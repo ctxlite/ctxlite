@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test & Typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck all packages
+        run: npm run typecheck
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+
+  validate-npm:
+    name: Validate npm packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate package.json files
+        run: |
+          for pkg in packages/core packages/opencode packages/mcp packages/cli; do
+            echo "Checking $pkg/package.json..."
+            node -e "require('./$pkg/package.json')"
+          done
+
+      - name: Check versions are in sync
+        run: |
+          ROOT_VERSION=$(node -e "console.log(require('./package.json').config.version)")
+          for pkg in packages/core packages/opencode packages/mcp packages/cli; do
+            PKG_VERSION=$(node -e "console.log(require('./$pkg/package.json').version)")
+            if [ "$ROOT_VERSION" != "$PKG_VERSION" ]; then
+              echo "Version mismatch in $pkg: $PKG_VERSION != $ROOT_VERSION"
+              exit 1
+            fi
+          done
+          echo "All versions in sync: $ROOT_VERSION"
+
+      - name: Check no console.log in MCP server
+        run: |
+          if grep -rEn '^\s*console\.log\s*\(' packages/mcp/src/ --include='*.ts'; then
+            echo "ERROR: console.log found in MCP server — use console.error instead"
+            exit 1
+          fi
+          echo "OK: no console.log in MCP server"

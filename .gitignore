@@ -1,0 +1,12 @@
+bin/
+npm/*/bin/ctxlite
+npm/*/bin/ctxlite.exe
+*.db
+*.db-shm
+*.db-wal
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.env
+specs/

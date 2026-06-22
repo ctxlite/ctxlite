@@ -1,0 +1,42 @@
+{
+  "name": "ctxlite",
+  "version": "0.1.0",
+  "description": "Token optimizer for Cursor, OpenCode and Claude Code — semantic caching + context trimming",
+  "keywords": [
+    "mcp",
+    "llm",
+    "tokens",
+    "cursor",
+    "claude",
+    "opencode",
+    "cache",
+    "context",
+    "ai",
+    "cost-optimization"
+  ],
+  "homepage": "https://github.com/ctxlite/ctxlite",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ctxlite/ctxlite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ctxlite/ctxlite/issues"
+  },
+  "license": "MIT",
+  "bin": {
+    "ctxlite": "./bin/ctxlite.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "optionalDependencies": {
+    "ctxlite-darwin-arm64": "0.1.0",
+    "ctxlite-darwin-x64": "0.1.0",
+    "ctxlite-linux-x64": "0.1.0",
+    "ctxlite-linux-arm64": "0.1.0",
+    "ctxlite-win32-x64": "0.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

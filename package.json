@@ -1,0 +1,29 @@
+{
+  "name": "ctxlite-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "config": {
+    "version": "0.1.0"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "lint": "eslint packages/*/src/**/*.ts",
+    "typecheck": "tsc --build packages/core/tsconfig.json packages/opencode/tsconfig.json packages/mcp/tsconfig.json packages/cli/tsconfig.json",
+    "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo",
+    "sync-version": "node scripts/sync-version.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

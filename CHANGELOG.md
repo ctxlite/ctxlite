@@ -1,0 +1,70 @@
+# Changelog
+
+All notable changes to ctxlite will be documented here.
+
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)  
+Versioning: [Semantic Versioning](https://semver.org/)
+
+## [Unreleased]
+
+### Added (SPEC-015)
+- GitHub Actions CI for TypeScript monorepo (typecheck, build, test, lint, version sync, MCP console.log guard)
+- GitHub Actions release workflow publishing `@ctxlite/core`, `@ctxlite/opencode`, `@ctxlite/mcp`, and `ctxlite` CLI to npm on tag
+
+### Added (SPEC-014)
+- `ctxlite` CLI package with `stats` subcommand, period filters, and JSON export
+
+### Added (SPEC-013)
+- `@ctxlite/mcp`: MCP stdio server for Cursor with `get_stats` and `trim_context` tools
+
+### Added (SPEC-012)
+- `@ctxlite/opencode`: OpenCode plugin with system prompt conciseness injection, `get_stats` and `trim_context` tools
+
+### Added (SPEC-011)
+- `@ctxlite/core`: BM25 scoring, file parser, import graph, trimmer, token counting, SQLite stats store
+
+### Added (SPEC-010)
+- Monorepo setup cu npm workspaces
+- TypeScript shared config (eslint, prettier, vitest)
+- Pachete placeholder: @ctxlite/core, @ctxlite/opencode, @ctxlite/mcp, ctxlite CLI
+
+### Changed (SPEC-02-addendum)
+- HTTP proxy uses pure pass-through upstream resolution from the `Host` header (works with any provider)
+- Replaced `--anthropic-url` / `--openai-url` with optional `--upstream-url` (testing only)
+- Removed `anthropic_url` / `openai_url` from config file; documented per-tool setup and OpenCode MCP-only integration
+
+### Added (SPEC-08)
+- CLI subcommands: `stats`, `cache stats`, `cache clear` (with `--l1` / `--l2` selective clear)
+- YAML config file support (`~/.ctxlite/config.yaml`) with CLI flag override priority
+- Extended stats summary (L1/L2 hits, trim savings, avg latency) and `SummaryFrom` period queries
+
+### Added
+
+- GitHub Actions CI (multi-OS tests, lint, npm validation) and release workflow
+- Local release alternative: `./scripts/release.sh` and `make ci` when Actions minutes are unavailable
+- Version injection via `-ldflags` at build time
+
+### Added (SPEC-06)
+- Local npm testing targets: `npm-version`, `npm-install-local`, `npm-pack`
+
+### Added (SPEC-04)
+- Real token usage parsing from Anthropic/OpenAI responses (including SSE streams)
+- `--max-context` flag for trimmer token budget
+
+### Added (SPEC-03)
+- Cache hooks wired into HTTP proxy handler
+- Embedding provider flags and `OPENAI_API_KEY` auto-detection
+- Background TTL/LRU eviction for L1 cache
+
+### Added (SPEC-02)
+- SSE streaming passthrough for coding tool compatibility
+- Request logging to SQLite and stderr one-liners (`[ctxlite] MISS ...`)
+- CLI/env upstream URL overrides (`--anthropic-url`, `--openai-url`)
+
+### Added (SPEC-01)
+
+- Initial repository structure
+- HTTP proxy entry point (placeholder)
+- SQLite stats store with session summary
+- Graceful shutdown with SIGTERM/SIGINT handling
+- CLI flags: --port, --db, --verbose, --version

@@ -1,0 +1,32 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended-type-checked"
+  ],
+  "parserOptions": {
+    "project": [
+      "./packages/core/tsconfig.json",
+      "./packages/opencode/tsconfig.json",
+      "./packages/mcp/tsconfig.json",
+      "./packages/cli/tsconfig.json"
+    ],
+    "tsconfigRootDir": "."
+  },
+  "rules": {
+    "no-console": ["error", { "allow": ["error", "warn"] }],
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/explicit-function-return-type": "off"
+  },
+  "overrides": [
+    {
+      "files": ["packages/opencode/**/*.ts", "packages/mcp/**/*.ts"],
+      "rules": {
+        "@typescript-eslint/require-await": "off"
+      }
+    }
+  ]
+}

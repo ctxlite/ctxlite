@@ -1,0 +1,22 @@
+{
+  "name": "ctxlite-linux-arm64",
+  "version": "0.1.0",
+  "description": "ctxlite binary for Linux ARM64",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ctxlite/ctxlite.git"
+  },
+  "license": "MIT",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "files": [
+    "bin/"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,43 @@
+---
+description: Security rules
+globs: ["**/*.go", "**/*.ts"]
+alwaysApply: true
+---
+
+# Security Rules
+
+## Go proxy
+
+### Network
+- HTTP server binds EXCLUSIVELY on 127.0.0.1, never on 0.0.0.0
+- Mandatory timeout on any outbound HTTP call: max 120s
+
+### Secrets
+- Never store Authorization header in SQLite or logs
+- Never log URLs containing query params with tokens
+- API keys remain in memory only for the duration of a request
+
+### Cache
+- Cache keys are computed from request body (without headers)
+- Responses are stored without authentication headers
+
+### Input validation
+- Validate Content-Type on any incoming request
+- Limit request body size to 10MB (configurable)
+- Return 400 for malformed requests, not 500
+
+## TypeScript packages
+
+### Secrets
+- Nu stoca niciodata API keys, session tokens, sau Authorization headers in SQLite
+- Nu loga request sau response bodies — pot contine date sensibile
+- SQLite db doar in ~/.ctxlite/ cu permisiuni user-only
+
+### Input
+- Valideaza toate inputurile externe cu zod
+- Limiteaza size-ul textelor procesate (max 1MB per fisier pentru BM25)
+
+### Dependencies
+- Minimizeaza dependintele externe
+- Audiaza cu `npm audit` la fiecare release
+- Nu adauga dependinte cu CVE-uri known

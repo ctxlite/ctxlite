@@ -1,0 +1,24 @@
+---
+description: Documentation standards
+globs: ["**/*.go", "**/*.md"]
+alwaysApply: true
+---
+
+# Documentation Standards
+
+## Go comments
+- All exported types, functions, and constants have GoDoc comments
+- Comments start with the symbol name: `// Proxy handles...`
+- Comments explain WHAT it does, not HOW
+
+## Markdown
+- README.md sections: Overview, Install, Configuration, Usage, Contributing
+- Each implemented spec gets a status update: `[x] Done` + link to PR
+- CHANGELOG.md follows Keep a Changelog (https://keepachangelog.com)
+
+## Inline comments
+- Inline comments only for non-obvious logic
+- Do not comment what the code does — comment WHY it does it that way
+
+## Language
+- All documentation, README files, and code comments must be written in English

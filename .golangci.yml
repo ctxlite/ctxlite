@@ -1,0 +1,12 @@
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - gosec
+    - unused
+
+linters-settings:
+  gosec:
+    excludes:
+      - G304   # file path from variable — intentional in stats package

@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Verify version matches tag
+        run: |
+          ROOT_VERSION=$(node -e "console.log(require('./package.json').config.version)")
+          TAG_VERSION="${{ steps.version.outputs.VERSION }}"
+          if [ "$ROOT_VERSION" != "$TAG_VERSION" ]; then
+            echo "ERROR: package.json version ($ROOT_VERSION) != tag ($TAG_VERSION)"
+            echo "Run: node scripts/sync-version.js after updating config.version"
+            exit 1
+          fi
+
+      - name: Publish @ctxlite/core
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: cd packages/core && npm publish --access public
+
+      - name: Publish @ctxlite/opencode
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: cd packages/opencode && npm publish --access public
+
+      - name: Publish @ctxlite/mcp
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: cd packages/mcp && npm publish --access public
+
+      - name: Publish ctxlite (CLI)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: cd packages/cli && npm publish --access public
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "ctxlite ${{ github.ref_name }}"
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body: |
+            ## Install
+
+            **OpenCode:**
+            ```bash
+            opencode plugin @ctxlite/opencode -g -f
+            ```
+
+            **Cursor:**
+            ```json
+            {
+              "mcpServers": {
+                "ctxlite": { "command": "npx", "args": ["-y", "@ctxlite/mcp"] }
+              }
+            }
+            ```
+
+            **CLI stats:**
+            ```bash
+            npx ctxlite stats
+            ```

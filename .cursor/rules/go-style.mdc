@@ -1,0 +1,42 @@
+---
+description: Go code style rules for ctxlite
+globs: ["**/*.go"]
+alwaysApply: true
+---
+
+# Go Style Rules
+
+## General
+- Go version: 1.22+
+- Module path: github.com/ctxlite/ctxlite
+- Return all errors explicitly; never ignore with `_`
+- Do not use `panic()` outside `main.go` startup validation
+- Prefer `errors.New()` and `fmt.Errorf("context: %w", err)` for error wrapping
+
+## Naming
+- Package names: lowercase, single word (e.g. `proxy`, `cache`, `trimmer`, `mcp`, `stats`)
+- Interfaces: `-er` suffix when appropriate (e.g. `Cacher`, `Trimmer`)
+- Exported functions: PascalCase
+- Internal helpers: camelCase
+- Constants: ALL_CAPS only for sentinel errors, otherwise PascalCase
+
+## Structure
+- Each package has a `doc.go` file with the package comment
+- Constructors follow `New<Type>(config Config) (*Type, error)`
+- Cleanup via `io.Closer` interface, not custom methods
+
+## HTTP
+- ALWAYS bind on `127.0.0.1`, never on `0.0.0.0`
+- Mandatory timeouts on any `http.Server`: ReadTimeout, WriteTimeout, IdleTimeout
+- Never log Authorization headers or API keys
+
+## Logging
+- Use `log/slog` (stdlib, Go 1.21+)
+- Default level: `INFO`
+- Format: text on stderr (not JSON in v1)
+- Never log request body or response body — they may contain sensitive data
+
+## Testing
+- Each package has a `*_test.go` file
+- Use stdlib `testing`, no external frameworks
+- Table-driven tests for cache and trimming logic

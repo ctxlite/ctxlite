@@ -1,0 +1,22 @@
+{
+  "name": "ctxlite-darwin-x64",
+  "version": "0.1.0",
+  "description": "ctxlite binary for macOS Intel (x64)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ctxlite/ctxlite.git"
+  },
+  "license": "MIT",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bin/"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

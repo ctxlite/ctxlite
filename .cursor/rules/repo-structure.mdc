@@ -1,0 +1,42 @@
+---
+description: Monorepo structure conventions
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Monorepo Structure
+
+## Layout
+
+```
+ctxlite/
+├── go/                     # Go HTTP proxy + cache (legacy binary)
+├── npm/                    # Platform binary wrappers for Go release
+├── packages/               # TypeScript workspace packages
+│   ├── core/               → @ctxlite/core
+│   ├── opencode/           → @ctxlite/opencode
+│   ├── mcp/                → @ctxlite/mcp
+│   └── cli/                → ctxlite (CLI stats)
+├── docs/
+├── package.json            # root npm workspace
+├── tsconfig.base.json
+└── vitest.workspace.ts
+```
+
+## Packages
+- `@ctxlite/core` — logica shared: BM25, stats SQLite, token counting, parser
+- `@ctxlite/opencode` — OpenCode plugin
+- `@ctxlite/mcp` — MCP stdio server pentru Cursor editor + Cursor agent CLI
+- `ctxlite` (CLI) — `ctxlite stats` command
+
+## Reguli
+- Logica de business DOAR in @ctxlite/core
+- Pachetele opencode si mcp importa din core, nu isi duplica logica
+- CLI importa din core direct
+- Nu exista dependinte circulare intre pachete
+- Go code lives in `go/`; npm binary wrappers in `npm/`
+
+## Versioning
+- Toate pachetele TypeScript au aceeasi versiune (synchronized versioning)
+- Versiunea e definita o singura data in root package.json ca `config.version`
+- Script-ul `sync-version` o propaga in toate pachetele

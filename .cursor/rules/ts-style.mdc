@@ -1,0 +1,39 @@
+---
+description: TypeScript style rules for ctxlite
+globs: ["**/*.ts"]
+alwaysApply: true
+---
+
+# TypeScript Style Rules
+
+## General
+- TypeScript strict mode: true
+- Node.js >= 18 (ESM modules)
+- Toate erorile se returneaza explicit — no throw pentru flow normal
+- Prefer `Result<T, E>` pattern peste throw/catch pentru erori de business logic
+
+## Naming
+- Interfaces: PascalCase, fara prefix I
+- Types: PascalCase
+- Functions: camelCase
+- Constants: SCREAMING_SNAKE_CASE pentru env vars, camelCase pentru restul
+- Fisiere: kebab-case (ex: bm25.ts, token-counter.ts)
+
+## Imports
+- ESM only — "type": "module" in package.json
+- Imports cu extensie .js (chiar daca fisierul e .ts — TypeScript ESM requirement)
+- No default exports — named exports only
+
+## Async
+- Async/await peste .then()/.catch()
+- Nu ignora Promise-uri neawaited
+
+## Logging
+- Nu folosi console.log in library code (core, opencode, mcp)
+- console.error permis in CLI si entry points
+- Nu loga niciodata API keys, tokens, sau request/response bodies
+
+## Testing
+- Vitest pentru toate testele
+- Table-driven tests cu it.each()
+- Nu mock-ui filesystem — foloseste tmp directories reale

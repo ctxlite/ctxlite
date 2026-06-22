@@ -1,0 +1,22 @@
+{
+  "name": "ctxlite",
+  "version": "0.1.0",
+  "description": "Token optimizer CLI for OpenCode and Cursor — stats reporting",
+  "type": "module",
+  "bin": {
+    "ctxlite": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": ["dist/"],
+  "scripts": {
+    "build": "tsc --build && chmod +x dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ctxlite/core": "0.1.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0"
+  }
+}
