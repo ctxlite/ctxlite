@@ -24,16 +24,16 @@ make test
 
 1. Fork repo
 2. `git checkout -b feat/your-feature`
-3. Modifica codul
+3. Make your changes
 4. TypeScript: `npm run typecheck && npm test && npm run lint`
 5. Go: `make lint && make test`
-6. PR catre `main`
+6. Open a PR to `main`
 
 ## Specs
 
-Spec-urile sunt in `specs/`.
-Inainte sa implementezi, citeste spec-ul relevant.
-Dupa implementare, marcheaza `[x] Done` si linkuieste PR-ul.
+Specs live in `specs/` (local only, not committed).  
+Read the relevant spec before implementing.  
+After implementation, mark `[x] Done` and link the PR.
 
 ## Commit style
 
@@ -99,8 +99,31 @@ Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which:
 
 1. Builds and tests all packages
 2. Verifies `config.version` matches the tag
-3. Publishes `@ctxlite/core`, `@ctxlite/opencode`, `@ctxlite/mcp`, and `ctxlite` (CLI) to npm
+3. Publishes `@ctxlite/core`, `@ctxlite/opencode`, `@ctxlite/mcp`, and `@ctxlite/cli` to npm
 4. Creates a GitHub Release
+
+### Manual npm publish (local)
+
+**Do not run `npm publish` from the repo root.** The root `package.json` is `private` and has no top-level `version` field (version lives in `config.version`), which causes npm to crash with:
+
+`Cannot read properties of null (reading 'prerelease')`
+
+Publish workspace packages in order:
+
+```bash
+npm run build
+npm run publish:npm          # dry-run all four packages
+npm run publish:npm:live     # publish (requires npm login or NPM_TOKEN)
+```
+
+Or publish one package at a time:
+
+```bash
+cd packages/core && npm publish --access public
+cd ../opencode && npm publish --access public
+cd ../mcp && npm publish --access public
+cd ../cli && npm publish --access public
+```
 
 ## Go binary (legacy)
 

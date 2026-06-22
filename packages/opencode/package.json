@@ -1,6 +1,6 @@
 {
   "name": "@ctxlite/opencode",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,12 +10,15 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "build": "tsc --build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ctxlite/core": "0.1.0",
+    "@ctxlite/core": "0.1.2",
     "@opencode-ai/plugin": "latest"
   },
   "devDependencies": {

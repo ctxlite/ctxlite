@@ -16,7 +16,7 @@ ctxlite/
 │   ├── core/               → @ctxlite/core
 │   ├── opencode/           → @ctxlite/opencode
 │   ├── mcp/                → @ctxlite/mcp
-│   └── cli/                → ctxlite (CLI stats)
+│   └── cli/                → @ctxlite/cli
 ├── docs/
 ├── package.json            # root npm workspace
 ├── tsconfig.base.json
@@ -24,19 +24,19 @@ ctxlite/
 ```
 
 ## Packages
-- `@ctxlite/core` — logica shared: BM25, stats SQLite, token counting, parser
+- `@ctxlite/core` — shared logic: BM25, SQLite stats, token counting, parser
 - `@ctxlite/opencode` — OpenCode plugin
-- `@ctxlite/mcp` — MCP stdio server pentru Cursor editor + Cursor agent CLI
-- `ctxlite` (CLI) — `ctxlite stats` command
+- `@ctxlite/mcp` — MCP stdio server for Cursor editor + Cursor agent CLI
+- `@ctxlite/cli` — `ctxlite stats` and `ctxlite install` commands
 
-## Reguli
-- Logica de business DOAR in @ctxlite/core
-- Pachetele opencode si mcp importa din core, nu isi duplica logica
-- CLI importa din core direct
-- Nu exista dependinte circulare intre pachete
+## Rules
+- Business logic ONLY in @ctxlite/core
+- opencode and mcp packages import from core; do not duplicate logic
+- CLI imports from core directly
+- No circular dependencies between packages
 - Go code lives in `go/`; npm binary wrappers in `npm/`
 
 ## Versioning
-- Toate pachetele TypeScript au aceeasi versiune (synchronized versioning)
-- Versiunea e definita o singura data in root package.json ca `config.version`
-- Script-ul `sync-version` o propaga in toate pachetele
+- All TypeScript packages share the same version (synchronized versioning)
+- Version is defined once in root `package.json` as `config.version`
+- The `sync-version` script propagates it to all packages

@@ -23,3 +23,31 @@ export type {
   Summary,
   CacheStats,
 } from "./types.js"
+
+export {
+  ALL_TOOLS,
+  MCP_PACKAGE,
+  MCP_SERVER_NAME,
+  OPENCODE_PLUGIN,
+  applyConfigChange,
+  buildTargets,
+  defaultMcpEntry,
+  formatJson,
+  mergeMcpConfig,
+  mergeOpenCodeConfig,
+  parseTools,
+  planInstall,
+  resolveConfigPath,
+  runInstall,
+  toolLabel,
+} from "./install/index.js"
+export type {
+  ConfigKind,
+  InstallAction,
+  InstallOptions,
+  InstallPlanItem,
+  InstallScope,
+  InstallTarget,
+  InstallTool,
+  McpServerEntry,
+} from "./install/index.js"

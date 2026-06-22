@@ -60,7 +60,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: cd packages/mcp && npm publish --access public
 
-      - name: Publish ctxlite (CLI)
+      - name: Publish @ctxlite/cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: cd packages/cli && npm publish --access public
@@ -88,7 +88,8 @@ jobs:
             }
             ```
 
-            **CLI stats:**
+            **CLI stats + install:**
             ```bash
-            npx ctxlite stats
+            npx @ctxlite/cli stats
+            npx @ctxlite/cli install
             ```

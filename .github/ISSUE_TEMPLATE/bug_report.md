@@ -3,7 +3,7 @@ name: Bug report
 labels: bug
 ---
 
-**ctxlite version:** (run `npx ctxlite stats --help`)
+**ctxlite version:** (run `npx @ctxlite/cli stats --help`)
 **Tool:** OpenCode / Cursor editor / Cursor agent CLI
 **OS:** macOS / Linux / Windows
 

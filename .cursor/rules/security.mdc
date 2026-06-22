@@ -29,15 +29,15 @@ alwaysApply: true
 ## TypeScript packages
 
 ### Secrets
-- Nu stoca niciodata API keys, session tokens, sau Authorization headers in SQLite
-- Nu loga request sau response bodies — pot contine date sensibile
-- SQLite db doar in ~/.ctxlite/ cu permisiuni user-only
+- Never store API keys, session tokens, or Authorization headers in SQLite
+- Do not log request or response bodies — they may contain sensitive data
+- SQLite database only under `~/.ctxlite/` with user-only permissions
 
 ### Input
-- Valideaza toate inputurile externe cu zod
-- Limiteaza size-ul textelor procesate (max 1MB per fisier pentru BM25)
+- Validate all external inputs with zod
+- Limit processed text size (max 1MB per file for BM25)
 
 ### Dependencies
-- Minimizeaza dependintele externe
-- Audiaza cu `npm audit` la fiecare release
-- Nu adauga dependinte cu CVE-uri known
+- Minimize external dependencies
+- Run `npm audit` on every release
+- Do not add dependencies with known CVEs

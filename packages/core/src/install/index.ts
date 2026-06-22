@@ -1,0 +1,21 @@
+export {
+  ALL_TOOLS,
+  MCP_PACKAGE,
+  MCP_SERVER_NAME,
+  OPENCODE_PLUGIN,
+  defaultMcpEntry,
+} from "./types.js"
+export type {
+  ConfigKind,
+  InstallAction,
+  InstallOptions,
+  InstallPlanItem,
+  InstallScope,
+  InstallTarget,
+  InstallTool,
+  McpServerEntry,
+} from "./types.js"
+
+export { buildTargets, resolveConfigPath, toolLabel } from "./paths.js"
+export { applyConfigChange, formatJson, mergeMcpConfig, mergeOpenCodeConfig } from "./merge.js"
+export { parseTools, planInstall, runInstall } from "./run.js"

@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "config": {
-    "version": "0.1.0"
+    "version": "0.1.2"
   },
   "scripts": {
     "build": "npm run build --workspaces --if-present",
@@ -15,7 +15,9 @@
     "lint": "eslint packages/*/src/**/*.ts",
     "typecheck": "tsc --build packages/core/tsconfig.json packages/opencode/tsconfig.json packages/mcp/tsconfig.json packages/cli/tsconfig.json",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo",
-    "sync-version": "node scripts/sync-version.js"
+    "sync-version": "node scripts/sync-version.js",
+    "publish:npm": "./scripts/publish-npm.sh",
+    "publish:npm:live": "./scripts/publish-npm.sh --publish"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

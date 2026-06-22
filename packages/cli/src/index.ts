@@ -2,28 +2,37 @@
 
 import { StatsStore, defaultDbPath } from "@ctxlite/core"
 import { formatText, formatJson } from "./format.js"
+import { runInstallCommand } from "./install.js"
 
 const HELP = `
 ctxlite — token optimizer for OpenCode and Cursor
 
 USAGE:
   ctxlite stats [options]
+  ctxlite install [options]
 
-OPTIONS:
+COMMANDS:
+  stats     Show token savings statistics
+  install   Configure ctxlite in Cursor, OpenCode, or Claude Code
+
+GLOBAL OPTIONS:
+  --help, -h         Show this help
+
+STATS OPTIONS:
   --last <period>    Period: session, today, 7d, 30d, all (default: today)
   --export <format>  Export format: text, json (default: text)
   --db <path>        SQLite database path (default: ~/.ctxlite/stats.db)
-  --help, -h         Show this help
 
 EXAMPLES:
   ctxlite stats
   ctxlite stats --last 7d
-  ctxlite stats --last 30d --export json
-  ctxlite stats --last all
+  ctxlite install --tool cursor --scope global --yes
+  ctxlite install --tool all --scope global --dry-run
 `.trimStart()
 
 interface Args {
   subcommand: string | null
+  rest: string[]
   last: string
   export: string
   db: string
@@ -33,6 +42,7 @@ interface Args {
 function parseArgs(argv: string[]): Args {
   const args: Args = {
     subcommand: null,
+    rest: [],
     last: "today",
     export: "text",
     db: defaultDbPath(),
@@ -59,6 +69,8 @@ function parseArgs(argv: string[]): Args {
       default:
         if (arg && !arg.startsWith("-") && args.subcommand === null) {
           args.subcommand = arg
+          args.rest = argv.slice(i + 1)
+          return args
         }
     }
     i++
@@ -92,30 +104,17 @@ function periodToTimestamp(period: string): number {
   }
 }
 
-function main(): void {
-  const args = parseArgs(process.argv.slice(2))
-
-  if (args.help || args.subcommand === null) {
-    process.stdout.write(HELP + "\n")
-    process.exit(0)
-  }
-
-  if (args.subcommand !== "stats") {
-    process.stderr.write(`Unknown subcommand "${args.subcommand}"\n`)
-    process.stderr.write(`Run 'ctxlite --help' for usage.\n`)
-    process.exit(1)
-  }
-
+function runStats(args: Args): number {
   const validPeriods = ["session", "today", "7d", "30d", "all"]
   if (!validPeriods.includes(args.last)) {
     process.stderr.write(`Invalid period "${args.last}". Valid: ${validPeriods.join(", ")}\n`)
-    process.exit(1)
+    return 1
   }
 
   const validFormats = ["text", "json"]
   if (!validFormats.includes(args.export)) {
     process.stderr.write(`Invalid export format "${args.export}". Valid: text, json\n`)
-    process.exit(1)
+    return 1
   }
 
   let store: StatsStore | null = null
@@ -123,16 +122,36 @@ function main(): void {
     store = new StatsStore(args.db)
     const since = periodToTimestamp(args.last)
     const summary = store.summary(since)
-
     const output = args.export === "json" ? formatJson(summary) : formatText(summary)
-
     process.stdout.write(output + "\n")
+    return 0
   } catch (err) {
     process.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}\n`)
-    process.exit(1)
+    return 1
   } finally {
     store?.close()
   }
+}
+
+async function main(): Promise<void> {
+  const args = parseArgs(process.argv.slice(2))
+
+  if (args.help || args.subcommand === null) {
+    process.stdout.write(HELP + "\n")
+    process.exit(0)
+  }
+
+  if (args.subcommand === "stats") {
+    process.exit(runStats(args))
+  }
+
+  if (args.subcommand === "install") {
+    process.exit(await runInstallCommand(args.rest))
+  }
+
+  process.stderr.write(`Unknown subcommand "${args.subcommand}"\n`)
+  process.stderr.write(`Run 'ctxlite --help' for usage.\n`)
+  process.exit(1)
 }
 
 main()

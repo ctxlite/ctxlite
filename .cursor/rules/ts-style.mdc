@@ -9,31 +9,31 @@ alwaysApply: true
 ## General
 - TypeScript strict mode: true
 - Node.js >= 18 (ESM modules)
-- Toate erorile se returneaza explicit — no throw pentru flow normal
-- Prefer `Result<T, E>` pattern peste throw/catch pentru erori de business logic
+- Return all errors explicitly — no throw for normal control flow
+- Prefer `Result<T, E>` pattern over throw/catch for business-logic errors
 
 ## Naming
-- Interfaces: PascalCase, fara prefix I
+- Interfaces: PascalCase, no `I` prefix
 - Types: PascalCase
 - Functions: camelCase
-- Constants: SCREAMING_SNAKE_CASE pentru env vars, camelCase pentru restul
-- Fisiere: kebab-case (ex: bm25.ts, token-counter.ts)
+- Constants: SCREAMING_SNAKE_CASE for env vars, camelCase otherwise
+- Files: kebab-case (e.g. bm25.ts, token-counter.ts)
 
 ## Imports
-- ESM only — "type": "module" in package.json
-- Imports cu extensie .js (chiar daca fisierul e .ts — TypeScript ESM requirement)
+- ESM only — `"type": "module"` in package.json
+- Imports use `.js` extension (even when the source file is `.ts — TypeScript ESM requirement)
 - No default exports — named exports only
 
 ## Async
-- Async/await peste .then()/.catch()
-- Nu ignora Promise-uri neawaited
+- Prefer async/await over `.then()` / `.catch()`
+- Do not leave Promises unawaited
 
 ## Logging
-- Nu folosi console.log in library code (core, opencode, mcp)
-- console.error permis in CLI si entry points
-- Nu loga niciodata API keys, tokens, sau request/response bodies
+- Do not use `console.log` in library code (core, opencode, mcp)
+- `console.error` is allowed in CLI and entry points
+- Never log API keys, tokens, or request/response bodies
 
 ## Testing
-- Vitest pentru toate testele
-- Table-driven tests cu it.each()
-- Nu mock-ui filesystem — foloseste tmp directories reale
+- Vitest for all tests
+- Table-driven tests with `it.each()`
+- Do not mock the filesystem — use real temp directories

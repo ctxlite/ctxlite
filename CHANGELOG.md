@@ -7,12 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added (SPEC-016)
+- `@ctxlite/cli install` — interactive installer for Cursor, OpenCode, Claude Code, and Claude Desktop (global or project scope)
+- Renamed CLI package from `ctxlite` to `@ctxlite/cli` (unscoped npm name taken)
+
 ### Added (SPEC-015)
 - GitHub Actions CI for TypeScript monorepo (typecheck, build, test, lint, version sync, MCP console.log guard)
-- GitHub Actions release workflow publishing `@ctxlite/core`, `@ctxlite/opencode`, `@ctxlite/mcp`, and `ctxlite` CLI to npm on tag
+- GitHub Actions release workflow publishing `@ctxlite/core`, `@ctxlite/opencode`, `@ctxlite/mcp`, and `@ctxlite/cli` to npm on tag
 
 ### Added (SPEC-014)
-- `ctxlite` CLI package with `stats` subcommand, period filters, and JSON export
+- `@ctxlite/cli` package with `stats` subcommand, period filters, and JSON export
 
 ### Added (SPEC-013)
 - `@ctxlite/mcp`: MCP stdio server for Cursor with `get_stats` and `trim_context` tools
@@ -26,7 +30,7 @@ Versioning: [Semantic Versioning](https://semver.org/)
 ### Added (SPEC-010)
 - Monorepo setup cu npm workspaces
 - TypeScript shared config (eslint, prettier, vitest)
-- Pachete placeholder: @ctxlite/core, @ctxlite/opencode, @ctxlite/mcp, ctxlite CLI
+- Placeholder packages: @ctxlite/core, @ctxlite/opencode, @ctxlite/mcp, @ctxlite/cli
 
 ### Changed (SPEC-02-addendum)
 - HTTP proxy uses pure pass-through upstream resolution from the `Host` header (works with any provider)

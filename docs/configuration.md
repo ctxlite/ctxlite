@@ -84,9 +84,21 @@ export ANTHROPIC_BASE_URL=http://127.0.0.1:8080
 
 #### Install
 
+Use the interactive installer (recommended):
+
+```bash
+npx @ctxlite/cli install --tool opencode --scope global --yes
+npx @ctxlite/cli install --tool opencode --scope project --yes
+```
+
+Or the OpenCode CLI:
+
 ```bash
 opencode plugin @ctxlite/opencode -g -f
 ```
+
+Global config: `~/.config/opencode/opencode.json`  
+Project config: `opencode.json` in the project root
 
 #### What it does
 
@@ -117,15 +129,33 @@ Use the `trim_context` tool explicitly before large tasks.
 
 #### MCP (Cursor)
 
-For Cursor, use the MCP server instead:
+For Cursor, use the MCP server. Install with:
+
+```bash
+npx @ctxlite/cli install --tool cursor --scope global --yes
+```
+
+Or add manually:
 
 ```json
 {
   "mcpServers": {
-    "ctxlite": { "type": "stdio", "command": "npx", "args": ["-y", "@ctxlite/mcp"] }
+    "ctxlite": { "command": "npx", "args": ["-y", "@ctxlite/mcp"] }
   }
 }
 ```
+
+Global: `~/.cursor/mcp.json` · Project: `.cursor/mcp.json`
+
+#### Claude Code / Claude Desktop
+
+```bash
+npx @ctxlite/cli install --tool claude-code --scope global --yes
+npx @ctxlite/cli install --tool claude-desktop --scope global --yes
+```
+
+Claude Code global: `~/.claude.json` · Project: `.mcp.json`  
+Claude Desktop: OS-specific `claude_desktop_config.json` (global only)
 
 ### Cursor (HTTP proxy)
 
