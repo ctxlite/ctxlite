@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { trimFiles, estimateTokens } from "@ctxlite/core"
+import { trimFiles, estimateTokens, logTrimResult } from "@ctxlite/core"
 import type { CodeFile } from "@ctxlite/core"
 
 export const trimContextSchema = z.object({
@@ -41,6 +41,7 @@ export async function handleTrimContext(
   }))
 
   const result = trimFiles(codeFiles, query, { maxTokens })
+  logTrimResult(result, "mcp")
 
   if (result.tokensSaved === 0) {
     return [

@@ -1,5 +1,11 @@
 import { tool, type ToolDefinition } from "@opencode-ai/plugin"
-import { StatsStore, detectLanguage, estimateTokens, trimFiles } from "@ctxlite/core"
+import {
+  StatsStore,
+  detectLanguage,
+  estimateTokens,
+  logTrimResult,
+  trimFiles,
+} from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
 
 /**
@@ -84,6 +90,7 @@ Provide the files you're considering including and your current task description
     }))
 
     const result = trimFiles(codeFiles, query, { maxTokens })
+    logTrimResult(result, "opencode")
 
     if (result.tokensSaved === 0) {
       return `All ${files.length} files are relevant — no trimming needed.`

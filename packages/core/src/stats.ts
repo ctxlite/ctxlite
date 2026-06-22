@@ -4,7 +4,8 @@ import Database from "better-sqlite3"
 import { mkdirSync } from "fs"
 import { dirname, join } from "path"
 import { homedir } from "os"
-import type { CacheStats, RequestLog, Summary } from "./types.js"
+import { estimateCost } from "./tokens.js"
+import type { CacheStats, RequestLog, Summary, TrimResult } from "./types.js"
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS requests (
@@ -130,5 +131,34 @@ export class StatsStore {
 
   close(): void {
     this.db.close()
+  }
+}
+
+/**
+ * Persist token savings from a trim_context run.
+ * No-op when nothing was trimmed.
+ */
+export function logTrimResult(result: TrimResult, source: string, dbPath?: string): void {
+  if (result.tokensSaved <= 0) {
+    return
+  }
+
+  let store: StatsStore | null = null
+  try {
+    store = new StatsStore(dbPath)
+    store.log({
+      upstream: source,
+      cacheHit: false,
+      tokensIn: result.tokensIn,
+      tokensUsed: result.tokensOut,
+      tokensOut: 0,
+      tokensSaved: result.tokensSaved,
+      costSaved: estimateCost(result.tokensSaved, source),
+      latencyMs: 0,
+    })
+  } catch {
+    // Silent — logging must not break tool execution
+  } finally {
+    store?.close()
   }
 }

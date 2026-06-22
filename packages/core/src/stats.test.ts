@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest"
-import { StatsStore } from "./stats.js"
+import { StatsStore, logTrimResult } from "./stats.js"
 import { tmpdir } from "os"
 import { join } from "path"
 import { rmSync } from "fs"
@@ -65,6 +65,51 @@ describe("StatsStore", () => {
         latencyMs: 0,
       }),
     ).not.toThrow()
+  })
+
+  it("logTrimResult persists trim savings", () => {
+    dbPath = tmpDb()
+    logTrimResult(
+      {
+        files: [],
+        tokensIn: 1000,
+        tokensOut: 400,
+        tokensSaved: 600,
+        trimRatio: 0.6,
+        filesIn: 5,
+        filesOut: 2,
+      },
+      "opencode",
+      dbPath,
+    )
+
+    store = new StatsStore(dbPath)
+    const summary = store.summary()
+    expect(summary.totalRequests).toBe(1)
+    expect(summary.tokensSaved).toBe(600)
+    expect(summary.trimmedRequests).toBe(1)
+    store.close()
+  })
+
+  it("logTrimResult skips zero savings", () => {
+    dbPath = tmpDb()
+    logTrimResult(
+      {
+        files: [],
+        tokensIn: 100,
+        tokensOut: 100,
+        tokensSaved: 0,
+        trimRatio: 0,
+        filesIn: 1,
+        filesOut: 1,
+      },
+      "opencode",
+      dbPath,
+    )
+
+    store = new StatsStore(dbPath)
+    expect(store.summary().totalRequests).toBe(0)
+    store.close()
   })
 
   it("pruneOlderThan removes old entries", () => {

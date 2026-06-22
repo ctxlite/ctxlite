@@ -13,7 +13,7 @@ export type { TrimOptions } from "./trimmer.js"
 
 export { parseTokenUsage, estimateTokens, estimateCost } from "./tokens.js"
 
-export { StatsStore, defaultDbPath } from "./stats.js"
+export { StatsStore, defaultDbPath, logTrimResult } from "./stats.js"
 
 export type {
   CodeFile,

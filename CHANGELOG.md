@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-06-22
+
+### Fixed
+- `@ctxlite/opencode` / `@ctxlite/mcp`: record token savings in `~/.ctxlite/stats.db` when `trim_context` trims files
+
+## [0.1.3] - 2026-06-22
+
 ### Fixed
 - `@ctxlite/opencode`: remove debug `session idle` log that OpenCode showed as an error
 
