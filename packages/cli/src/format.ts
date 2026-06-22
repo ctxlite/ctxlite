@@ -15,6 +15,8 @@ export function formatText(summary: Summary): string {
 ctxlite stats — ${summary.period}
 ─────────────────────────────────────
 Tokens saved  ${formatTokens(summary.tokensSaved)} total
+  compress    ${formatTokens(summary.compressTokensSaved)} (${summary.compressRequests} tool outputs)
+  prune       ${formatTokens(summary.pruneTokensSaved)} (${summary.pruneRequests} context passes)
   trim        ${formatTokens(summary.trimTokensSaved)} (${summary.trimmedRequests} calls)
   concise     ${formatTokens(summary.concisenessTokensSaved)} (${summary.concisenessRequests} responses)
 Cost saved    ~$${summary.costSaved.toFixed(4)}
@@ -29,9 +31,13 @@ export interface JsonExport {
   totalRequests: number
   trimmedRequests: number
   concisenessRequests: number
+  compressRequests: number
+  pruneRequests: number
   tokensSaved: number
   trimTokensSaved: number
   concisenessTokensSaved: number
+  compressTokensSaved: number
+  pruneTokensSaved: number
   costSavedUsd: number
   avgLatencyMs: number
 }
@@ -43,9 +49,13 @@ export function formatJson(summary: Summary): string {
     totalRequests: summary.totalRequests,
     trimmedRequests: summary.trimmedRequests,
     concisenessRequests: summary.concisenessRequests,
+    compressRequests: summary.compressRequests,
+    pruneRequests: summary.pruneRequests,
     tokensSaved: summary.tokensSaved,
     trimTokensSaved: summary.trimTokensSaved,
     concisenessTokensSaved: summary.concisenessTokensSaved,
+    compressTokensSaved: summary.compressTokensSaved,
+    pruneTokensSaved: summary.pruneTokensSaved,
     costSavedUsd: summary.costSaved,
     avgLatencyMs: summary.avgLatencyMs,
   }

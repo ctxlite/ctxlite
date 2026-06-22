@@ -6,9 +6,13 @@ const emptySummary: Summary = {
   totalRequests: 0,
   trimmedRequests: 0,
   concisenessRequests: 0,
+  compressRequests: 0,
+  pruneRequests: 0,
   tokensSaved: 0,
   trimTokensSaved: 0,
   concisenessTokensSaved: 0,
+  compressTokensSaved: 0,
+  pruneTokensSaved: 0,
   costSaved: 0,
   avgLatencyMs: 0,
   period: "today",
@@ -18,10 +22,14 @@ const fullSummary: Summary = {
   totalRequests: 87,
   trimmedRequests: 23,
   concisenessRequests: 64,
-  tokensSaved: 341200,
+  compressRequests: 120,
+  pruneRequests: 45,
+  tokensSaved: 541200,
   trimTokensSaved: 41200,
   concisenessTokensSaved: 300000,
-  costSaved: 1.0236,
+  compressTokensSaved: 150000,
+  pruneTokensSaved: 50000,
+  costSaved: 1.6236,
   avgLatencyMs: 12,
   period: "last 7 days",
 }
@@ -35,18 +43,17 @@ describe("formatText", () => {
 
   it("formats tokens in K for large numbers", () => {
     const out = formatText(fullSummary)
-    expect(out).toContain("341.2K")
+    expect(out).toContain("541.2K")
   })
 
   it("includes all key metrics", () => {
     const out = formatText(fullSummary)
-    expect(out).toContain("341.2K")
-    expect(out).toContain("41.2K")
-    expect(out).toContain("300.0K")
-    expect(out).toContain("23 calls")
-    expect(out).toContain("64 responses")
-    expect(out).toContain("$1.0236")
-    expect(out).toContain("12ms")
+    expect(out).toContain("541.2K")
+    expect(out).toContain("150.0K")
+    expect(out).toContain("50.0K")
+    expect(out).toContain("120 tool outputs")
+    expect(out).toContain("45 context passes")
+    expect(out).toContain("$1.6236")
   })
 })
 
@@ -60,7 +67,7 @@ describe("formatJson", () => {
     const parsed = JSON.parse(formatJson(fullSummary)) as JsonExport
     expect(parsed).toHaveProperty("totalRequests", 87)
     expect(parsed).toHaveProperty("trimmedRequests", 23)
-    expect(parsed).toHaveProperty("tokensSaved", 341200)
+    expect(parsed).toHaveProperty("tokensSaved", 541200)
     expect(parsed).toHaveProperty("costSavedUsd")
     expect(parsed).toHaveProperty("generatedAt")
     expect(parsed).toHaveProperty("period")

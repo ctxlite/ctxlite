@@ -13,8 +13,14 @@ export type { TrimOptions } from "./trimmer.js"
 
 export { parseTokenUsage, estimateTokens, estimateCost, estimateConcisenessSavings, CONCISENESS_SAVINGS_RATE } from "./tokens.js"
 
-export { StatsStore, defaultDbPath, logTrimResult, logConcisenessSavings } from "./stats.js"
-export type { ConcisenessLog } from "./stats.js"
+export { compressToolOutput } from "./tool-output-compress.js"
+export type { CompressToolOutputOptions, CompressToolOutputResult } from "./tool-output-compress.js"
+
+export { pruneMessageContext } from "./context-prune.js"
+export type { PruneMessage, ContextPruneResult } from "./context-prune.js"
+
+export { StatsStore, defaultDbPath, logTrimResult, logConcisenessSavings, logOptimizationSavings } from "./stats.js"
+export type { ConcisenessLog, OptimizationLog } from "./stats.js"
 
 export type {
   CodeFile,

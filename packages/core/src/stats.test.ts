@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest"
-import { StatsStore, logTrimResult, logConcisenessSavings } from "./stats.js"
+import { StatsStore, logTrimResult, logConcisenessSavings, logOptimizationSavings } from "./stats.js"
 import { openStatsSqlite } from "./sqlite-adapter.js"
 import { tmpdir } from "os"
 import { join } from "path"
@@ -147,6 +147,26 @@ describe("StatsStore", () => {
       dbPath,
     )
     expect(store.summary().totalRequests).toBe(1)
+    store.close()
+  })
+
+  it("logOptimizationSavings persists compress savings", () => {
+    dbPath = tmpDb()
+    logOptimizationSavings(
+      {
+        source: "compress",
+        upstream: "opencode",
+        tokensIn: 5000,
+        tokensOut: 1200,
+        id: "compress-call-1",
+      },
+      dbPath,
+    )
+
+    store = new StatsStore(dbPath)
+    const summary = store.summary()
+    expect(summary.compressRequests).toBe(1)
+    expect(summary.compressTokensSaved).toBe(3800)
     store.close()
   })
 

@@ -1,14 +1,17 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { buildSystemPromptAddition } from "./system-prompt.js"
+import { createMessagesTransformHook } from "./messages-transform-hook.js"
 import { createStatsEventHandler } from "./stats-events.js"
+import { createToolCompressHook } from "./tool-compress-hook.js"
 import { getStatsTool, trimContextTool } from "./tools.js"
 
 /**
  * ctxlite OpenCode plugin
  *
- * 1. Injects conciseness instructions into the system prompt
- * 2. Records conciseness + trim savings to ~/.ctxlite/stats.db
- * 3. Exposes `get_stats` and `trim_context` tools
+ * 1. Compresses tool output automatically (tool.execute.after)
+ * 2. Prunes duplicate tool context before each LLM request
+ * 3. Injects conciseness instructions into the system prompt
+ * 4. Records all savings to ~/.ctxlite/stats.db
  */
 const CtxlitePlugin: Plugin = async (_ctx) => {
   return {
@@ -21,6 +24,10 @@ const CtxlitePlugin: Plugin = async (_ctx) => {
         output.system.push(addition.trim())
       }
     },
+
+    "tool.execute.after": createToolCompressHook(),
+
+    "experimental.chat.messages.transform": createMessagesTransformHook(),
 
     event: createStatsEventHandler(),
 

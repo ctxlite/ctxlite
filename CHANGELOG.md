@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-06-22
+
+### Added
+- `@ctxlite/opencode`: automatic tool output compression (`tool.execute.after`) — ANSI strip, log folding, head/tail truncate
+- `@ctxlite/opencode`: duplicate tool output pruning before each LLM request (`experimental.chat.messages.transform`)
+- Stats breakdown: compress + prune logged to `~/.ctxlite/stats.db` alongside trim and concise
+
 ## [0.1.8] - 2026-06-22
 
 ### Fixed
