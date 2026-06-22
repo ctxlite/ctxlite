@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-06-22
+
+### Fixed
+- Republish: includes Bun `bun:sqlite` + Node `node:sqlite` fallback (0.1.7 on npm was missing these changes)
+
 ## [0.1.7] - 2026-06-22
 
 ### Fixed
