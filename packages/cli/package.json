@@ -1,6 +1,6 @@
 {
   "name": "@ctxlite/cli",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "ctxlite CLI — stats reporting and tool installer for Cursor, OpenCode, and Claude Code",
   "type": "module",
   "bin": {
@@ -16,7 +16,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ctxlite/core": "0.1.5"
+    "@ctxlite/core": "0.1.6"
   },
   "devDependencies": {
     "vitest": "^1.6.0"

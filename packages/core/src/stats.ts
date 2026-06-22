@@ -1,9 +1,9 @@
-// SQLite stats store with better-sqlite3
+// SQLite stats store — bun:sqlite (OpenCode/Bun) or better-sqlite3 (Node)
 
-import Database from "better-sqlite3"
 import { mkdirSync } from "fs"
 import { dirname, join } from "path"
 import { homedir } from "os"
+import { openStatsSqlite, type StatsSqlite } from "./sqlite-adapter.js"
 import { estimateCost, estimateConcisenessSavings } from "./tokens.js"
 import type { CacheStats, RequestLog, Summary, TrimResult } from "./types.js"
 
@@ -30,15 +30,13 @@ export function defaultDbPath(): string {
 }
 
 export class StatsStore {
-  private readonly db: Database.Database
+  private readonly db: StatsSqlite
   private readonly sessionStart: number
 
   constructor(dbPath = defaultDbPath()) {
     mkdirSync(dirname(dbPath), { recursive: true })
 
-    this.db = new Database(dbPath)
-    this.db.pragma("journal_mode = WAL")
-    this.db.pragma("synchronous = NORMAL")
+    this.db = openStatsSqlite(dbPath)
     this.db.exec(SCHEMA)
 
     this.sessionStart = Math.floor(Date.now() / 1000)
@@ -49,47 +47,30 @@ export class StatsStore {
       const id = options?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
       const source =
         entry.source ?? (entry.tokensIn > entry.tokensUsed ? "trim" : entry.tokensSaved > 0 ? "concise" : "trim")
-      this.db
-        .prepare(
-          `INSERT OR IGNORE INTO requests
-           (id, ts, upstream, trimmed, tokens_in, tokens_used, tokens_out,
-            tokens_saved, cost_saved, latency_ms, source)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        )
-        .run(
-          id,
-          Math.floor(Date.now() / 1000),
-          entry.upstream,
-          source === "trim" ? 1 : 0,
-          entry.tokensIn,
-          entry.tokensUsed,
-          entry.tokensOut,
-          entry.tokensSaved,
-          entry.costSaved,
-          entry.latencyMs,
-          source,
-        )
+      this.db.run(
+        `INSERT OR IGNORE INTO requests
+         (id, ts, upstream, trimmed, tokens_in, tokens_used, tokens_out,
+          tokens_saved, cost_saved, latency_ms, source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        id,
+        Math.floor(Date.now() / 1000),
+        entry.upstream,
+        source === "trim" ? 1 : 0,
+        entry.tokensIn,
+        entry.tokensUsed,
+        entry.tokensOut,
+        entry.tokensSaved,
+        entry.costSaved,
+        entry.latencyMs,
+        source,
+      )
     } catch {
       // Silent — logging must not break the main flow
     }
   }
 
   summary(since = 0): Summary {
-    const row = this.db
-      .prepare(
-        `SELECT
-          COUNT(*)                                              as total,
-          SUM(CASE WHEN source = 'trim' THEN 1 ELSE 0 END)       as trimmed,
-          SUM(CASE WHEN source = 'concise' THEN 1 ELSE 0 END)    as concise,
-          COALESCE(SUM(tokens_saved), 0)                        as saved,
-          COALESCE(SUM(CASE WHEN source = 'trim' THEN tokens_saved ELSE 0 END), 0) as trim_saved,
-          COALESCE(SUM(CASE WHEN source = 'concise' THEN tokens_saved ELSE 0 END), 0) as concise_saved,
-          COALESCE(SUM(cost_saved), 0)                          as cost,
-          COALESCE(AVG(CASE WHEN source = 'trim' THEN latency_ms END), 0) as avg_lat
-         FROM requests
-         WHERE (? = 0 OR ts >= ?)`,
-      )
-      .get(since, since) as {
+    const row = this.db.get<{
       total: number
       trimmed: number
       concise: number
@@ -98,28 +79,41 @@ export class StatsStore {
       concise_saved: number
       cost: number
       avg_lat: number
-    }
+    }>(
+      `SELECT
+        COUNT(*)                                              as total,
+        SUM(CASE WHEN source = 'trim' THEN 1 ELSE 0 END)       as trimmed,
+        SUM(CASE WHEN source = 'concise' THEN 1 ELSE 0 END)    as concise,
+        COALESCE(SUM(tokens_saved), 0)                        as saved,
+        COALESCE(SUM(CASE WHEN source = 'trim' THEN tokens_saved ELSE 0 END), 0) as trim_saved,
+        COALESCE(SUM(CASE WHEN source = 'concise' THEN tokens_saved ELSE 0 END), 0) as concise_saved,
+        COALESCE(SUM(cost_saved), 0)                          as cost,
+        COALESCE(AVG(CASE WHEN source = 'trim' THEN latency_ms END), 0) as avg_lat
+       FROM requests
+       WHERE (? = 0 OR ts >= ?)`,
+      since,
+      since,
+    )
 
-    // Legacy rows (source = 'mcp') with trimmed=1 count as trim savings
-    const legacy = this.db
-      .prepare(
-        `SELECT
-          COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'cache') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
-          COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'cache') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
-         FROM requests
-         WHERE (? = 0 OR ts >= ?)`,
-      )
-      .get(since, since) as { trim_count: number; trim_saved: number }
+    const legacy = this.db.get<{ trim_count: number; trim_saved: number }>(
+      `SELECT
+        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'cache') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
+        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'cache') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
+       FROM requests
+       WHERE (? = 0 OR ts >= ?)`,
+      since,
+      since,
+    )
 
     return {
-      totalRequests: row.total,
-      trimmedRequests: row.trimmed + legacy.trim_count,
-      concisenessRequests: row.concise,
-      tokensSaved: row.saved,
-      trimTokensSaved: row.trim_saved + legacy.trim_saved,
-      concisenessTokensSaved: row.concise_saved,
-      costSaved: row.cost,
-      avgLatencyMs: Math.round(row.avg_lat),
+      totalRequests: row?.total ?? 0,
+      trimmedRequests: (row?.trimmed ?? 0) + (legacy?.trim_count ?? 0),
+      concisenessRequests: row?.concise ?? 0,
+      tokensSaved: row?.saved ?? 0,
+      trimTokensSaved: (row?.trim_saved ?? 0) + (legacy?.trim_saved ?? 0),
+      concisenessTokensSaved: row?.concise_saved ?? 0,
+      costSaved: row?.cost ?? 0,
+      avgLatencyMs: Math.round(row?.avg_lat ?? 0),
       period: since === 0 ? "all time" : "since " + new Date(since * 1000).toLocaleDateString(),
     }
   }
@@ -129,27 +123,24 @@ export class StatsStore {
   }
 
   cacheStats(): CacheStats {
-    const row = this.db
-      .prepare(
-        `SELECT
-          COUNT(*)                    as total,
-          COALESCE(SUM(LENGTH(upstream) + LENGTH(id) + 100), 0) as size,
-          MIN(ts)                     as oldest
-         FROM requests`,
-      )
-      .get() as { total: number; size: number; oldest: number | null }
+    const row = this.db.get<{ total: number; size: number; oldest: number | null }>(
+      `SELECT
+        COUNT(*)                    as total,
+        COALESCE(SUM(LENGTH(upstream) + LENGTH(id) + 100), 0) as size,
+        MIN(ts)                     as oldest
+       FROM requests`,
+    )
 
     return {
-      totalEntries: row.total,
-      sizeBytes: row.size,
-      oldestEntry: row.oldest ? new Date(row.oldest * 1000) : null,
+      totalEntries: row?.total ?? 0,
+      sizeBytes: row?.size ?? 0,
+      oldestEntry: row?.oldest ? new Date(row.oldest * 1000) : null,
     }
   }
 
   pruneOlderThan(days: number): number {
     const cutoff = Math.floor(Date.now() / 1000) - days * 86400
-    const result = this.db.prepare(`DELETE FROM requests WHERE ts < ?`).run(cutoff)
-    return result.changes
+    return this.db.run(`DELETE FROM requests WHERE ts < ?`, cutoff).changes
   }
 
   close(): void {

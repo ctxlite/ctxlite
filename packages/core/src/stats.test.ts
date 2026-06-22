@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest"
 import { StatsStore, logTrimResult, logConcisenessSavings } from "./stats.js"
+import { openStatsSqlite } from "./sqlite-adapter.js"
 import { tmpdir } from "os"
 import { join } from "path"
 import { rmSync } from "fs"
@@ -11,7 +12,7 @@ describe("StatsStore", () => {
   let dbPath: string
 
   afterEach(() => {
-    store.close()
+    store?.close()
     try {
       rmSync(dbPath)
     } catch {
@@ -152,14 +153,18 @@ describe("StatsStore", () => {
   it("pruneOlderThan removes old entries", () => {
     dbPath = tmpDb()
     store = new StatsStore(dbPath)
+    store.close()
 
-    const db = (store as unknown as {
-      db: { prepare: (s: string) => { run: (...a: unknown[]) => void } }
-    }).db
-    db.prepare(
+    const raw = openStatsSqlite(dbPath)
+    raw.run(
       "INSERT INTO requests (id, ts, upstream, tokens_in, tokens_used, tokens_out, tokens_saved, cost_saved, latency_ms) VALUES (?, ?, ?, 0, 0, 0, 0, 0, 0)",
-    ).run("old-1", Math.floor(Date.now() / 1000) - 86400 * 10, "test")
+      "old-1",
+      Math.floor(Date.now() / 1000) - 86400 * 10,
+      "test",
+    )
+    raw.close()
 
+    store = new StatsStore(dbPath)
     const removed = store.pruneOlderThan(7)
     expect(removed).toBe(1)
   })

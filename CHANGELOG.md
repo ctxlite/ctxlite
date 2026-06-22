@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-06-22
+
+### Fixed
+- `@ctxlite/core`: use `bun:sqlite` under OpenCode (Bun) instead of `better-sqlite3`, fixing Node ABI / MODULE_VERSION mismatch on plugin load
+
 ## [0.1.5] - 2026-06-22
 
 ### Added
