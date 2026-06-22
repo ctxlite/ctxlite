@@ -33,11 +33,10 @@ export async function handleGetStats(args: z.infer<typeof getStatsSchema>): Prom
       ``,
       `| Metric | Value |`,
       `|--------|-------|`,
-      `| Total requests | ${summary.totalRequests} |`,
-      `| Trimmed requests | ${summary.trimmedRequests} |`,
-      `| Tokens saved | ${formatTokens(summary.tokensSaved)} |`,
+      `| Tokens saved (total) | ${formatTokens(summary.tokensSaved)} |`,
+      `| — trim | ${formatTokens(summary.trimTokensSaved)} (${summary.trimmedRequests} calls) |`,
+      `| — concise | ${formatTokens(summary.concisenessTokensSaved)} (${summary.concisenessRequests} responses) |`,
       `| Est. cost saved | $${summary.costSaved.toFixed(4)} |`,
-      `| Avg latency | ${summary.avgLatencyMs}ms |`,
     ].join("\n")
   } catch (err) {
     return `ctxlite stats unavailable: ${err instanceof Error ? err.message : String(err)}`

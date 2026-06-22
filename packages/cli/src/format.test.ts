@@ -5,7 +5,10 @@ import type { Summary } from "@ctxlite/core"
 const emptySummary: Summary = {
   totalRequests: 0,
   trimmedRequests: 0,
+  concisenessRequests: 0,
   tokensSaved: 0,
+  trimTokensSaved: 0,
+  concisenessTokensSaved: 0,
   costSaved: 0,
   avgLatencyMs: 0,
   period: "today",
@@ -14,7 +17,10 @@ const emptySummary: Summary = {
 const fullSummary: Summary = {
   totalRequests: 87,
   trimmedRequests: 23,
+  concisenessRequests: 64,
   tokensSaved: 341200,
+  trimTokensSaved: 41200,
+  concisenessTokensSaved: 300000,
   costSaved: 1.0236,
   avgLatencyMs: 12,
   period: "last 7 days",
@@ -34,8 +40,11 @@ describe("formatText", () => {
 
   it("includes all key metrics", () => {
     const out = formatText(fullSummary)
-    expect(out).toContain("87")
-    expect(out).toContain("23")
+    expect(out).toContain("341.2K")
+    expect(out).toContain("41.2K")
+    expect(out).toContain("300.0K")
+    expect(out).toContain("23 calls")
+    expect(out).toContain("64 responses")
     expect(out).toContain("$1.0236")
     expect(out).toContain("12ms")
   })

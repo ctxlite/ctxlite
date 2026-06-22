@@ -32,12 +32,17 @@ export interface RequestLog {
   tokensSaved: number
   costSaved: number
   latencyMs: number
+  /** trim | concise | cache — defaults to trim when trimmed flag is set */
+  source?: "trim" | "concise" | "cache"
 }
 
 export interface Summary {
   totalRequests: number
   trimmedRequests: number
+  concisenessRequests: number
   tokensSaved: number
+  trimTokensSaved: number
+  concisenessTokensSaved: number
   costSaved: number
   avgLatencyMs: number
   period: string

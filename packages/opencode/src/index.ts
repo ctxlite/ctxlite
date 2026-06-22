@@ -1,13 +1,14 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { buildSystemPromptAddition } from "./system-prompt.js"
+import { createStatsEventHandler } from "./stats-events.js"
 import { getStatsTool, trimContextTool } from "./tools.js"
 
 /**
  * ctxlite OpenCode plugin
  *
  * 1. Injects conciseness instructions into the system prompt
- * 2. Exposes `get_stats` for token savings reporting
- * 3. Exposes `trim_context` for explicit file trimming
+ * 2. Records conciseness + trim savings to ~/.ctxlite/stats.db
+ * 3. Exposes `get_stats` and `trim_context` tools
  */
 const CtxlitePlugin: Plugin = async (_ctx) => {
   return {
@@ -20,6 +21,8 @@ const CtxlitePlugin: Plugin = async (_ctx) => {
         output.system.push(addition.trim())
       }
     },
+
+    event: createStatsEventHandler(),
 
     tool: {
       get_stats: getStatsTool,

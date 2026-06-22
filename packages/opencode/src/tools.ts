@@ -36,19 +36,23 @@ Returns a formatted report with: total requests, tokens saved, estimated cost sa
         return `## ctxlite stats — ${period}\n\nNo requests recorded yet for this period.`
       }
 
-      const savedK =
-        summary.tokensSaved >= 1000
-          ? `${(summary.tokensSaved / 1000).toFixed(1)}K`
-          : `${summary.tokensSaved}`
+      const fmt = (n: number) =>
+        n >= 1000 ? `${(n / 1000).toFixed(1)}K` : `${n}`
 
-      return [
+      const lines = [
         `## ctxlite stats — ${period}`,
         ``,
-        `**Requests:** ${summary.totalRequests} total, ${summary.trimmedRequests} trimmed`,
-        `**Tokens saved:** ${savedK}`,
+        `**Tokens saved:** ${fmt(summary.tokensSaved)} total`,
+        `  - trim: ${fmt(summary.trimTokensSaved)} (${summary.trimmedRequests} calls)`,
+        `  - concise: ${fmt(summary.concisenessTokensSaved)} (${summary.concisenessRequests} responses)`,
         `**Estimated cost saved:** $${summary.costSaved.toFixed(4)}`,
-        `**Avg latency:** ${summary.avgLatencyMs}ms`,
-      ].join("\n")
+      ]
+
+      if (summary.avgLatencyMs > 0) {
+        lines.push(`**Avg trim latency:** ${summary.avgLatencyMs}ms`)
+      }
+
+      return lines.join("\n")
     } catch (err) {
       return `ctxlite stats unavailable: ${err instanceof Error ? err.message : String(err)}`
     } finally {

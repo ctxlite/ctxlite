@@ -7,6 +7,12 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-06-22
+
+### Added
+- `@ctxlite/opencode`: track conciseness savings on every completed assistant response via `message.updated` events (~15% of output tokens, logged to stats.db)
+- Stats breakdown: trim vs concise in CLI, MCP `get_stats`, and OpenCode `get_stats`
+
 ## [0.1.4] - 2026-06-22
 
 ### Fixed

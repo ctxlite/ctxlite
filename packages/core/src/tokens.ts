@@ -42,7 +42,28 @@ const PRICE_PER_MILLION: Record<string, number> = {
   "api.openai.com": 2.5,
   "api.githubcopilot.com": 0.0,
   "api2.cursor.sh": 0.0,
+  anthropic: 3.0,
+  openai: 2.5,
+  google: 1.25,
+  groq: 0.5,
   default: 3.0,
+}
+
+/**
+ * Conservative share of generative tokens (output + reasoning) avoided by
+ * ctxlite conciseness rules (no filler, recap, or verbose sign-offs).
+ */
+export const CONCISENESS_SAVINGS_RATE = 0.15
+
+/**
+ * Estimate output tokens saved by conciseness system prompt injection.
+ */
+export function estimateConcisenessSavings(outputTokens: number, reasoningTokens = 0): number {
+  const generative = outputTokens + reasoningTokens
+  if (generative <= 0) {
+    return 0
+  }
+  return Math.round(generative * CONCISENESS_SAVINGS_RATE)
 }
 
 export function estimateCost(tokensSaved: number, upstream: string): number {

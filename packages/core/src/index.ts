@@ -11,9 +11,10 @@ export type { ImportGraph } from "./imports.js"
 export { trimFiles } from "./trimmer.js"
 export type { TrimOptions } from "./trimmer.js"
 
-export { parseTokenUsage, estimateTokens, estimateCost } from "./tokens.js"
+export { parseTokenUsage, estimateTokens, estimateCost, estimateConcisenessSavings, CONCISENESS_SAVINGS_RATE } from "./tokens.js"
 
-export { StatsStore, defaultDbPath, logTrimResult } from "./stats.js"
+export { StatsStore, defaultDbPath, logTrimResult, logConcisenessSavings } from "./stats.js"
+export type { ConcisenessLog } from "./stats.js"
 
 export type {
   CodeFile,

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest"
-import { StatsStore, logTrimResult } from "./stats.js"
+import { StatsStore, logTrimResult, logConcisenessSavings } from "./stats.js"
 import { tmpdir } from "os"
 import { join } from "path"
 import { rmSync } from "fs"
@@ -32,12 +32,14 @@ describe("StatsStore", () => {
       tokensSaved: 600,
       costSaved: 0.0018,
       latencyMs: 450,
+      source: "trim",
     })
 
     const summary = store.summary()
     expect(summary.totalRequests).toBe(1)
     expect(summary.tokensSaved).toBe(600)
     expect(summary.trimmedRequests).toBe(1)
+    expect(summary.trimTokensSaved).toBe(600)
   })
 
   it("summary returns zero for empty db", () => {
@@ -109,6 +111,41 @@ describe("StatsStore", () => {
 
     store = new StatsStore(dbPath)
     expect(store.summary().totalRequests).toBe(0)
+    store.close()
+  })
+
+  it("logConcisenessSavings persists estimated output savings", () => {
+    dbPath = tmpDb()
+    logConcisenessSavings(
+      {
+        messageId: "msg-1",
+        providerId: "anthropic",
+        inputTokens: 5000,
+        outputTokens: 1000,
+        reasoningTokens: 200,
+      },
+      dbPath,
+    )
+
+    store = new StatsStore(dbPath)
+    const summary = store.summary()
+    expect(summary.totalRequests).toBe(1)
+    expect(summary.concisenessRequests).toBe(1)
+    expect(summary.concisenessTokensSaved).toBe(180) // 15% of 1200
+    expect(summary.trimTokensSaved).toBe(0)
+
+    // duplicate message id is ignored
+    logConcisenessSavings(
+      {
+        messageId: "msg-1",
+        providerId: "anthropic",
+        inputTokens: 5000,
+        outputTokens: 1000,
+        reasoningTokens: 200,
+      },
+      dbPath,
+    )
+    expect(store.summary().totalRequests).toBe(1)
     store.close()
   })
 

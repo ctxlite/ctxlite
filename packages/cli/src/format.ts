@@ -14,8 +14,9 @@ export function formatText(summary: Summary): string {
   return `
 ctxlite stats — ${summary.period}
 ─────────────────────────────────────
-Requests      ${summary.totalRequests} total, ${summary.trimmedRequests} trimmed
-Tokens saved  ${formatTokens(summary.tokensSaved)}
+Tokens saved  ${formatTokens(summary.tokensSaved)} total
+  trim        ${formatTokens(summary.trimTokensSaved)} (${summary.trimmedRequests} calls)
+  concise     ${formatTokens(summary.concisenessTokensSaved)} (${summary.concisenessRequests} responses)
 Cost saved    ~$${summary.costSaved.toFixed(4)}
 Avg latency   ${summary.avgLatencyMs}ms
 ─────────────────────────────────────
@@ -27,7 +28,10 @@ export interface JsonExport {
   generatedAt: string
   totalRequests: number
   trimmedRequests: number
+  concisenessRequests: number
   tokensSaved: number
+  trimTokensSaved: number
+  concisenessTokensSaved: number
   costSavedUsd: number
   avgLatencyMs: number
 }
@@ -38,7 +42,10 @@ export function formatJson(summary: Summary): string {
     generatedAt: new Date().toISOString(),
     totalRequests: summary.totalRequests,
     trimmedRequests: summary.trimmedRequests,
+    concisenessRequests: summary.concisenessRequests,
     tokensSaved: summary.tokensSaved,
+    trimTokensSaved: summary.trimTokensSaved,
+    concisenessTokensSaved: summary.concisenessTokensSaved,
     costSavedUsd: summary.costSaved,
     avgLatencyMs: summary.avgLatencyMs,
   }

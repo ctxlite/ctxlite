@@ -4,7 +4,7 @@ import Database from "better-sqlite3"
 import { mkdirSync } from "fs"
 import { dirname, join } from "path"
 import { homedir } from "os"
-import { estimateCost } from "./tokens.js"
+import { estimateCost, estimateConcisenessSavings } from "./tokens.js"
 import type { CacheStats, RequestLog, Summary, TrimResult } from "./types.js"
 
 const SCHEMA = `
@@ -44,27 +44,30 @@ export class StatsStore {
     this.sessionStart = Math.floor(Date.now() / 1000)
   }
 
-  log(entry: RequestLog): void {
+  log(entry: RequestLog, options?: { id?: string }): void {
     try {
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      const id = options?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      const source =
+        entry.source ?? (entry.tokensIn > entry.tokensUsed ? "trim" : entry.tokensSaved > 0 ? "concise" : "trim")
       this.db
         .prepare(
-          `INSERT INTO requests
+          `INSERT OR IGNORE INTO requests
            (id, ts, upstream, trimmed, tokens_in, tokens_used, tokens_out,
-            tokens_saved, cost_saved, latency_ms)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            tokens_saved, cost_saved, latency_ms, source)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           id,
           Math.floor(Date.now() / 1000),
           entry.upstream,
-          entry.tokensIn > entry.tokensUsed ? 1 : 0,
+          source === "trim" ? 1 : 0,
           entry.tokensIn,
           entry.tokensUsed,
           entry.tokensOut,
           entry.tokensSaved,
           entry.costSaved,
           entry.latencyMs,
+          source,
         )
     } catch {
       // Silent — logging must not break the main flow
@@ -75,26 +78,46 @@ export class StatsStore {
     const row = this.db
       .prepare(
         `SELECT
-          COUNT(*)                                    as total,
-          SUM(CASE WHEN trimmed THEN 1 ELSE 0 END)   as trimmed,
-          COALESCE(SUM(tokens_saved), 0)              as saved,
-          COALESCE(SUM(cost_saved), 0)                as cost,
-          COALESCE(AVG(CASE WHEN NOT trimmed THEN latency_ms END), 0) as avg_lat
+          COUNT(*)                                              as total,
+          SUM(CASE WHEN source = 'trim' THEN 1 ELSE 0 END)       as trimmed,
+          SUM(CASE WHEN source = 'concise' THEN 1 ELSE 0 END)    as concise,
+          COALESCE(SUM(tokens_saved), 0)                        as saved,
+          COALESCE(SUM(CASE WHEN source = 'trim' THEN tokens_saved ELSE 0 END), 0) as trim_saved,
+          COALESCE(SUM(CASE WHEN source = 'concise' THEN tokens_saved ELSE 0 END), 0) as concise_saved,
+          COALESCE(SUM(cost_saved), 0)                          as cost,
+          COALESCE(AVG(CASE WHEN source = 'trim' THEN latency_ms END), 0) as avg_lat
          FROM requests
          WHERE (? = 0 OR ts >= ?)`,
       )
       .get(since, since) as {
       total: number
       trimmed: number
+      concise: number
       saved: number
+      trim_saved: number
+      concise_saved: number
       cost: number
       avg_lat: number
     }
 
+    // Legacy rows (source = 'mcp') with trimmed=1 count as trim savings
+    const legacy = this.db
+      .prepare(
+        `SELECT
+          COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'cache') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
+          COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'cache') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
+         FROM requests
+         WHERE (? = 0 OR ts >= ?)`,
+      )
+      .get(since, since) as { trim_count: number; trim_saved: number }
+
     return {
       totalRequests: row.total,
-      trimmedRequests: row.trimmed ?? 0,
+      trimmedRequests: row.trimmed + legacy.trim_count,
+      concisenessRequests: row.concise,
       tokensSaved: row.saved,
+      trimTokensSaved: row.trim_saved + legacy.trim_saved,
+      concisenessTokensSaved: row.concise_saved,
       costSaved: row.cost,
       avgLatencyMs: Math.round(row.avg_lat),
       period: since === 0 ? "all time" : "since " + new Date(since * 1000).toLocaleDateString(),
@@ -138,7 +161,7 @@ export class StatsStore {
  * Persist token savings from a trim_context run.
  * No-op when nothing was trimmed.
  */
-export function logTrimResult(result: TrimResult, source: string, dbPath?: string): void {
+export function logTrimResult(result: TrimResult, tool: "mcp" | "opencode", dbPath?: string): void {
   if (result.tokensSaved <= 0) {
     return
   }
@@ -147,17 +170,60 @@ export function logTrimResult(result: TrimResult, source: string, dbPath?: strin
   try {
     store = new StatsStore(dbPath)
     store.log({
-      upstream: source,
+      upstream: tool,
       cacheHit: false,
       tokensIn: result.tokensIn,
       tokensUsed: result.tokensOut,
       tokensOut: 0,
       tokensSaved: result.tokensSaved,
-      costSaved: estimateCost(result.tokensSaved, source),
+      costSaved: estimateCost(result.tokensSaved, tool),
       latencyMs: 0,
+      source: "trim",
     })
   } catch {
     // Silent — logging must not break tool execution
+  } finally {
+    store?.close()
+  }
+}
+
+export interface ConcisenessLog {
+  messageId: string
+  providerId: string
+  inputTokens: number
+  outputTokens: number
+  reasoningTokens: number
+}
+
+/**
+ * Persist estimated token savings from conciseness system prompt injection.
+ */
+export function logConcisenessSavings(entry: ConcisenessLog, dbPath?: string): void {
+  const tokensSaved = estimateConcisenessSavings(entry.outputTokens, entry.reasoningTokens)
+  if (tokensSaved <= 0) {
+    return
+  }
+
+  const generative = entry.outputTokens + entry.reasoningTokens
+  let store: StatsStore | null = null
+  try {
+    store = new StatsStore(dbPath)
+    store.log(
+      {
+        upstream: entry.providerId,
+        cacheHit: false,
+        tokensIn: entry.inputTokens,
+        tokensUsed: generative,
+        tokensOut: generative,
+        tokensSaved,
+        costSaved: estimateCost(tokensSaved, entry.providerId),
+        latencyMs: 0,
+        source: "concise",
+      },
+      { id: `concise-${entry.messageId}` },
+    )
+  } catch {
+    // Silent — logging must not break the main flow
   } finally {
     store?.close()
   }
