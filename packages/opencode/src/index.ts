@@ -2,16 +2,18 @@ import type { Plugin } from "@opencode-ai/plugin"
 import { buildSystemPromptAddition } from "./system-prompt.js"
 import { createMessagesTransformHook } from "./messages-transform-hook.js"
 import { createStatsEventHandler } from "./stats-events.js"
+import { createToolPrecallHook } from "./tool-precall-hook.js"
 import { createToolCompressHook } from "./tool-compress-hook.js"
 import { getStatsTool, trimContextTool } from "./tools.js"
 
 /**
  * ctxlite OpenCode plugin
  *
- * 1. Compresses tool output automatically (tool.execute.after)
- * 2. Prunes duplicate tool context before each LLM request
- * 3. Injects conciseness instructions into the system prompt
- * 4. Records all savings to ~/.ctxlite/stats.db
+ * 1. Rewrites tool args before execution (tool.execute.before)
+ * 2. Compresses tool output after execution (tool.execute.after)
+ * 3. Prunes duplicate tool context before each LLM request
+ * 4. Injects conciseness instructions into the system prompt
+ * 5. Records all savings to ~/.ctxlite/stats.db
  */
 const CtxlitePlugin: Plugin = async (_ctx) => {
   return {
@@ -24,6 +26,8 @@ const CtxlitePlugin: Plugin = async (_ctx) => {
         output.system.push(addition.trim())
       }
     },
+
+    "tool.execute.before": createToolPrecallHook(),
 
     "tool.execute.after": createToolCompressHook(),
 

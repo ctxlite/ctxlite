@@ -1,0 +1,142 @@
+/** Heuristic tokens prevented by quieter command flags (conservative). */
+const PRECALL_ESTIMATES: Record<string, number> = {
+  npm_test: 800,
+  npm_build: 400,
+  cargo_test: 600,
+  pytest: 500,
+  docker_logs: 700,
+  curl: 200,
+  generic_quiet: 300,
+}
+
+export interface PrecallResult {
+  args: Record<string, unknown>
+  modified: boolean
+  blocked: boolean
+  blockReason?: string
+  /** Estimated tokens prevented when modified or blocked. */
+  estimatedTokensSaved: number
+  label?: string
+}
+
+function hasFlag(command: string, flags: string[]): boolean {
+  return flags.some((f) => command.includes(f))
+}
+
+function appendFlag(command: string, flag: string): string {
+  const trimmed = command.trimEnd()
+  if (trimmed.endsWith(flag) || trimmed.includes(`${flag} `)) {
+    return command
+  }
+  return `${trimmed} ${flag}`
+}
+
+/**
+ * Rewrite bash commands to emit less noise before execution.
+ */
+export function optimizeBashCommand(command: string): PrecallResult {
+  const base = { args: { command }, modified: false, blocked: false, estimatedTokensSaved: 0 }
+
+  if (!command.trim()) {
+    return base
+  }
+
+  let next = command
+  let label: string | undefined
+
+  if (/\bnpm\s+(run\s+)?test\b/.test(next) && !hasFlag(next, ["--silent", "--quiet", "--loglevel silent"])) {
+    next = appendFlag(next, "--silent")
+    label = "npm_test"
+  } else if (/\bnpm\s+(run\s+)?build\b/.test(next) && !hasFlag(next, ["--loglevel", "--silent"])) {
+    next = appendFlag(next, "--loglevel=warn")
+    label = "npm_build"
+  } else if (/\bpnpm\s+test\b/.test(next) && !hasFlag(next, ["--reporter=dot", "--silent"])) {
+    next = appendFlag(next, "--reporter=dot")
+    label = "npm_test"
+  } else if (/\byarn\s+test\b/.test(next) && !hasFlag(next, ["--silent"])) {
+    next = appendFlag(next, "--silent")
+    label = "npm_test"
+  } else if (/\bcargo\s+test\b/.test(next) && !hasFlag(next, ["--quiet", "-q"])) {
+    next = appendFlag(next, "--quiet")
+    label = "cargo_test"
+  } else if (/\bpytest\b/.test(next) && !hasFlag(next, ["-q", "--quiet", "-v"])) {
+    next = appendFlag(next, "-q")
+    label = "pytest"
+  } else if (/\bpython\s+-m\s+pytest\b/.test(next) && !hasFlag(next, ["-q", "--quiet"])) {
+    next = appendFlag(next, "-q")
+    label = "pytest"
+  } else if (/\bdocker(\s+compose)?\s+logs\b/.test(next) && !hasFlag(next, ["--tail", "-n"])) {
+    next = appendFlag(next, "--tail=80")
+    label = "docker_logs"
+  } else if (/\bcurl\b/.test(next) && !hasFlag(next, ["-s", "--silent", "-S"])) {
+    next = appendFlag(next, "-sS")
+    label = "curl"
+  }
+
+  if (next === command) {
+    return base
+  }
+
+  const estimateKey = label ?? "generic_quiet"
+  return {
+    args: { command: next },
+    modified: true,
+    blocked: false,
+    estimatedTokensSaved: PRECALL_ESTIMATES[estimateKey] ?? PRECALL_ESTIMATES.generic_quiet ?? 300,
+    label: estimateKey,
+  }
+}
+
+const BLOCKED_READ_PATTERNS = [
+  /node_modules\//,
+  /\.git\//,
+  /\/dist\//,
+  /\/build\//,
+  /package-lock\.json$/,
+  /yarn\.lock$/,
+  /pnpm-lock\.yaml$/,
+  /\.min\.js$/,
+]
+
+/**
+ * Block reads of paths that rarely help the agent and waste context.
+ */
+export function optimizeReadPath(path: string): PrecallResult {
+  const normalized = path.replace(/\\/g, "/")
+  for (const pattern of BLOCKED_READ_PATTERNS) {
+    if (pattern.test(normalized)) {
+      return {
+        args: { path },
+        modified: false,
+        blocked: true,
+        blockReason: `Blocked read of low-signal path: ${path}`,
+        estimatedTokensSaved: 2000,
+      }
+    }
+  }
+  return { args: { path }, modified: false, blocked: false, estimatedTokensSaved: 0 }
+}
+
+/**
+ * Optimize tool args before execution (pre-call / input side).
+ */
+export function optimizeToolArgs(tool: string, args: Record<string, unknown>): PrecallResult {
+  if (tool === "bash" && typeof args.command === "string") {
+    return optimizeBashCommand(args.command)
+  }
+
+  const readPath =
+    typeof args.path === "string"
+      ? args.path
+      : typeof args.filePath === "string"
+        ? args.filePath
+        : typeof args.file_path === "string"
+          ? args.file_path
+          : null
+
+  if ((tool === "read" || tool === "glob") && readPath) {
+    return optimizeReadPath(readPath)
+  }
+
+  return { args, modified: false, blocked: false, estimatedTokensSaved: 0 }
+}

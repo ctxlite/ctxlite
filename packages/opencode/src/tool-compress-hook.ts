@@ -1,5 +1,6 @@
 import { compressToolOutput, logOptimizationSavings } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
+import { takePrecallPending } from "./precall-state.js"
 
 const SKIP_TOOLS = new Set(["get_stats", "trim_context"])
 
@@ -15,6 +16,20 @@ export function createToolCompressHook(): (
   return async (input, output) => {
     if (SKIP_TOOLS.has(input.tool) || !output.output) {
       return
+    }
+
+    const precall = takePrecallPending(input.sessionID, input.callID)
+    if (precall && precall.estimatedTokensSaved > 0) {
+      logOptimizationSavings(
+        {
+          source: "precall",
+          upstream: input.tool,
+          tokensIn: precall.estimatedTokensSaved,
+          tokensOut: 0,
+          id: `precall-${input.callID}`,
+        },
+        dbPath,
+      )
     }
 
     const result = compressToolOutput(output.output)

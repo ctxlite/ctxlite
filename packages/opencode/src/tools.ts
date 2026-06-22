@@ -43,6 +43,7 @@ Returns a formatted report with: total requests, tokens saved, estimated cost sa
         `## ctxlite stats — ${period}`,
         ``,
         `**Tokens saved:** ${fmt(summary.tokensSaved)} total`,
+        `  - precall: ${fmt(summary.precallTokensSaved)} (${summary.precallRequests} rewrites/blocks)`,
         `  - compress: ${fmt(summary.compressTokensSaved)} (${summary.compressRequests} tool outputs)`,
         `  - prune: ${fmt(summary.pruneTokensSaved)} (${summary.pruneRequests} context passes)`,
         `  - trim: ${fmt(summary.trimTokensSaved)} (${summary.trimmedRequests} calls)`,

@@ -7,6 +7,12 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-06-22
+
+### Added
+- `@ctxlite/opencode`: pre-call tool optimization (`tool.execute.before`) — quiet flags on bash commands, blocks low-signal reads (`node_modules/`, lockfiles, etc.)
+- Stats breakdown: `precall` source alongside compress, prune, trim, and concise
+
 ## [0.1.9] - 2026-06-22
 
 ### Added

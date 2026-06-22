@@ -15,6 +15,7 @@ export function formatText(summary: Summary): string {
 ctxlite stats — ${summary.period}
 ─────────────────────────────────────
 Tokens saved  ${formatTokens(summary.tokensSaved)} total
+  precall     ${formatTokens(summary.precallTokensSaved)} (${summary.precallRequests} rewrites/blocks)
   compress    ${formatTokens(summary.compressTokensSaved)} (${summary.compressRequests} tool outputs)
   prune       ${formatTokens(summary.pruneTokensSaved)} (${summary.pruneRequests} context passes)
   trim        ${formatTokens(summary.trimTokensSaved)} (${summary.trimmedRequests} calls)
@@ -33,11 +34,13 @@ export interface JsonExport {
   concisenessRequests: number
   compressRequests: number
   pruneRequests: number
+  precallRequests: number
   tokensSaved: number
   trimTokensSaved: number
   concisenessTokensSaved: number
   compressTokensSaved: number
   pruneTokensSaved: number
+  precallTokensSaved: number
   costSavedUsd: number
   avgLatencyMs: number
 }
@@ -51,11 +54,13 @@ export function formatJson(summary: Summary): string {
     concisenessRequests: summary.concisenessRequests,
     compressRequests: summary.compressRequests,
     pruneRequests: summary.pruneRequests,
+    precallRequests: summary.precallRequests,
     tokensSaved: summary.tokensSaved,
     trimTokensSaved: summary.trimTokensSaved,
     concisenessTokensSaved: summary.concisenessTokensSaved,
     compressTokensSaved: summary.compressTokensSaved,
     pruneTokensSaved: summary.pruneTokensSaved,
+    precallTokensSaved: summary.precallTokensSaved,
     costSavedUsd: summary.costSaved,
     avgLatencyMs: summary.avgLatencyMs,
   }

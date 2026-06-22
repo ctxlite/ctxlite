@@ -34,6 +34,7 @@ export async function handleGetStats(args: z.infer<typeof getStatsSchema>): Prom
       `| Metric | Value |`,
       `|--------|-------|`,
       `| Tokens saved (total) | ${formatTokens(summary.tokensSaved)} |`,
+      `| — precall | ${formatTokens(summary.precallTokensSaved)} (${summary.precallRequests} rewrites/blocks) |`,
       `| — compress | ${formatTokens(summary.compressTokensSaved)} (${summary.compressRequests} outputs) |`,
       `| — prune | ${formatTokens(summary.pruneTokensSaved)} (${summary.pruneRequests} passes) |`,
       `| — trim | ${formatTokens(summary.trimTokensSaved)} (${summary.trimmedRequests} calls) |`,

@@ -32,8 +32,8 @@ export interface RequestLog {
   tokensSaved: number
   costSaved: number
   latencyMs: number
-  /** trim | concise | compress | prune | cache */
-  source?: "trim" | "concise" | "compress" | "prune" | "cache"
+  /** trim | concise | compress | prune | precall | cache */
+  source?: "trim" | "concise" | "compress" | "prune" | "precall" | "cache"
 }
 
 export interface Summary {
@@ -42,11 +42,13 @@ export interface Summary {
   concisenessRequests: number
   compressRequests: number
   pruneRequests: number
+  precallRequests: number
   tokensSaved: number
   trimTokensSaved: number
   concisenessTokensSaved: number
   compressTokensSaved: number
   pruneTokensSaved: number
+  precallTokensSaved: number
   costSaved: number
   avgLatencyMs: number
   period: string

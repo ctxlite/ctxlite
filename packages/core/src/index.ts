@@ -13,6 +13,9 @@ export type { TrimOptions } from "./trimmer.js"
 
 export { parseTokenUsage, estimateTokens, estimateCost, estimateConcisenessSavings, CONCISENESS_SAVINGS_RATE } from "./tokens.js"
 
+export { optimizeToolArgs, optimizeBashCommand, optimizeReadPath } from "./tool-precall.js"
+export type { PrecallResult } from "./tool-precall.js"
+
 export { compressToolOutput } from "./tool-output-compress.js"
 export type { CompressToolOutputOptions, CompressToolOutputResult } from "./tool-output-compress.js"
 
