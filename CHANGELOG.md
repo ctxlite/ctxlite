@@ -7,6 +7,9 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Fixed
+- `@ctxlite/opencode`: remove debug `session idle` log that OpenCode showed as an error
+
 ### Added (SPEC-016)
 - `@ctxlite/cli install` — interactive installer for Cursor, OpenCode, Claude Code, and Claude Desktop (global or project scope)
 - Renamed CLI package from `ctxlite` to `@ctxlite/cli` (unscoped npm name taken)

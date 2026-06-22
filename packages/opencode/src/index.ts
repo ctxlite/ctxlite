@@ -25,12 +25,6 @@ const CtxlitePlugin: Plugin = async (_ctx) => {
       get_stats: getStatsTool,
       trim_context: trimContextTool,
     },
-
-    event: async ({ event }) => {
-      if (event.type === "session.idle") {
-        console.error("[ctxlite] session idle")
-      }
-    },
   }
 }
 
