@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-06-22
+
+### Fixed
+- `@ctxlite/cli` / `@ctxlite/mcp`: fall back to Node 22+ built-in `node:sqlite` when `better-sqlite3` ABI mismatches (fixes `npx @ctxlite/cli stats` crash on Node version change)
+
 ## [0.1.6] - 2026-06-22
 
 ### Fixed

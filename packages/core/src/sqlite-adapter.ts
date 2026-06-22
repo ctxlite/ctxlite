@@ -6,34 +6,31 @@ export type { StatsSqlite } from "./sqlite-types.js"
 
 const require = createRequire(import.meta.url)
 
-/** True when running inside OpenCode (Bun), not Node.js. */
-export function isBunRuntime(): boolean {
-  return typeof (globalThis as { Bun?: { version?: string } }).Bun !== "undefined"
+type SqliteStatement = {
+  run(...params: unknown[]): unknown
+  get(...params: unknown[]): Record<string, unknown> | undefined
+  changes?: number
 }
 
-function openNodeStatsSqlite(dbPath: string): StatsSqlite {
-  // Lazy require — never loaded under Bun (OpenCode plugin runtime).
-  type BetterSqliteDatabase = {
-    pragma(name: string, value?: string): void
-    exec(sql: string): void
-    prepare(sql: string): {
-      run(...params: unknown[]): { changes: number }
-      get(...params: unknown[]): Record<string, unknown> | undefined
-    }
-    close(): void
-  }
+type PreparedDb = {
+  exec(sql: string): void
+  prepare(sql: string): SqliteStatement
+  close(): void
+  pragma?: (name: string, value?: string) => void
+}
 
-  const Database = require("better-sqlite3") as new (path: string) => BetterSqliteDatabase
-  const db = new Database(dbPath)
-  db.pragma("journal_mode = WAL")
-  db.pragma("synchronous = NORMAL")
-
+function wrapDb(db: PreparedDb): StatsSqlite {
   return {
     exec(sql: string) {
       db.exec(sql)
     },
     run(sql: string, ...params: unknown[]) {
-      return db.prepare(sql).run(...params)
+      const stmt = db.prepare(sql)
+      const result = stmt.run(...params)
+      if (result && typeof result === "object" && "changes" in result) {
+        return { changes: (result as { changes: number }).changes }
+      }
+      return { changes: stmt.changes ?? 0 }
     },
     get<T extends Record<string, unknown>>(sql: string, ...params: unknown[]) {
       return db.prepare(sql).get(...params) as T | undefined
@@ -44,9 +41,57 @@ function openNodeStatsSqlite(dbPath: string): StatsSqlite {
   }
 }
 
+/** True when running inside OpenCode (Bun), not Node.js. */
+export function isBunRuntime(): boolean {
+  return typeof (globalThis as { Bun?: { version?: string } }).Bun !== "undefined"
+}
+
+function hasNodeBuiltinSqlite(): boolean {
+  try {
+    require("node:sqlite")
+    return true
+  } catch {
+    return false
+  }
+}
+
+function openNodeBetterSqlite3(dbPath: string): StatsSqlite {
+  const Database = require("better-sqlite3") as new (path: string) => PreparedDb
+  const db = new Database(dbPath)
+  db.pragma?.("journal_mode = WAL")
+  db.pragma?.("synchronous = NORMAL")
+  return wrapDb(db)
+}
+
+/** Node 22+ built-in sqlite — no native addon, avoids MODULE_VERSION mismatch. */
+function openNodeBuiltinSqlite(dbPath: string): StatsSqlite {
+  const { DatabaseSync } = require("node:sqlite") as {
+    DatabaseSync: new (path: string) => PreparedDb
+  }
+  const db = new DatabaseSync(dbPath)
+  db.exec("PRAGMA journal_mode = WAL")
+  db.exec("PRAGMA synchronous = NORMAL")
+  return wrapDb(db)
+}
+
+function openNodeStatsSqlite(dbPath: string): StatsSqlite {
+  try {
+    return openNodeBetterSqlite3(dbPath)
+  } catch {
+    if (hasNodeBuiltinSqlite()) {
+      return openNodeBuiltinSqlite(dbPath)
+    }
+    throw new Error(
+      "ctxlite: cannot open stats.db — better-sqlite3 native module mismatch. " +
+        "Use Node 22+, run `npm rebuild better-sqlite3`, or upgrade @ctxlite/core.",
+    )
+  }
+}
+
 /**
- * Opens stats.db with bun:sqlite under Bun (OpenCode plugin) or
- * better-sqlite3 under Node (CLI, MCP, tests).
+ * Opens stats.db:
+ * - Bun (OpenCode plugin) → bun:sqlite
+ * - Node CLI/MCP → better-sqlite3, falling back to node:sqlite (Node 22+)
  */
 export function openStatsSqlite(dbPath: string): StatsSqlite {
   if (isBunRuntime()) {
