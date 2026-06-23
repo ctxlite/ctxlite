@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.24] - 2026-06-23
+
+### Added
+- Cursor CLI's missing `~/.cursor/hooks.json` install target traced and fixed: the `cursor-hooks` install kind existed since 0.1.20, but a Cursor install run before that version never gets it written unless the install command is re-run. `ctxlite install --tool cursor` writes it correctly; verified end-to-end against a real `cursor-agent` session (`preToolUse` fires, rewrite is logged, `--by-session` shows the real conversation id).
+- `optimizeBashCommand`'s `mvn`/`gradle` rules now also match the wrapper-script and Windows forms: `mvnw`, `./mvnw`, `mvnw.cmd`/`.bat`, bare `gradlew` (not just `./gradlew`), `gradlew.bat` — case-insensitive.
+- **Segment-aware chained-command rewriting.** Previously, any `&&`/`||`/`;`/`|` anywhere in a command made `optimizeBashCommand` skip rewriting entirely, to avoid the "flag lands on the wrong command" bug fixed in 0.1.23. Now the command is split on top-level shell operators first (using the already-quote/heredoc-blanked skeleton, so operators inside strings are never split on), and only the matching segment is rewritten — `cd app && npm test 2>&1 | tail -15` now correctly becomes `cd app && npm test --silent 2>&1 | tail -15`-equivalent, leaving `cd app` and `tail -15` untouched. `2>&1`/`>&N`/`&>` redirects are explicitly distinguished from real `&` separators so they're never mistaken for a chain boundary. Savings are summed across every segment that gets rewritten.
+
+### Fixed
+- Confirmed (via a real `cursor-agent` session, not just a unit test) that Cursor's existing `node_modules`/lockfile read-blocking already works correctly through the generic `preToolUse` dispatch — no code change needed, just verification. Added a regression test for the exact `path` field name the real Cursor CLI sends (the existing test only covered `file_path`).
+
 ## [0.1.23] - 2026-06-23
 
 ### Added

@@ -20,22 +20,53 @@ describe("optimizeBashCommand", () => {
     expect(result.modified).toBe(false)
   })
 
-  it("does not rewrite a piped command (regression: flag was landing on the wrong command)", () => {
+  it("rewrites only the matched segment of a piped command, leaving tail untouched (regression: flag used to land on the wrong command)", () => {
     // appendFlag used to stick the flag on the end of the whole string,
     // turning this into `... | tail -20 --loglevel=warn`, which breaks tail.
     const result = optimizeBashCommand("npm run build 2>&1 | tail -20")
-    expect(result.modified).toBe(false)
-    expect(result.args.command).toBe("npm run build 2>&1 | tail -20")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--loglevel=warn")
+    expect(result.args.command).not.toContain("tail -20 --loglevel=warn")
+    expect(result.args.command).toContain("tail -20")
   })
 
-  it("does not rewrite a chained command (regression: same root cause, && instead of |)", () => {
+  it("rewrites only the matched segment of a && chain, leaving the other command untouched", () => {
     const result = optimizeBashCommand("npm test && echo done")
-    expect(result.modified).toBe(false)
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--silent")
+    expect(result.args.command).toContain("echo done")
+    expect(result.args.command).not.toContain("echo done --silent")
   })
 
-  it("does not rewrite when the matched command isn't the last one in a semicolon list", () => {
+  it("rewrites only the matched command in a semicolon list", () => {
     const result = optimizeBashCommand("npm test; echo done")
-    expect(result.modified).toBe(false)
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--silent")
+    expect(result.args.command).toContain("echo done")
+    expect(result.args.command).not.toContain("echo done --silent")
+  })
+
+  it("rewrites a real-world cd && npm test | tail chain (the exact pattern that motivated segment-aware rewriting)", () => {
+    const result = optimizeBashCommand("cd /Users/me/project/backend && npm test 2>&1 | tail -15")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("npm test")
+    expect(result.args.command).toContain("--silent")
+    expect(result.args.command).toContain("cd /Users/me/project/backend")
+    expect(result.args.command).toContain("tail -15")
+    expect(result.args.command).not.toContain("tail -15 --silent")
+  })
+
+  it("does not mistake a 2>&1 redirect for a chain separator", () => {
+    const result = optimizeBashCommand("npm test 2>&1")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toBe("npm test 2>&1 --silent")
+  })
+
+  it("does not mistake &> redirect for a chain separator", () => {
+    const result = optimizeBashCommand("npm test &> out.log")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--silent")
+    expect(result.args.command).toContain("&> out.log")
   })
 
   it("still rewrites a simple command with no chaining", () => {
@@ -93,6 +124,35 @@ describe("optimizeBashCommand", () => {
     const result = optimizeBashCommand("./gradlew build")
     expect(result.modified).toBe(true)
     expect(result.args.command).toContain("-q")
+  })
+
+  it("adds -q to a bare gradlew invocation (no ./ prefix)", () => {
+    const result = optimizeBashCommand("gradlew build")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("-q")
+  })
+
+  it("adds -q to gradlew.bat (Windows)", () => {
+    const result = optimizeBashCommand("gradlew.bat build")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("-q")
+  })
+
+  it("adds -q to the maven wrapper (mvnw)", () => {
+    const result = optimizeBashCommand("./mvnw package")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("-q")
+  })
+
+  it("adds -q to mvnw.cmd (Windows)", () => {
+    const result = optimizeBashCommand("mvnw.cmd package")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("-q")
+  })
+
+  it("matches mvnw/gradlew case-insensitively", () => {
+    const result = optimizeBashCommand("MVNW.CMD package")
+    expect(result.modified).toBe(true)
   })
 
   it("adds -s to a make target", () => {

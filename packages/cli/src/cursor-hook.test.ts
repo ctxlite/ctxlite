@@ -63,6 +63,20 @@ describe("runCursorPreToolUseHook", () => {
     }
   })
 
+  it("blocks a low-signal read path via the 'path' field (the actual key real Cursor CLI sends for Read tool calls)", async () => {
+    const out = captureStdout()
+    try {
+      const code = await runCursorPreToolUseHook(
+        stdinOf({ tool_name: "Read", tool_input: { path: "/some/repo/node_modules/foo/index.js" } }),
+      )
+      expect(code).toBe(0)
+      const body = JSON.parse(out.calls.join("")) as { permission: string }
+      expect(body.permission).toBe("deny")
+    } finally {
+      out.restore()
+    }
+  })
+
   it("writes nothing when there's nothing to optimize", async () => {
     const out = captureStdout()
     try {

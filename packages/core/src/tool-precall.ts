@@ -39,18 +39,61 @@ function appendFlag(command: string, flag: string): string {
   return `${trimmed} ${flag}`
 }
 
+interface Segment {
+  start: number
+  end: number
+}
+
 /**
  * `&&`/`||`/`;`/`|` mean the matched command (e.g. "npm run build") isn't
- * necessarily the last thing in the string — appendFlag's "stick it on the
- * end" approach would then attach the flag to a DIFFERENT command instead
- * (e.g. `npm run build | tail -20` becoming `... | tail -20 --loglevel=warn`,
- * which breaks tail). Checking for any of these chars anywhere is
- * deliberately conservative — it also skips commands where the operator is
- * just inside a quoted string, but a missed optimization is harmless while
- * a wrongly-placed flag breaks the user's actual command.
+ * necessarily the last thing in the string — appendFlag's naive "stick it on
+ * the end" approach would then attach the flag to a DIFFERENT command
+ * instead (e.g. `npm run build | tail -20` becoming
+ * `... | tail -20 --loglevel=warn`, which breaks tail). Splitting on
+ * top-level operators first and rewriting only the matched segment avoids
+ * that, while still leaving every other segment byte-for-byte untouched.
+ *
+ * A bare `&` is also a separator (backgrounding), but `&` is also used in
+ * redirects (`2>&1`, `>&2`, `&>out.log`) where it is NOT a separator — those
+ * are skipped by checking the adjacent characters. This is best-effort (it
+ * doesn't understand `()` subshell grouping or unquoted command
+ * substitution), matching the same conservative tradeoff as
+ * `stripEmbeddedText`: a missed optimization is harmless, a wrongly-placed
+ * flag isn't.
  */
-function hasShellChaining(skeleton: string): boolean {
-  return /[|;&]/.test(skeleton)
+function splitTopLevel(skeleton: string): Segment[] {
+  const segments: Segment[] = []
+  let start = 0
+  let i = 0
+  while (i < skeleton.length) {
+    const two = skeleton.slice(i, i + 2)
+    if (two === "&&" || two === "||") {
+      segments.push({ start, end: i })
+      i += 2
+      start = i
+      continue
+    }
+    const ch = skeleton[i]
+    if (ch === ";" || ch === "|") {
+      segments.push({ start, end: i })
+      i += 1
+      start = i
+      continue
+    }
+    if (ch === "&") {
+      const prev = skeleton[i - 1]
+      const next = skeleton[i + 1]
+      if (prev !== ">" && prev !== "<" && next !== ">") {
+        segments.push({ start, end: i })
+        i += 1
+        start = i
+        continue
+      }
+    }
+    i += 1
+  }
+  segments.push({ start, end: skeleton.length })
+  return segments
 }
 
 /**
@@ -73,8 +116,89 @@ function stripEmbeddedText(command: string): string {
   return skeleton
 }
 
+interface SegmentMatch {
+  command: string
+  label: string
+}
+
+/** Tries every quiet-flag pattern against a single (already chain-split) segment. */
+function matchQuietPattern(segmentSkeleton: string, segment: string): SegmentMatch | null {
+  let next = segment
+  let label: string | undefined
+
+  if (
+    /\bnpm\s+(run\s+)?test\b/.test(segmentSkeleton) &&
+    !hasFlag(segment, ["--silent", "--quiet", "--loglevel silent"])
+  ) {
+    next = appendFlag(segment, "--silent")
+    label = "npm_test"
+  } else if (/\bnpm\s+(run\s+)?build\b/.test(segmentSkeleton) && !hasFlag(segment, ["--loglevel", "--silent"])) {
+    next = appendFlag(segment, "--loglevel=warn")
+    label = "npm_build"
+  } else if (/\bpnpm\s+test\b/.test(segmentSkeleton) && !hasFlag(segment, ["--reporter=dot", "--silent"])) {
+    next = appendFlag(segment, "--reporter=dot")
+    label = "npm_test"
+  } else if (/\byarn\s+test\b/.test(segmentSkeleton) && !hasFlag(segment, ["--silent"])) {
+    next = appendFlag(segment, "--silent")
+    label = "npm_test"
+  } else if (/\bcargo\s+test\b/.test(segmentSkeleton) && !hasFlag(segment, ["--quiet", "-q"])) {
+    next = appendFlag(segment, "--quiet")
+    label = "cargo_test"
+  } else if (/\bpytest\b/.test(segmentSkeleton) && !hasFlag(segment, ["-q", "--quiet", "-v"])) {
+    next = appendFlag(segment, "-q")
+    label = "pytest"
+  } else if (/\bpython\s+-m\s+pytest\b/.test(segmentSkeleton) && !hasFlag(segment, ["-q", "--quiet"])) {
+    next = appendFlag(segment, "-q")
+    label = "pytest"
+  } else if (/\bnpm\s+(install|ci)\b/.test(segmentSkeleton) && !hasFlag(segment, ["--loglevel", "--silent"])) {
+    next = appendFlag(segment, "--loglevel=warn")
+    label = "npm_install"
+  } else if (/\b(pip|pip3)\s+install\b/.test(segmentSkeleton) && !hasFlag(segment, ["-q", "--quiet", "-v"])) {
+    next = appendFlag(segment, "-q")
+    label = "pip_install"
+  } else if (/\bcomposer\s+(install|update)\b/.test(segmentSkeleton) && !hasFlag(segment, ["--quiet", "-v"])) {
+    next = appendFlag(segment, "--quiet")
+    label = "composer_install"
+  } else if (/\bbundle\s+install\b/.test(segmentSkeleton) && !hasFlag(segment, ["--quiet", "-v"])) {
+    next = appendFlag(segment, "--quiet")
+    label = "bundle_install"
+  } else if (
+    /\b(mvn|mvnw)(\.cmd|\.bat)?\s+\S/i.test(segmentSkeleton) &&
+    !hasFlag(segment, ["-q", "--quiet", "-X", "--debug", "-v"])
+  ) {
+    next = appendFlag(segment, "-q")
+    label = "maven"
+  } else if (
+    /\b(gradle|gradlew)(\.bat)?\s+\S/i.test(segmentSkeleton) &&
+    !hasFlag(segment, ["-q", "--quiet", "--debug", "-v"])
+  ) {
+    next = appendFlag(segment, "-q")
+    label = "gradle"
+  } else if (/\bmake\s+\w/.test(segmentSkeleton) && !hasFlag(segment, ["-s", "--silent"])) {
+    next = appendFlag(segment, "-s")
+    label = "make"
+  } else if (/\bvite\s+build\b/.test(segmentSkeleton) && !hasFlag(segment, ["--logLevel", "--debug"])) {
+    next = appendFlag(segment, "--logLevel warn")
+    label = "vite_build"
+  } else if (/\bdocker(\s+compose)?\s+logs\b/.test(segmentSkeleton) && !hasFlag(segment, ["--tail", "-n"])) {
+    next = appendFlag(segment, "--tail=80")
+    label = "docker_logs"
+  } else if (/\bcurl\b/.test(segmentSkeleton) && !hasFlag(segment, ["-s", "--silent", "-S"])) {
+    next = appendFlag(segment, "-sS")
+    label = "curl"
+  }
+
+  if (label === undefined || next === segment) {
+    return null
+  }
+  return { command: next, label }
+}
+
 /**
- * Rewrite bash commands to emit less noise before execution.
+ * Rewrite bash commands to emit less noise before execution. Splits on
+ * top-level shell operators first so a command like
+ * `cd app && npm test | tail -15` gets `npm test` rewritten in place without
+ * touching `cd app` or `tail -15`.
  */
 export function optimizeBashCommand(command: string): PrecallResult {
   const base = { args: { command }, modified: false, blocked: false, estimatedTokensSaved: 0 }
@@ -84,77 +208,38 @@ export function optimizeBashCommand(command: string): PrecallResult {
   }
 
   const skeleton = stripEmbeddedText(command)
-  if (hasShellChaining(skeleton)) {
+  const segments = splitTopLevel(skeleton)
+
+  let rebuilt = ""
+  let cursor = 0
+  let totalSaved = 0
+  const labels: string[] = []
+
+  for (const { start, end } of segments) {
+    rebuilt += command.slice(cursor, start)
+    const segmentText = command.slice(start, end)
+    const match = matchQuietPattern(skeleton.slice(start, end), segmentText)
+    if (match) {
+      rebuilt += match.command
+      totalSaved += PRECALL_ESTIMATES[match.label] ?? PRECALL_ESTIMATES.generic_quiet ?? 300
+      labels.push(match.label)
+    } else {
+      rebuilt += segmentText
+    }
+    cursor = end
+  }
+  rebuilt += command.slice(cursor)
+
+  if (labels.length === 0) {
     return base
   }
 
-  let next = command
-  let label: string | undefined
-
-  if (/\bnpm\s+(run\s+)?test\b/.test(skeleton) && !hasFlag(next, ["--silent", "--quiet", "--loglevel silent"])) {
-    next = appendFlag(next, "--silent")
-    label = "npm_test"
-  } else if (/\bnpm\s+(run\s+)?build\b/.test(skeleton) && !hasFlag(next, ["--loglevel", "--silent"])) {
-    next = appendFlag(next, "--loglevel=warn")
-    label = "npm_build"
-  } else if (/\bpnpm\s+test\b/.test(skeleton) && !hasFlag(next, ["--reporter=dot", "--silent"])) {
-    next = appendFlag(next, "--reporter=dot")
-    label = "npm_test"
-  } else if (/\byarn\s+test\b/.test(skeleton) && !hasFlag(next, ["--silent"])) {
-    next = appendFlag(next, "--silent")
-    label = "npm_test"
-  } else if (/\bcargo\s+test\b/.test(skeleton) && !hasFlag(next, ["--quiet", "-q"])) {
-    next = appendFlag(next, "--quiet")
-    label = "cargo_test"
-  } else if (/\bpytest\b/.test(skeleton) && !hasFlag(next, ["-q", "--quiet", "-v"])) {
-    next = appendFlag(next, "-q")
-    label = "pytest"
-  } else if (/\bpython\s+-m\s+pytest\b/.test(skeleton) && !hasFlag(next, ["-q", "--quiet"])) {
-    next = appendFlag(next, "-q")
-    label = "pytest"
-  } else if (/\bnpm\s+(install|ci)\b/.test(skeleton) && !hasFlag(next, ["--loglevel", "--silent"])) {
-    next = appendFlag(next, "--loglevel=warn")
-    label = "npm_install"
-  } else if (/\b(pip|pip3)\s+install\b/.test(skeleton) && !hasFlag(next, ["-q", "--quiet", "-v"])) {
-    next = appendFlag(next, "-q")
-    label = "pip_install"
-  } else if (/\bcomposer\s+(install|update)\b/.test(skeleton) && !hasFlag(next, ["--quiet", "-v"])) {
-    next = appendFlag(next, "--quiet")
-    label = "composer_install"
-  } else if (/\bbundle\s+install\b/.test(skeleton) && !hasFlag(next, ["--quiet", "-v"])) {
-    next = appendFlag(next, "--quiet")
-    label = "bundle_install"
-  } else if (/\bmvn\s+\w/.test(skeleton) && !hasFlag(next, ["-q", "--quiet", "-X", "--debug", "-v"])) {
-    next = appendFlag(next, "-q")
-    label = "maven"
-  } else if (/(\bgradle|\.\/gradlew)\s+\w/.test(skeleton) && !hasFlag(next, ["-q", "--quiet", "--debug", "-v"])) {
-    next = appendFlag(next, "-q")
-    label = "gradle"
-  } else if (/\bmake\s+\w/.test(skeleton) && !hasFlag(next, ["-s", "--silent"])) {
-    next = appendFlag(next, "-s")
-    label = "make"
-  } else if (/\bvite\s+build\b/.test(skeleton) && !hasFlag(next, ["--logLevel", "--debug"])) {
-    next = appendFlag(next, "--logLevel warn")
-    label = "vite_build"
-  } else if (/\bdocker(\s+compose)?\s+logs\b/.test(skeleton) && !hasFlag(next, ["--tail", "-n"])) {
-    next = appendFlag(next, "--tail=80")
-    label = "docker_logs"
-  } else if (/\bcurl\b/.test(skeleton) && !hasFlag(next, ["-s", "--silent", "-S"])) {
-    next = appendFlag(next, "-sS")
-    label = "curl"
-  }
-
-  if (next === command) {
-    return base
-  }
-
-  const estimateKey = label ?? "generic_quiet"
   return {
-    args: { command: next },
+    args: { command: rebuilt },
     modified: true,
     blocked: false,
-    estimatedTokensSaved: PRECALL_ESTIMATES[estimateKey] ?? PRECALL_ESTIMATES.generic_quiet ?? 300,
-    label: estimateKey,
+    estimatedTokensSaved: totalSaved,
+    label: labels.join(","),
   }
 }
 
