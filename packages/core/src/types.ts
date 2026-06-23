@@ -32,8 +32,8 @@ export interface RequestLog {
   tokensSaved: number
   costSaved: number
   latencyMs: number
-  /** trim | concise | compress | prune | precall | cache */
-  source?: "trim" | "concise" | "compress" | "prune" | "precall" | "cache"
+  /** trim | concise | compress | prune | precall | cache | session */
+  source?: "trim" | "concise" | "compress" | "prune" | "precall" | "cache" | "session"
 }
 
 export interface Summary {
@@ -49,9 +49,11 @@ export interface Summary {
   compressTokensSaved: number
   pruneTokensSaved: number
   precallTokensSaved: number
-  /** Tokens that would have been used without ctxlite (tokensUsed + tokensSaved). */
+  /** Actual input tokens sent to the model across the session (from message.updated events) — already reduced by ctxlite, not a hypothetical. */
+  sessionTokensUsed: number
+  /** Tokens that would have flowed through without ctxlite: tokensSaved + sessionTokensUsed. */
   tokensBefore: number
-  /** tokensSaved / tokensBefore * 100, i.e. the overall reduction percentage. */
+  /** tokensSaved / tokensBefore * 100 — savings relative to total session traffic, not just the subset ctxlite touched. */
   savingsPercent: number
   costSaved: number
   avgLatencyMs: number

@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { StatsStore, buildStatsBreakdown, formatTokenCount, renderStatsBarChart } from "@ctxlite/core"
+import { StatsStore, buildStatsBreakdown, formatSavingsLine, renderStatsBarChart } from "@ctxlite/core"
 import { STATS_DB_PATH } from "../shared.js"
 
 export const getStatsSchema = z.object({
@@ -27,7 +27,7 @@ export async function handleGetStats(args: z.infer<typeof getStatsSchema>): Prom
     return [
       `## ctxlite stats — ${period}`,
       ``,
-      `**Tokens saved:** ${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)`,
+      `**Tokens saved:** ${formatSavingsLine(summary)}`,
       "```",
       chart,
       "```",

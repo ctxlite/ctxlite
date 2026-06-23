@@ -4,7 +4,7 @@ import {
   buildStatsBreakdown,
   detectLanguage,
   estimateTokens,
-  formatTokenCount,
+  formatSavingsLine,
   logTrimResult,
   renderStatsBarChart,
   trimFiles,
@@ -44,7 +44,7 @@ Returns a formatted report with: total requests, tokens saved, estimated cost sa
       const lines = [
         `## ctxlite stats — ${period}`,
         ``,
-        `**Tokens saved:** ${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)`,
+        `**Tokens saved:** ${formatSavingsLine(summary)}`,
         "```",
         chart,
         "```",

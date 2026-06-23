@@ -51,6 +51,18 @@ export function formatTokenCount(n: number): string {
   return `${n}`
 }
 
+/**
+ * "X of Y (Z%)", or a baseline notice when no session traffic has been
+ * tracked yet (sessionTokensUsed === 0) — otherwise savingsPercent reads as
+ * a misleading 100%, since tokensBefore degrades to just tokensSaved.
+ */
+export function formatSavingsLine(summary: Summary): string {
+  if (summary.sessionTokensUsed === 0) {
+    return `${formatTokenCount(summary.tokensSaved)} saved (no session baseline yet)`
+  }
+  return `${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)`
+}
+
 const BAR_WIDTH = 20
 const BAR_FILLED = "█"
 const BAR_EMPTY = "░"

@@ -1,5 +1,12 @@
 import { describe, it, expect, afterEach } from "vitest"
-import { StatsStore, logTrimResult, logConcisenessSavings, logOptimizationSavings, closeSharedStores } from "./stats.js"
+import {
+  StatsStore,
+  logTrimResult,
+  logConcisenessSavings,
+  logOptimizationSavings,
+  logSessionUsage,
+  closeSharedStores,
+} from "./stats.js"
 import { openStatsSqlite } from "./sqlite-adapter.js"
 import { tmpdir } from "os"
 import { join } from "path"
@@ -37,13 +44,23 @@ describe("StatsStore", () => {
       source: "trim",
     })
 
-    const summary = store.summary()
+    let summary = store.summary()
     expect(summary.totalRequests).toBe(1)
     expect(summary.tokensSaved).toBe(600)
     expect(summary.trimmedRequests).toBe(1)
     expect(summary.trimTokensSaved).toBe(600)
-    expect(summary.tokensBefore).toBe(1000)
-    expect(summary.savingsPercent).toBeCloseTo(60, 5)
+    // No session-usage rows logged yet — savingsPercent has no "total" to compare against.
+    expect(summary.sessionTokensUsed).toBe(0)
+    expect(summary.tokensBefore).toBe(600)
+    expect(summary.savingsPercent).toBeCloseTo(100, 5)
+
+    logSessionUsage({ messageId: "msg-1", inputTokens: 2000 }, dbPath)
+
+    summary = store.summary()
+    expect(summary.totalRequests).toBe(1) // session-usage rows are not "requests"
+    expect(summary.sessionTokensUsed).toBe(2000)
+    expect(summary.tokensBefore).toBe(2600)
+    expect(summary.savingsPercent).toBeCloseTo((600 / 2600) * 100, 5)
   })
 
   it("summary returns zero for empty db", () => {
@@ -171,6 +188,36 @@ describe("StatsStore", () => {
     const summary = store.summary()
     expect(summary.compressRequests).toBe(1)
     expect(summary.compressTokensSaved).toBe(3800)
+    store.close()
+  })
+
+  it("logSessionUsage feeds tokensBefore/savingsPercent without counting as a request", () => {
+    dbPath = tmpDb()
+    logOptimizationSavings(
+      { source: "compress", upstream: "opencode", tokensIn: 1000, tokensOut: 700, id: "compress-1" },
+      dbPath,
+    )
+    logSessionUsage({ messageId: "msg-1", inputTokens: 5000 }, dbPath)
+
+    store = new StatsStore(dbPath)
+    const summary = store.summary()
+    expect(summary.totalRequests).toBe(1)
+    expect(summary.tokensSaved).toBe(300)
+    expect(summary.sessionTokensUsed).toBe(5000)
+    expect(summary.tokensBefore).toBe(5300)
+
+    // duplicate message id is ignored
+    logSessionUsage({ messageId: "msg-1", inputTokens: 5000 }, dbPath)
+    expect(store.summary().sessionTokensUsed).toBe(5000)
+    store.close()
+  })
+
+  it("logSessionUsage skips zero/negative input tokens", () => {
+    dbPath = tmpDb()
+    logSessionUsage({ messageId: "msg-1", inputTokens: 0 }, dbPath)
+
+    store = new StatsStore(dbPath)
+    expect(store.summary().sessionTokensUsed).toBe(0)
     store.close()
   })
 

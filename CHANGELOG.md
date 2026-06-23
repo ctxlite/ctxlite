@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-06-23
+
+### Changed
+- `savingsPercent`/`tokensBefore` now compare against actual total session traffic (`sessionTokensUsed`, tracked from `message.updated`'s real input-token count on every completed turn) instead of just the subset of content ctxlite touched. Answers "13% of what?" — previously the denominator was only the optimized rows themselves, which made the percentage read as "% of total usage" when it wasn't.
+- When no session traffic has been tracked yet (`sessionTokensUsed === 0`, e.g. right after upgrading), shows "X saved (no session baseline yet)" instead of a misleading 100%.
+- `@ctxlite/opencode` sidebar widget now renders the full ASCII bar chart (same as CLI/`get_stats`) plus the cost-saved line, instead of a compact label-only list.
+
+### Added
+- `@ctxlite/core`: `logSessionUsage()` — persists real per-turn input tokens as the denominator baseline; not itself a "saving".
+
 ## [0.1.14] - 2026-06-23
 
 ### Added

@@ -28,11 +28,12 @@ export {
   logTrimResult,
   logConcisenessSavings,
   logOptimizationSavings,
+  logSessionUsage,
   closeSharedStores,
 } from "./stats.js"
 export type { ConcisenessLog, OptimizationLog } from "./stats.js"
 
-export { buildStatsBreakdown, formatTokenCount, renderStatsBarChart } from "./report.js"
+export { buildStatsBreakdown, formatSavingsLine, formatTokenCount, renderStatsBarChart } from "./report.js"
 export type { StatsBreakdownRow } from "./report.js"
 
 export type {

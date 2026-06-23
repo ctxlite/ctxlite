@@ -1,4 +1,4 @@
-import { buildStatsBreakdown, formatTokenCount, renderStatsBarChart, type Summary } from "@ctxlite/core"
+import { buildStatsBreakdown, formatSavingsLine, formatTokenCount, renderStatsBarChart, type Summary } from "@ctxlite/core"
 
 export function formatText(summary: Summary): string {
   if (summary.totalRequests === 0) {
@@ -12,7 +12,7 @@ export function formatText(summary: Summary): string {
   return `
 ctxlite stats — ${summary.period}
 ─────────────────────────────────────
-Tokens saved  ${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)
+Tokens saved  ${formatSavingsLine(summary)}
 
 ${chart}
 

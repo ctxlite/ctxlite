@@ -78,7 +78,6 @@ export class StatsStore {
       prune: number
       precall: number
       saved: number
-      used: number
       trim_saved: number
       concise_saved: number
       compress_saved: number
@@ -95,7 +94,6 @@ export class StatsStore {
         SUM(CASE WHEN source = 'prune' THEN 1 ELSE 0 END)      as prune,
         SUM(CASE WHEN source = 'precall' THEN 1 ELSE 0 END)    as precall,
         COALESCE(SUM(tokens_saved), 0)                        as saved,
-        COALESCE(SUM(tokens_used), 0)                         as used,
         COALESCE(SUM(CASE WHEN source = 'trim' THEN tokens_saved ELSE 0 END), 0) as trim_saved,
         COALESCE(SUM(CASE WHEN source = 'concise' THEN tokens_saved ELSE 0 END), 0) as concise_saved,
         COALESCE(SUM(CASE WHEN source = 'compress' THEN tokens_saved ELSE 0 END), 0) as compress_saved,
@@ -104,23 +102,32 @@ export class StatsStore {
         COALESCE(SUM(cost_saved), 0)                          as cost,
         COALESCE(AVG(CASE WHEN source = 'trim' THEN latency_ms END), 0) as avg_lat
        FROM requests
-       WHERE (? = 0 OR ts >= ?)`,
+       WHERE (? = 0 OR ts >= ?) AND source != 'session'`,
       since,
       since,
     )
 
     const legacy = this.db.get<{ trim_count: number; trim_saved: number }>(
       `SELECT
-        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'cache') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
-        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'cache') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
+        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'cache', 'session') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
+        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'cache', 'session') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
        FROM requests
        WHERE (? = 0 OR ts >= ?)`,
       since,
       since,
     )
 
+    const session = this.db.get<{ session_used: number }>(
+      `SELECT COALESCE(SUM(tokens_used), 0) as session_used
+       FROM requests
+       WHERE (? = 0 OR ts >= ?) AND source = 'session'`,
+      since,
+      since,
+    )
+
     const tokensSaved = row?.saved ?? 0
-    const tokensBefore = tokensSaved + (row?.used ?? 0)
+    const sessionTokensUsed = session?.session_used ?? 0
+    const tokensBefore = tokensSaved + sessionTokensUsed
 
     return {
       totalRequests: row?.total ?? 0,
@@ -135,6 +142,7 @@ export class StatsStore {
       compressTokensSaved: row?.compress_saved ?? 0,
       pruneTokensSaved: row?.prune_saved ?? 0,
       precallTokensSaved: row?.precall_saved ?? 0,
+      sessionTokensUsed,
       tokensBefore,
       savingsPercent: tokensBefore > 0 ? (tokensSaved / tokensBefore) * 100 : 0,
       costSaved: row?.cost ?? 0,
@@ -295,6 +303,38 @@ export function logOptimizationSavings(entry: OptimizationLog, dbPath?: string):
         source: entry.source,
       },
       entry.id ? { id: entry.id } : undefined,
+    )
+  } catch {
+    // Silent — logging must not break the main flow
+  }
+}
+
+/**
+ * Persist the actual input tokens sent to the model for one completed turn.
+ * Not a saving by itself — used as the denominator for savingsPercent, so
+ * "X% saved" is relative to real session traffic instead of just the subset
+ * of content ctxlite touched. INSERT OR IGNORE on messageId — safe across
+ * duplicate events.
+ */
+export function logSessionUsage(entry: { messageId: string; inputTokens: number }, dbPath?: string): void {
+  if (entry.inputTokens <= 0) {
+    return
+  }
+
+  try {
+    getSharedStore(dbPath).log(
+      {
+        upstream: "session",
+        cacheHit: false,
+        tokensIn: entry.inputTokens,
+        tokensUsed: entry.inputTokens,
+        tokensOut: 0,
+        tokensSaved: 0,
+        costSaved: 0,
+        latencyMs: 0,
+        source: "session",
+      },
+      { id: `session-${entry.messageId}` },
     )
   } catch {
     // Silent — logging must not break the main flow

@@ -1,7 +1,7 @@
 /** @jsxImportSource @opentui/solid */
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@opencode-ai/plugin/tui"
 import { createSignal, onCleanup, Show } from "solid-js"
-import { StatsStore, buildStatsBreakdown, formatTokenCount } from "@ctxlite/core"
+import { StatsStore, buildStatsBreakdown, formatSavingsLine, renderStatsBarChart } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
 
 const id = "@ctxlite/opencode"
@@ -11,6 +11,7 @@ const REFRESH_INTERVAL_MS = 15_000
 interface StatsSnapshot {
   totalLine: string
   rows: string[]
+  costLine: string
 }
 
 function readSnapshot(): StatsSnapshot {
@@ -19,17 +20,15 @@ function readSnapshot(): StatsSnapshot {
     store = new StatsStore(getStatsDbPath())
     const summary = store.summary(0)
     if (summary.totalRequests === 0) {
-      return { totalLine: "no savings yet", rows: [] }
+      return { totalLine: "no savings yet", rows: [], costLine: "" }
     }
 
-    const rows = buildStatsBreakdown(summary)
-      .filter((row) => row.tokensSaved > 0)
-      .map((row) => `${row.label.padEnd(9)} ${formatTokenCount(row.tokensSaved).padStart(6)}`)
-
-    const totalLine = `${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(0)}%)`
-    return { totalLine, rows }
+    const rows = renderStatsBarChart(buildStatsBreakdown(summary))
+    const totalLine = formatSavingsLine(summary)
+    const costLine = `~$${summary.costSaved.toFixed(4)} saved`
+    return { totalLine, rows, costLine }
   } catch {
-    return { totalLine: "", rows: [] }
+    return { totalLine: "", rows: [], costLine: "" }
   } finally {
     store?.close()
   }
@@ -54,6 +53,11 @@ function SidebarStats(props: { api: TuiPluginApi }) {
             </text>
           ))}
         </box>
+        <Show when={snapshot().costLine}>
+          <text fg={props.api.theme.current.textMuted} wrapMode="none">
+            {snapshot().costLine}
+          </text>
+        </Show>
       </box>
     </Show>
   )

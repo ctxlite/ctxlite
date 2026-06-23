@@ -1,5 +1,5 @@
 import type { Event } from "@opencode-ai/sdk"
-import { StatsStore, formatTokenCount, logConcisenessSavings } from "@ctxlite/core"
+import { StatsStore, formatTokenCount, logConcisenessSavings, logSessionUsage } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
 
 /** Minimal shape we need from PluginInput.client — avoids depending on the full generated SDK type. */
@@ -63,6 +63,8 @@ export function createStatsEventHandler(client?: ToastClient): (input: { event: 
       },
       dbPath,
     )
+
+    logSessionUsage({ messageId: info.id, inputTokens: info.tokens.input }, dbPath)
 
     if (!client) {
       return
