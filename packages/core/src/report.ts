@@ -31,6 +31,12 @@ export function buildStatsBreakdown(summary: Summary): StatsBreakdownRow[] {
       countLabel: "context passes",
     },
     {
+      label: "compact",
+      tokensSaved: summary.compactTokensSaved,
+      count: summary.compactRequests,
+      countLabel: "stale outputs",
+    },
+    {
       label: "trim",
       tokensSaved: summary.trimTokensSaved,
       count: summary.trimmedRequests,

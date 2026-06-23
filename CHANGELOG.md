@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-06-23
+
+### Added
+- `@ctxlite/core`: `capStaleToolOutputs()` — caps large completed tool outputs in older messages to a token budget (default 600), regardless of whether they're duplicates. Closes a real gap vs. competing plugins (reverse-engineered `@tokenwarden/opencode`'s `messages.transform` pass): `pruneMessageContext` only removed exact-duplicate calls, so a single large unique read/grep early in a long session stayed at full size in every subsequent request. The most recent message is left untouched so the model keeps full fidelity on what it just produced. Logged under a new `compact` source, shown as its own row in all stats reports.
+- `@ctxlite/opencode`: hooks `experimental.session.compacting` to inject a continuation checklist (file paths, decisions made, commands run, failed approaches, test status) into OpenCode's own context-compaction summary, so the next turn doesn't have to re-read/re-discover what's already known.
+- `@ctxlite/opencode`: system prompt now nudges the model to call `trim_context` after reading several candidate files for a multi-file task, instead of carrying all of them forward unfiltered.
+
 ## [0.1.15] - 2026-06-23
 
 ### Changed

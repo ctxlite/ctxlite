@@ -77,12 +77,14 @@ export class StatsStore {
       compress: number
       prune: number
       precall: number
+      compact: number
       saved: number
       trim_saved: number
       concise_saved: number
       compress_saved: number
       prune_saved: number
       precall_saved: number
+      compact_saved: number
       cost: number
       avg_lat: number
     }>(
@@ -93,12 +95,14 @@ export class StatsStore {
         SUM(CASE WHEN source = 'compress' THEN 1 ELSE 0 END)   as compress,
         SUM(CASE WHEN source = 'prune' THEN 1 ELSE 0 END)      as prune,
         SUM(CASE WHEN source = 'precall' THEN 1 ELSE 0 END)    as precall,
+        SUM(CASE WHEN source = 'compact' THEN 1 ELSE 0 END)    as compact,
         COALESCE(SUM(tokens_saved), 0)                        as saved,
         COALESCE(SUM(CASE WHEN source = 'trim' THEN tokens_saved ELSE 0 END), 0) as trim_saved,
         COALESCE(SUM(CASE WHEN source = 'concise' THEN tokens_saved ELSE 0 END), 0) as concise_saved,
         COALESCE(SUM(CASE WHEN source = 'compress' THEN tokens_saved ELSE 0 END), 0) as compress_saved,
         COALESCE(SUM(CASE WHEN source = 'prune' THEN tokens_saved ELSE 0 END), 0) as prune_saved,
         COALESCE(SUM(CASE WHEN source = 'precall' THEN tokens_saved ELSE 0 END), 0) as precall_saved,
+        COALESCE(SUM(CASE WHEN source = 'compact' THEN tokens_saved ELSE 0 END), 0) as compact_saved,
         COALESCE(SUM(cost_saved), 0)                          as cost,
         COALESCE(AVG(CASE WHEN source = 'trim' THEN latency_ms END), 0) as avg_lat
        FROM requests
@@ -109,8 +113,8 @@ export class StatsStore {
 
     const legacy = this.db.get<{ trim_count: number; trim_saved: number }>(
       `SELECT
-        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'cache', 'session') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
-        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'cache', 'session') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
+        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'compact', 'cache', 'session') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
+        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'compact', 'cache', 'session') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
        FROM requests
        WHERE (? = 0 OR ts >= ?)`,
       since,
@@ -136,12 +140,14 @@ export class StatsStore {
       compressRequests: row?.compress ?? 0,
       pruneRequests: row?.prune ?? 0,
       precallRequests: row?.precall ?? 0,
+      compactRequests: row?.compact ?? 0,
       tokensSaved,
       trimTokensSaved: (row?.trim_saved ?? 0) + (legacy?.trim_saved ?? 0),
       concisenessTokensSaved: row?.concise_saved ?? 0,
       compressTokensSaved: row?.compress_saved ?? 0,
       pruneTokensSaved: row?.prune_saved ?? 0,
       precallTokensSaved: row?.precall_saved ?? 0,
+      compactTokensSaved: row?.compact_saved ?? 0,
       sessionTokensUsed,
       tokensBefore,
       savingsPercent: tokensBefore > 0 ? (tokensSaved / tokensBefore) * 100 : 0,
@@ -273,7 +279,7 @@ export function logConcisenessSavings(entry: ConcisenessLog, dbPath?: string): v
 }
 
 export interface OptimizationLog {
-  source: "compress" | "prune" | "precall"
+  source: "compress" | "prune" | "precall" | "compact"
   upstream: string
   tokensIn: number
   tokensOut: number

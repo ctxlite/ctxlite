@@ -1,4 +1,5 @@
 import { estimateTokens } from "./tokens.js"
+import { compressToolOutput } from "./tool-output-compress.js"
 
 /** Minimal shape for OpenCode message transform pruning. */
 export interface PruneToolPart {
@@ -94,4 +95,55 @@ export function pruneMessageContext(messages: PruneMessage[]): ContextPruneResul
   }
 
   return { tokensIn, tokensOut, tokensSaved, prunedCount }
+}
+
+export interface ContextCapResult {
+  tokensIn: number
+  tokensOut: number
+  tokensSaved: number
+  cappedCount: number
+}
+
+/** Old tool outputs above this size get head/tail-capped — they're history, not the active task. */
+const STALE_OUTPUT_MAX_TOKENS = 600
+
+/**
+ * Caps large completed tool outputs in older messages to a token budget,
+ * regardless of whether they're duplicates. Unlike pruneMessageContext
+ * (which only removes repeat calls), this targets the common case of a
+ * single large read/grep early in a long session that otherwise stays at
+ * full size in every subsequent request. The most recent message is left
+ * untouched so the model keeps full fidelity on what it just produced.
+ */
+export function capStaleToolOutputs(messages: PruneMessage[], maxTokens = STALE_OUTPUT_MAX_TOKENS): ContextCapResult {
+  let tokensIn = 0
+  let tokensOut = 0
+  let tokensSaved = 0
+  let cappedCount = 0
+
+  for (let i = 0; i < messages.length - 1; i++) {
+    for (const part of messages[i]?.parts ?? []) {
+      if (part.type !== "tool" || part.state?.status !== "completed" || !part.state.output) {
+        continue
+      }
+
+      const output = part.state.output
+      if (estimateTokens(output) <= maxTokens) {
+        continue
+      }
+
+      const result = compressToolOutput(output, { maxChars: maxTokens * 4 })
+      if (!result.compressed) {
+        continue
+      }
+
+      part.state.output = result.output
+      tokensIn += result.tokensIn
+      tokensOut += result.tokensOut
+      tokensSaved += result.tokensSaved
+      cappedCount += 1
+    }
+  }
+
+  return { tokensIn, tokensOut, tokensSaved, cappedCount }
 }

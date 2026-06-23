@@ -4,6 +4,12 @@
 export const CONCISENESS_INSTRUCTIONS = `
 ## Token efficiency (ctxlite)
 
+After reading several candidate files for a multi-file task (refactor,
+"how does X work", cross-file search), call trim_context with their
+content and the task description before continuing — drop the files it
+excludes from further reasoning instead of carrying all of them forward.
+Skip this for a single known file.
+
 When responding, apply these rules to reduce token usage:
 
 - Skip preamble: never start with "Great question!", "Sure!", "Of course!", 
