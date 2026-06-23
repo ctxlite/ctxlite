@@ -6,6 +6,7 @@ import {
   applyConfigChange,
   buildTargets,
   mergeClaudeCodeHooksConfig,
+  mergeCursorHooksConfig,
   mergeMcpConfig,
   mergeOpenCodeConfig,
   mergeOpenCodeTuiConfig,
@@ -117,6 +118,45 @@ describe("mergeClaudeCodeHooksConfig", () => {
   })
 })
 
+describe("mergeCursorHooksConfig", () => {
+  it("adds a preToolUse entry with version: 1", () => {
+    const { next, changed } = mergeCursorHooksConfig({})
+    expect(changed).toBe(true)
+    expect(next.version).toBe(1)
+    const preToolUse = (next.hooks as { preToolUse: Array<{ command: string }> }).preToolUse
+    expect(preToolUse).toHaveLength(1)
+    expect(preToolUse[0]?.command).toContain("cursor-pre-tool-use")
+  })
+
+  it("preserves existing unrelated preToolUse entries", () => {
+    const existing = { hooks: { preToolUse: [{ command: "some-other-tool" }] } }
+    const { next, changed } = mergeCursorHooksConfig(existing)
+    expect(changed).toBe(true)
+    const preToolUse = (next.hooks as { preToolUse: Array<{ command: string }> }).preToolUse
+    expect(preToolUse).toHaveLength(2)
+    expect(preToolUse[0]?.command).toBe("some-other-tool")
+  })
+
+  it("is idempotent when ctxlite's hook already present", () => {
+    const { next } = mergeCursorHooksConfig({})
+    const { changed } = mergeCursorHooksConfig(next)
+    expect(changed).toBe(false)
+  })
+
+  it("removes only ctxlite's entry via applyConfigChange", () => {
+    const existing = {
+      hooks: {
+        preToolUse: [{ command: "some-other-tool" }, { command: "npx -y @ctxlite/cli hook cursor-pre-tool-use" }],
+      },
+    }
+    const { next, changed } = applyConfigChange("cursor-hooks", existing, true)
+    expect(changed).toBe(true)
+    const preToolUse = (next.hooks as { preToolUse: Array<{ command: string }> }).preToolUse
+    expect(preToolUse).toHaveLength(1)
+    expect(preToolUse[0]?.command).toBe("some-other-tool")
+  })
+})
+
 describe("applyConfigChange remove", () => {
   it("removes only ctxlite mcp server", () => {
     const existing = {
@@ -159,6 +199,14 @@ describe("buildTargets", () => {
     expect(targets[0]?.kind).toBe("mcp")
     expect(targets[1]?.configPath).toBe("/home/test/.claude/settings.json")
     expect(targets[1]?.kind).toBe("claude-code-hooks")
+  })
+
+  it("also targets hooks.json for cursor (hooks registration)", () => {
+    const targets = buildTargets(["cursor"], "global", { homeDir: "/home/test" })
+    expect(targets).toHaveLength(2)
+    expect(targets[0]?.kind).toBe("mcp")
+    expect(targets[1]?.configPath).toBe("/home/test/.cursor/hooks.json")
+    expect(targets[1]?.kind).toBe("cursor-hooks")
   })
 })
 
@@ -205,7 +253,7 @@ describe("runInstall", () => {
 })
 
 describe("planInstall all global", () => {
-  it("returns six targets for all tools (opencode and claude-code each count as two)", async () => {
+  it("returns seven targets for all tools (cursor, opencode, and claude-code each count as two)", async () => {
     const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
     try {
       const plan = await planInstall({
@@ -215,7 +263,7 @@ describe("planInstall all global", () => {
         projectDir: root,
         dryRun: true,
       })
-      expect(plan).toHaveLength(6)
+      expect(plan).toHaveLength(7)
     } finally {
       await rm(root, { recursive: true, force: true })
     }

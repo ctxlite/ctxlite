@@ -21,10 +21,12 @@ export {
   applyConfigChange,
   formatJson,
   mergeClaudeCodeHooksConfig,
+  mergeCursorHooksConfig,
   mergeMcpConfig,
   mergeOpenCodeConfig,
   mergeOpenCodeTuiConfig,
   removeClaudeCodeHooksConfig,
+  removeCursorHooksConfig,
   removeOpenCodeTuiConfig,
 } from "./merge.js"
 export { parseTools, planInstall, runInstall } from "./run.js"

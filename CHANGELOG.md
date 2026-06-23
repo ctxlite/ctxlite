@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.20] - 2026-06-23
+
+### Added
+- `@ctxlite/cli hook cursor-pre-tool-use` — Cursor's equivalent of the Claude Code PreToolUse hook (`preToolUse` in `.cursor/hooks.json`, flat `{command, ...}` entries rather than Claude Code's matcher-group nesting). Reuses the same `optimizeToolArgs` logic (Bash/Shell quiet flags, blocks low-signal reads).
+- `@ctxlite/cli install --tool cursor`: now also registers this hook in `~/.cursor/hooks.json` (global) / `.cursor/hooks.json` (project), alongside the existing MCP registration.
+
+### Note
+- Investigated whether Cursor can replicate the automatic output-compression hook ("compress") that OpenCode and Claude Code have: it cannot. Verified against Cursor's official hooks docs that `postToolUse`'s output-replacement (`updated_mcp_tool_output`) only works for MCP tools, not built-in ones (`Shell`, `Read`, `Write`) — so large-output compression has no automatic path on Cursor and stays opt-in via the `smart_read` MCP tool.
+- README.md and docs/configuration.md rewritten: per-tool tables of what's automatic vs. on-demand, and concrete stats-viewing chat examples for Claude Code and Cursor (previously only OpenCode had one). docs/configuration.md's legacy Go HTTP-proxy config was previously presented as current setup instructions, mixed in with the actual plugin/MCP/hooks docs — now clearly separated under "Legacy: Go HTTP proxy."
+
 ## [0.1.19] - 2026-06-23
 
 ### Added

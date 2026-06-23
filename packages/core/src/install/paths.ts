@@ -68,6 +68,13 @@ function resolveClaudeCodeHooksConfigPath(scope: InstallScope, ctx: PathContext 
     : join(project(ctx), ".claude", "settings.json")
 }
 
+/** Cursor hooks live in hooks.json — a different file from the MCP server config (mcp.json). */
+function resolveCursorHooksConfigPath(scope: InstallScope, ctx: PathContext = {}): string {
+  return scope === "global"
+    ? join(home(ctx), ".cursor", "hooks.json")
+    : join(project(ctx), ".cursor", "hooks.json")
+}
+
 export function toPathContext(options: Pick<InstallOptions, "homeDir" | "projectDir">): PathContext {
   const ctx: PathContext = {}
   if (options.homeDir !== undefined) {
@@ -100,6 +107,13 @@ export function buildTargets(
       return [
         { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "mcp" },
         { tool, scope, configPath: resolveClaudeCodeHooksConfigPath(scope, ctx), kind: "claude-code-hooks" },
+      ]
+    }
+
+    if (tool === "cursor") {
+      return [
+        { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "mcp" },
+        { tool, scope, configPath: resolveCursorHooksConfigPath(scope, ctx), kind: "cursor-hooks" },
       ]
     }
 

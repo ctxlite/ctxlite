@@ -34,8 +34,8 @@ EXAMPLES:
   ctxlite install --remove --tool cursor --scope global --yes
 
 CONFIG PATHS:
-  Cursor (global)              ~/.cursor/mcp.json
-  Cursor (project)             .cursor/mcp.json
+  Cursor (global)              ~/.cursor/mcp.json (MCP) + ~/.cursor/hooks.json (hooks)
+  Cursor (project)             .cursor/mcp.json (MCP) + .cursor/hooks.json (hooks)
   OpenCode (global)            ~/.config/opencode/opencode.json + tui.json
   OpenCode (project)           opencode.json + tui.json
   Claude Code (global)         ~/.claude.json (MCP) + ~/.claude/settings.json (hooks)

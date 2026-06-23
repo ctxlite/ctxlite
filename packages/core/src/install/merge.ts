@@ -195,6 +195,50 @@ export function removeClaudeCodeHooksConfig(existing: unknown): { next: JsonObje
   }
 }
 
+const CURSOR_HOOK_COMMAND_MARKER = "@ctxlite/cli hook"
+const CURSOR_PRE_TOOL_USE_COMMAND = "npx -y @ctxlite/cli hook cursor-pre-tool-use"
+
+function isCtxliteCursorHookEntry(entry: unknown): boolean {
+  return isObject(entry) && typeof entry.command === "string" && entry.command.includes(CURSOR_HOOK_COMMAND_MARKER)
+}
+
+/**
+ * Cursor reads hooks from hooks.json — a different file from the MCP
+ * server config (mcp.json), and a flatter shape than Claude Code's
+ * (hooks.preToolUse is an array of {command, ...} entries directly, no
+ * matcher-group nesting). Only preToolUse is portable here — Cursor's
+ * postToolUse can only replace output for MCP tools, not built-in ones,
+ * so there's no equivalent of the "compress" hook on this platform.
+ */
+export function mergeCursorHooksConfig(existing: unknown): { next: JsonObject; changed: boolean } {
+  const base = isObject(existing) ? { ...existing } : {}
+  const hooks = isObject(base.hooks) ? { ...base.hooks } : {}
+  const preToolUse = Array.isArray(hooks.preToolUse) ? [...hooks.preToolUse] : []
+
+  if (preToolUse.some(isCtxliteCursorHookEntry)) {
+    return { next: base, changed: false }
+  }
+
+  preToolUse.push({ command: CURSOR_PRE_TOOL_USE_COMMAND })
+  return {
+    next: { version: base.version ?? 1, ...base, hooks: { ...hooks, preToolUse } },
+    changed: true,
+  }
+}
+
+export function removeCursorHooksConfig(existing: unknown): { next: JsonObject; changed: boolean } {
+  if (!isObject(existing) || !isObject(existing.hooks) || !Array.isArray(existing.hooks.preToolUse)) {
+    return { next: isObject(existing) ? { ...existing } : {}, changed: false }
+  }
+
+  const filtered = existing.hooks.preToolUse.filter((entry) => !isCtxliteCursorHookEntry(entry))
+  if (filtered.length === existing.hooks.preToolUse.length) {
+    return { next: { ...existing }, changed: false }
+  }
+
+  return { next: { ...existing, hooks: { ...existing.hooks, preToolUse: filtered } }, changed: true }
+}
+
 export function applyConfigChange(
   kind: ConfigKind,
   existing: unknown,
@@ -206,6 +250,10 @@ export function applyConfigChange(
 
   if (kind === "opencode-tui") {
     return remove ? removeOpenCodeTuiConfig(existing) : mergeOpenCodeTuiConfig(existing)
+  }
+
+  if (kind === "cursor-hooks") {
+    return remove ? removeCursorHooksConfig(existing) : mergeCursorHooksConfig(existing)
   }
 
   if (kind === "claude-code-hooks") {

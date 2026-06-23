@@ -1,6 +1,124 @@
 # Configuration
 
-## CLI flags
+This page covers the current plugin/MCP/hooks architecture (OpenCode, Cursor, Claude Code, Claude Desktop). For the legacy Go HTTP proxy, see [Legacy: Go HTTP proxy](#legacy-go-http-proxy) at the bottom — it's a separate, superseded architecture with its own config file and env vars.
+
+## Install
+
+### OpenCode
+
+```bash
+npx @ctxlite/cli install --tool opencode --scope global --yes
+# or, using OpenCode's own installer:
+opencode plugin @ctxlite/opencode -g -f
+```
+
+Writes two files: `~/.config/opencode/opencode.json` (server-side plugin: hooks, MCP-style tools) and `~/.config/opencode/tui.json` (TUI-side plugin: the sidebar widget). Use `--scope project` to scope to the current repo instead (`opencode.json` / `tui.json` in the project root).
+
+**Automatic, no action needed:**
+
+- Pre-call rewrite — quieter flags on `bash` commands, blocks low-signal reads (`node_modules/`, lockfiles)
+- Tool output compression — ANSI strip, log folding, head/tail truncation for large output
+- Stale-output capping and duplicate-output pruning across the conversation history before each request
+- Conciseness instructions injected into the system prompt
+- Sidebar widget showing live savings, a toast after each turn, and a `· ctxlite: X saved` suffix on the session title
+
+**On demand (the agent calls a tool):**
+
+- `get_stats` — token savings statistics
+- `trim_context` — select the most relevant files from a candidate set you've already read
+- `smart_read` — read a file as signatures only (functions/classes/methods, bodies omitted), or a budgeted head/tail read for unsupported languages
+
+### Claude Code
+
+```bash
+npx @ctxlite/cli install --tool claude-code --scope global --yes
+```
+
+Writes two files: `~/.claude.json` (MCP server registration) and `~/.claude/settings.json` (PreToolUse/PostToolUse hooks) — merging into the `hooks` key rather than overwriting it, so other tools' hooks on the same event are preserved. Use `--scope project` for `.mcp.json` + `.claude/settings.json` in the repo instead.
+
+**Automatic, no action needed** (via hooks, not MCP):
+
+- PreToolUse — same pre-call rewrite as OpenCode (quiet `Bash` flags, blocks low-signal `Read`s)
+- PostToolUse — same output compression as OpenCode (head/tail truncation), for any tool's output
+
+**On demand (MCP):** `get_stats`, `trim_context`, `smart_read` — same tools as OpenCode, via MCP instead of the plugin tool registry.
+
+### Cursor
+
+```bash
+npx @ctxlite/cli install --tool cursor --scope global --yes
+```
+
+Writes `~/.cursor/mcp.json` (MCP server) and `~/.cursor/hooks.json` (a `preToolUse` hook).
+
+**Automatic, no action needed:**
+
+- `preToolUse` — same pre-call rewrite as OpenCode/Claude Code (quiet `Shell` flags, blocks low-signal `Read`s)
+
+**Not automatic here, unlike OpenCode/Claude Code:** Cursor's `postToolUse` can only replace output for MCP tools, not built-in ones (`Shell`, `Read`, `Write`) — so there's no automatic output-compression hook on Cursor. Use `smart_read` explicitly for large files instead.
+
+**On demand (MCP):** `get_stats`, `trim_context`, `smart_read`.
+
+### Claude Desktop
+
+```bash
+npx @ctxlite/cli install --tool claude-desktop --scope global --yes
+```
+
+MCP only (`get_stats`, `trim_context`, `smart_read`) — Claude Desktop has no plugin/hook API, global scope only.
+
+### Interactive installer
+
+```bash
+npx @ctxlite/cli install
+```
+
+Prompts for tools and scope. Add `--remove` to undo any of the above.
+
+## Viewing stats
+
+Every surface above logs to the same `~/.ctxlite/stats.db`, so the CLI always shows the combined total regardless of which tool produced the savings.
+
+**CLI, from any terminal:**
+
+```bash
+npx @ctxlite/cli stats              # all-time (default)
+npx @ctxlite/cli stats --last 7d
+npx @ctxlite/cli stats --last today
+npx @ctxlite/cli stats --export json
+```
+
+**OpenCode:** the sidebar widget already shows this live. To get the same breakdown in chat:
+
+```
+> show me ctxlite's stats
+```
+
+**Claude Code:** ask in chat — the agent reaches for the `get_stats` MCP tool:
+
+```
+You: how many tokens has ctxlite saved this week?
+```
+
+```
+You: use the ctxlite get_stats tool and show me the breakdown
+```
+
+**Cursor:** same pattern — ask in chat, the agent calls `get_stats` via MCP:
+
+```
+You: show me ctxlite's token savings for this project
+```
+
+If the agent doesn't reach for the tool on its own (it's opt-in via MCP, not forced), naming the tool explicitly — "use get_stats" / "use the ctxlite MCP tool" — gets it to call it.
+
+---
+
+## Legacy: Go HTTP proxy
+
+The Go binary in `go/` is an earlier architecture: an HTTP proxy with L1 exact-match and L2 semantic caching, configured via env vars + a YAML file. Superseded by the plugin/MCP/hooks setup above — kept here for reference, not the recommended path for new installs.
+
+### CLI flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
@@ -25,7 +143,7 @@ The HTTP proxy resolves upstream from the request `Host` header. Tools must send
 If no embedding provider is configured, L2 semantic cache is disabled and L1 exact cache still works.  
 Set `OPENAI_API_KEY` to enable L2 with the OpenAI embeddings API automatically.
 
-## Config file
+### Config file
 
 Default location: `~/.ctxlite/config.yaml`
 
@@ -64,9 +182,9 @@ cache:
 
 A missing config file is not an error — ctxlite starts with defaults.
 
-## Environment variables (tool setup)
+### Environment variables
 
-### Cursor
+**Cursor:**
 
 ```bash
 export OPENAI_BASE_URL=http://127.0.0.1:8080/v1
@@ -74,100 +192,8 @@ export OPENAI_BASE_URL=http://127.0.0.1:8080/v1
 
 Cursor sends requests to the local proxy with the original provider in the `Host` header.
 
-### Claude Code
+**Claude Code:**
 
 ```bash
 export ANTHROPIC_BASE_URL=http://127.0.0.1:8080
-```
-
-### OpenCode
-
-#### Install
-
-Use the interactive installer (recommended):
-
-```bash
-npx @ctxlite/cli install --tool opencode --scope global --yes
-npx @ctxlite/cli install --tool opencode --scope project --yes
-```
-
-Or the OpenCode CLI:
-
-```bash
-opencode plugin @ctxlite/opencode -g -f
-```
-
-Global config: `~/.config/opencode/opencode.json`  
-Project config: `opencode.json` in the project root
-
-#### What it does
-
-**Automatic (zero config):**
-
-- Injects conciseness instructions into the system prompt
-- The model avoids filler phrases, recaps, and verbose sign-offs
-
-**On demand (tool calls):**
-
-- `get_stats` — token savings statistics
-- `trim_context` — explicit file trimming
-
-#### Stats
-
-In any OpenCode session:
-
-```
-> ctxlite stats
-> ctxlite stats 7d
-```
-
-#### Note on automatic trimming
-
-OpenCode does not expose the messages array as mutable in plugin hooks.  
-Automatic BM25 context trimming is not possible through the plugin API.  
-Use the `trim_context` tool explicitly before large tasks.
-
-#### MCP (Cursor)
-
-For Cursor, use the MCP server. Install with:
-
-```bash
-npx @ctxlite/cli install --tool cursor --scope global --yes
-```
-
-Or add manually:
-
-```json
-{
-  "mcpServers": {
-    "ctxlite": { "command": "npx", "args": ["-y", "@ctxlite/mcp"] }
-  }
-}
-```
-
-Global: `~/.cursor/mcp.json` · Project: `.cursor/mcp.json`
-
-#### Claude Code / Claude Desktop
-
-```bash
-npx @ctxlite/cli install --tool claude-code --scope global --yes
-npx @ctxlite/cli install --tool claude-desktop --scope global --yes
-```
-
-Claude Code global: `~/.claude.json` · Project: `.mcp.json`  
-Claude Desktop: OS-specific `claude_desktop_config.json` (global only)
-
-### Cursor (HTTP proxy)
-
-Add to your tool's MCP config:
-
-```json
-{
-  "mcpServers": {
-    "ctxlite": {
-      "command": "ctxlite",
-      "args": []
-    }
-  }
-}
 ```

@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "config": {
-    "version": "0.1.19"
+    "version": "0.1.20"
   },
   "scripts": {
     "build": "npm run build --workspaces --if-present",
