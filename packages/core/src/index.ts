@@ -55,6 +55,8 @@ export {
   formatJson,
   mergeMcpConfig,
   mergeOpenCodeConfig,
+  mergeOpenCodeTuiConfig,
+  removeOpenCodeTuiConfig,
   opencodePluginCacheDir,
   parseTools,
   planInstall,

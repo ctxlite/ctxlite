@@ -1,6 +1,6 @@
 {
   "name": "@ctxlite/opencode",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -8,18 +8,28 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./tui": {
+      "default": "./dist/tui.tsx"
     }
   },
+  "oc-plugin": [
+    "server",
+    "tui"
+  ],
   "files": [
     "dist/"
   ],
   "scripts": {
-    "build": "tsc --build",
-    "typecheck": "tsc --noEmit"
+    "build": "tsc --build && mkdir -p dist && cp src/tui.tsx dist/tui.tsx",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.tui.json"
   },
   "dependencies": {
-    "@ctxlite/core": "0.1.12",
-    "@opencode-ai/plugin": "latest"
+    "@ctxlite/core": "0.1.13",
+    "@opencode-ai/plugin": "latest",
+    "@opentui/core": "^0.2.16",
+    "@opentui/solid": "^0.2.16",
+    "solid-js": "^1.9.12"
   },
   "devDependencies": {
     "vitest": "^1.6.0"

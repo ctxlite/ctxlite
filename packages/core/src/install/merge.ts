@@ -89,6 +89,40 @@ export function removeOpenCodeConfig(existing: unknown): { next: JsonObject; cha
   return { next: { ...existing, plugin: nextPlugins }, changed: true }
 }
 
+/**
+ * OpenCode reads TUI-side plugins (sidebar widgets, etc.) from a separate
+ * tui.json, distinct from the server-side plugin list in opencode.json.
+ * No $schema is injected here — unlike opencode.json's, the right URL for
+ * tui.json isn't confirmed.
+ */
+export function mergeOpenCodeTuiConfig(existing: unknown): { next: JsonObject; changed: boolean } {
+  const base = isObject(existing) ? { ...existing } : {}
+  const plugins: string[] = Array.isArray(base.plugin)
+    ? base.plugin.filter((item): item is string => typeof item === "string")
+    : []
+
+  if (plugins.includes(OPENCODE_PLUGIN)) {
+    return { next: base, changed: false }
+  }
+
+  plugins.push(OPENCODE_PLUGIN)
+  return { next: { ...base, plugin: plugins }, changed: true }
+}
+
+export function removeOpenCodeTuiConfig(existing: unknown): { next: JsonObject; changed: boolean } {
+  if (!isObject(existing) || !Array.isArray(existing.plugin)) {
+    return { next: isObject(existing) ? { ...existing } : {}, changed: false }
+  }
+
+  const plugins = existing.plugin.filter((item): item is string => typeof item === "string")
+  const nextPlugins = plugins.filter((item) => item !== OPENCODE_PLUGIN)
+  if (nextPlugins.length === plugins.length) {
+    return { next: { ...existing }, changed: false }
+  }
+
+  return { next: { ...existing, plugin: nextPlugins }, changed: true }
+}
+
 export function applyConfigChange(
   kind: ConfigKind,
   existing: unknown,
@@ -96,6 +130,10 @@ export function applyConfigChange(
 ): { next: JsonObject; changed: boolean } {
   if (kind === "opencode") {
     return remove ? removeOpenCodeConfig(existing) : mergeOpenCodeConfig(existing)
+  }
+
+  if (kind === "opencode-tui") {
+    return remove ? removeOpenCodeTuiConfig(existing) : mergeOpenCodeTuiConfig(existing)
   }
 
   return remove ? removeMcpConfig(existing) : mergeMcpConfig(existing, defaultMcpEntry())

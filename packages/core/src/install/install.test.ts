@@ -7,6 +7,7 @@ import {
   buildTargets,
   mergeMcpConfig,
   mergeOpenCodeConfig,
+  mergeOpenCodeTuiConfig,
   planInstall,
   runInstall,
   MCP_SERVER_NAME,
@@ -48,6 +49,27 @@ describe("mergeOpenCodeConfig", () => {
   })
 })
 
+describe("mergeOpenCodeTuiConfig", () => {
+  it("adds plugin to array without injecting a $schema", () => {
+    const { next, changed } = mergeOpenCodeTuiConfig({})
+    expect(changed).toBe(true)
+    expect(next.plugin).toEqual([OPENCODE_PLUGIN])
+    expect(next.$schema).toBeUndefined()
+  })
+
+  it("is idempotent when plugin already present", () => {
+    const { changed } = mergeOpenCodeTuiConfig({ plugin: [OPENCODE_PLUGIN] })
+    expect(changed).toBe(false)
+  })
+
+  it("removes only the ctxlite plugin via applyConfigChange", () => {
+    const existing = { plugin: ["other-plugin", OPENCODE_PLUGIN] }
+    const { next, changed } = applyConfigChange("opencode-tui", existing, true)
+    expect(changed).toBe(true)
+    expect(next.plugin).toEqual(["other-plugin"])
+  })
+})
+
 describe("applyConfigChange remove", () => {
   it("removes only ctxlite mcp server", () => {
     const existing = {
@@ -75,6 +97,13 @@ describe("buildTargets", () => {
     const targets = buildTargets(["opencode"], "project", { projectDir: "/repo" })
     expect(targets[0]?.configPath).toBe("/repo/opencode.json")
     expect(targets[0]?.kind).toBe("opencode")
+  })
+
+  it("also targets tui.json for opencode (TUI-side plugin registration)", () => {
+    const targets = buildTargets(["opencode"], "global", { homeDir: "/home/test" })
+    expect(targets).toHaveLength(2)
+    expect(targets[1]?.configPath).toBe("/home/test/.config/opencode/tui.json")
+    expect(targets[1]?.kind).toBe("opencode-tui")
   })
 })
 
@@ -121,7 +150,7 @@ describe("runInstall", () => {
 })
 
 describe("planInstall all global", () => {
-  it("returns four targets for all tools", async () => {
+  it("returns five targets for all tools (opencode counts as two: server + tui)", async () => {
     const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
     try {
       const plan = await planInstall({
@@ -131,7 +160,7 @@ describe("planInstall all global", () => {
         projectDir: root,
         dryRun: true,
       })
-      expect(plan).toHaveLength(4)
+      expect(plan).toHaveLength(5)
     } finally {
       await rm(root, { recursive: true, force: true })
     }

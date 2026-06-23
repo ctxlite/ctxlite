@@ -7,6 +7,12 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-06-23
+
+### Added
+- `@ctxlite/opencode`: experimental persistent sidebar widget (`tui.tsx`, `sidebar_content` slot via `@opentui/solid`) showing the stats breakdown at all times, not just as a transient toast. Ships as a separate `oc-plugin: ["server", "tui"]` target per OpenCode's plugin conventions — untested against a real OpenCode/Bun TUI session, needs live verification.
+- `@ctxlite/cli install --tool opencode`: now also registers `@ctxlite/opencode` in `tui.json` (separate from `opencode.json`), required for the sidebar widget to load.
+
 ## [0.1.12] - 2026-06-23
 
 ### Fixed

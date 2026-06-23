@@ -54,6 +54,13 @@ export function resolveConfigPath(
   }
 }
 
+/** ctxlite must be registered separately for OpenCode's TUI — see opencode-refresh.ts for why. */
+function resolveOpenCodeTuiConfigPath(scope: InstallScope, ctx: PathContext = {}): string {
+  return scope === "global"
+    ? join(home(ctx), ".config", "opencode", "tui.json")
+    : join(project(ctx), "tui.json")
+}
+
 export function toPathContext(options: Pick<InstallOptions, "homeDir" | "projectDir">): PathContext {
   const ctx: PathContext = {}
   if (options.homeDir !== undefined) {
@@ -70,17 +77,19 @@ export function buildTargets(
   scope: InstallScope,
   ctx: PathContext = {},
 ): InstallTarget[] {
-  return tools.map((tool) => {
+  return tools.flatMap((tool): InstallTarget[] => {
     if (tool === "claude-desktop" && scope === "project") {
       throw new Error("Claude Desktop only supports global scope")
     }
 
-    return {
-      tool,
-      scope,
-      configPath: resolveConfigPath(tool, scope, ctx),
-      kind: tool === "opencode" ? "opencode" : "mcp",
+    if (tool === "opencode") {
+      return [
+        { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "opencode" },
+        { tool, scope, configPath: resolveOpenCodeTuiConfigPath(scope, ctx), kind: "opencode-tui" },
+      ]
     }
+
+    return [{ tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "mcp" }]
   })
 }
 
