@@ -14,8 +14,10 @@ import { getStatsTool, trimContextTool } from "./tools.js"
  * 3. Prunes duplicate tool context before each LLM request
  * 4. Injects conciseness instructions into the system prompt
  * 5. Records all savings to ~/.ctxlite/stats.db
+ * 6. Shows a TUI toast with per-turn savings, so users see ctxlite working
+ *    without having to call get_stats
  */
-const CtxlitePlugin: Plugin = async (_ctx) => {
+const CtxlitePlugin: Plugin = async ({ client }) => {
   return {
     "experimental.chat.system.transform": async (_input, output) => {
       const addition = buildSystemPromptAddition()
@@ -33,7 +35,7 @@ const CtxlitePlugin: Plugin = async (_ctx) => {
 
     "experimental.chat.messages.transform": createMessagesTransformHook(),
 
-    event: createStatsEventHandler(),
+    event: createStatsEventHandler(client),
 
     tool: {
       get_stats: getStatsTool,
