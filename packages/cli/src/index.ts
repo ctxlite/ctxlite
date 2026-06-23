@@ -3,6 +3,7 @@
 import { StatsStore, defaultDbPath } from "@ctxlite/core"
 import { formatText, formatJson } from "./format.js"
 import { runInstallCommand } from "./install.js"
+import { runPreToolUseHook, runPostToolUseHook } from "./hook.js"
 
 const HELP = `
 ctxlite — token optimizer for OpenCode and Cursor
@@ -10,10 +11,12 @@ ctxlite — token optimizer for OpenCode and Cursor
 USAGE:
   ctxlite stats [options]
   ctxlite install [options]
+  ctxlite hook <pre-tool-use|post-tool-use>
 
 COMMANDS:
   stats     Show token savings statistics
   install   Configure ctxlite in Cursor, OpenCode, or Claude Code
+  hook      Claude Code hook bridge (reads JSON from stdin) — not for manual use
 
 GLOBAL OPTIONS:
   --help, -h         Show this help
@@ -147,6 +150,18 @@ async function main(): Promise<void> {
 
   if (args.subcommand === "install") {
     process.exit(await runInstallCommand(args.rest))
+  }
+
+  if (args.subcommand === "hook") {
+    const event = args.rest[0]
+    if (event === "pre-tool-use") {
+      process.exit(await runPreToolUseHook())
+    }
+    if (event === "post-tool-use") {
+      process.exit(await runPostToolUseHook())
+    }
+    // Unknown hook event — never block the user's tool call.
+    process.exit(0)
   }
 
   process.stderr.write(`Unknown subcommand "${args.subcommand}"\n`)

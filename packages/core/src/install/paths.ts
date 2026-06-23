@@ -61,6 +61,13 @@ function resolveOpenCodeTuiConfigPath(scope: InstallScope, ctx: PathContext = {}
     : join(project(ctx), "tui.json")
 }
 
+/** Claude Code hooks live in settings.json — a different file from the MCP server config (.claude.json/.mcp.json). */
+function resolveClaudeCodeHooksConfigPath(scope: InstallScope, ctx: PathContext = {}): string {
+  return scope === "global"
+    ? join(home(ctx), ".claude", "settings.json")
+    : join(project(ctx), ".claude", "settings.json")
+}
+
 export function toPathContext(options: Pick<InstallOptions, "homeDir" | "projectDir">): PathContext {
   const ctx: PathContext = {}
   if (options.homeDir !== undefined) {
@@ -86,6 +93,13 @@ export function buildTargets(
       return [
         { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "opencode" },
         { tool, scope, configPath: resolveOpenCodeTuiConfigPath(scope, ctx), kind: "opencode-tui" },
+      ]
+    }
+
+    if (tool === "claude-code") {
+      return [
+        { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "mcp" },
+        { tool, scope, configPath: resolveClaudeCodeHooksConfigPath(scope, ctx), kind: "claude-code-hooks" },
       ]
     }
 

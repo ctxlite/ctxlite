@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-06-23
+
+### Added
+- `@ctxlite/cli hook pre-tool-use` / `hook post-tool-use` — bridges ctxlite's core optimizations into Claude Code's PreToolUse/PostToolUse hooks (verified JSON schema against current docs: `hookSpecificOutput.updatedInput`/`updatedToolOutput`). Unlike the MCP tools (opt-in, the agent has to remember to call them), hooks fire automatically on every tool call via a `"*"` matcher — same automatic behavior OpenCode's plugin hooks already give. PreToolUse reuses `optimizeToolArgs` (Bash quiet flags, blocks low-signal reads); PostToolUse reuses `compressToolOutput` (head/tail truncate for large output). Deliberately does NOT auto-apply symbol-only extraction to every Read — that's a much lossier transform than truncation and stays opt-in via the `smart_read` MCP tool, where the agent explicitly chooses it.
+- `@ctxlite/cli install --tool claude-code`: now also registers these hooks in `.claude/settings.json` (project) / `~/.claude/settings.json` (global) — a different file from the MCP server config — appending to any existing hook matcher groups rather than overwriting them.
+- Any hook payload that doesn't parse as expected is a silent no-op (exit 0, no output) — a malformed/unexpected shape must never block the user's actual tool call.
+
 ## [0.1.18] - 2026-06-23
 
 ### Added

@@ -123,6 +123,78 @@ export function removeOpenCodeTuiConfig(existing: unknown): { next: JsonObject; 
   return { next: { ...existing, plugin: nextPlugins }, changed: true }
 }
 
+const CTXLITE_HOOK_COMMAND_MARKER = "@ctxlite/cli hook"
+const PRE_TOOL_USE_HOOK_COMMAND = "npx -y @ctxlite/cli hook pre-tool-use"
+const POST_TOOL_USE_HOOK_COMMAND = "npx -y @ctxlite/cli hook post-tool-use"
+
+function isCtxliteHookGroup(group: unknown): boolean {
+  return (
+    isObject(group) &&
+    Array.isArray(group.hooks) &&
+    group.hooks.some(
+      (h) => isObject(h) && typeof h.command === "string" && h.command.includes(CTXLITE_HOOK_COMMAND_MARKER),
+    )
+  )
+}
+
+function addCtxliteHookGroup(entries: unknown, command: string): { entries: unknown[]; changed: boolean } {
+  const list = Array.isArray(entries) ? [...entries] : []
+  if (list.some(isCtxliteHookGroup)) {
+    return { entries: list, changed: false }
+  }
+  list.push({ matcher: "*", hooks: [{ type: "command", command }] })
+  return { entries: list, changed: true }
+}
+
+function removeCtxliteHookGroup(entries: unknown): { entries: unknown[]; changed: boolean } {
+  if (!Array.isArray(entries)) {
+    return { entries: [], changed: false }
+  }
+  const filtered = entries.filter((group) => !isCtxliteHookGroup(group))
+  return { entries: filtered, changed: filtered.length !== entries.length }
+}
+
+/**
+ * Claude Code reads PreToolUse/PostToolUse hooks from settings.json — a
+ * different file from the MCP server config (.claude.json/.mcp.json).
+ * Appends a matcher group rather than overwriting, so other tools'
+ * unrelated hooks on the same event are preserved.
+ */
+export function mergeClaudeCodeHooksConfig(existing: unknown): { next: JsonObject; changed: boolean } {
+  const base = isObject(existing) ? { ...existing } : {}
+  const hooks = isObject(base.hooks) ? { ...base.hooks } : {}
+
+  const pre = addCtxliteHookGroup(hooks.PreToolUse, PRE_TOOL_USE_HOOK_COMMAND)
+  const post = addCtxliteHookGroup(hooks.PostToolUse, POST_TOOL_USE_HOOK_COMMAND)
+
+  if (!pre.changed && !post.changed) {
+    return { next: base, changed: false }
+  }
+
+  return {
+    next: { ...base, hooks: { ...hooks, PreToolUse: pre.entries, PostToolUse: post.entries } },
+    changed: true,
+  }
+}
+
+export function removeClaudeCodeHooksConfig(existing: unknown): { next: JsonObject; changed: boolean } {
+  if (!isObject(existing) || !isObject(existing.hooks)) {
+    return { next: isObject(existing) ? { ...existing } : {}, changed: false }
+  }
+
+  const pre = removeCtxliteHookGroup(existing.hooks.PreToolUse)
+  const post = removeCtxliteHookGroup(existing.hooks.PostToolUse)
+
+  if (!pre.changed && !post.changed) {
+    return { next: { ...existing }, changed: false }
+  }
+
+  return {
+    next: { ...existing, hooks: { ...existing.hooks, PreToolUse: pre.entries, PostToolUse: post.entries } },
+    changed: true,
+  }
+}
+
 export function applyConfigChange(
   kind: ConfigKind,
   existing: unknown,
@@ -134,6 +206,10 @@ export function applyConfigChange(
 
   if (kind === "opencode-tui") {
     return remove ? removeOpenCodeTuiConfig(existing) : mergeOpenCodeTuiConfig(existing)
+  }
+
+  if (kind === "claude-code-hooks") {
+    return remove ? removeClaudeCodeHooksConfig(existing) : mergeClaudeCodeHooksConfig(existing)
   }
 
   return remove ? removeMcpConfig(existing) : mergeMcpConfig(existing, defaultMcpEntry())

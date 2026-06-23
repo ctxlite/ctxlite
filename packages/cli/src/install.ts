@@ -34,13 +34,13 @@ EXAMPLES:
   ctxlite install --remove --tool cursor --scope global --yes
 
 CONFIG PATHS:
-  Cursor (global)        ~/.cursor/mcp.json
-  Cursor (project)       .cursor/mcp.json
-  OpenCode (global)      ~/.config/opencode/opencode.json
-  OpenCode (project)     opencode.json
-  Claude Code (global)   ~/.claude.json
-  Claude Code (project)  .mcp.json
-  Claude Desktop         OS-specific claude_desktop_config.json
+  Cursor (global)              ~/.cursor/mcp.json
+  Cursor (project)             .cursor/mcp.json
+  OpenCode (global)            ~/.config/opencode/opencode.json + tui.json
+  OpenCode (project)           opencode.json + tui.json
+  Claude Code (global)         ~/.claude.json (MCP) + ~/.claude/settings.json (hooks)
+  Claude Code (project)        .mcp.json (MCP) + .claude/settings.json (hooks)
+  Claude Desktop               OS-specific claude_desktop_config.json
 `.trimStart()
 
 export interface InstallArgs {

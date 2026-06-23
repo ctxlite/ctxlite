@@ -5,6 +5,7 @@ import { tmpdir } from "node:os"
 import {
   applyConfigChange,
   buildTargets,
+  mergeClaudeCodeHooksConfig,
   mergeMcpConfig,
   mergeOpenCodeConfig,
   mergeOpenCodeTuiConfig,
@@ -70,6 +71,52 @@ describe("mergeOpenCodeTuiConfig", () => {
   })
 })
 
+describe("mergeClaudeCodeHooksConfig", () => {
+  it("adds PreToolUse and PostToolUse matcher groups", () => {
+    const { next, changed } = mergeClaudeCodeHooksConfig({})
+    expect(changed).toBe(true)
+    const hooks = next.hooks as { PreToolUse: unknown[]; PostToolUse: unknown[] }
+    expect(hooks.PreToolUse).toHaveLength(1)
+    expect(hooks.PostToolUse).toHaveLength(1)
+  })
+
+  it("preserves existing unrelated hooks on the same event", () => {
+    const existing = {
+      hooks: {
+        PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "some-other-tool" }] }],
+      },
+    }
+    const { next, changed } = mergeClaudeCodeHooksConfig(existing)
+    expect(changed).toBe(true)
+    const pre = (next.hooks as { PreToolUse: Array<{ hooks: Array<{ command: string }> }> }).PreToolUse
+    expect(pre).toHaveLength(2)
+    expect(pre[0]?.hooks[0]?.command).toBe("some-other-tool")
+  })
+
+  it("is idempotent when ctxlite hooks already present", () => {
+    const { next } = mergeClaudeCodeHooksConfig({})
+    const { changed } = mergeClaudeCodeHooksConfig(next)
+    expect(changed).toBe(false)
+  })
+
+  it("removes only ctxlite's hook groups via applyConfigChange", () => {
+    const existing = {
+      hooks: {
+        PreToolUse: [
+          { matcher: "Bash", hooks: [{ type: "command", command: "some-other-tool" }] },
+          { matcher: "*", hooks: [{ type: "command", command: "npx -y @ctxlite/cli hook pre-tool-use" }] },
+        ],
+        PostToolUse: [{ matcher: "*", hooks: [{ type: "command", command: "npx -y @ctxlite/cli hook post-tool-use" }] }],
+      },
+    }
+    const { next, changed } = applyConfigChange("claude-code-hooks", existing, true)
+    expect(changed).toBe(true)
+    const hooks = next.hooks as { PreToolUse: unknown[]; PostToolUse: unknown[] }
+    expect(hooks.PreToolUse).toHaveLength(1)
+    expect(hooks.PostToolUse).toHaveLength(0)
+  })
+})
+
 describe("applyConfigChange remove", () => {
   it("removes only ctxlite mcp server", () => {
     const existing = {
@@ -104,6 +151,14 @@ describe("buildTargets", () => {
     expect(targets).toHaveLength(2)
     expect(targets[1]?.configPath).toBe("/home/test/.config/opencode/tui.json")
     expect(targets[1]?.kind).toBe("opencode-tui")
+  })
+
+  it("also targets settings.json for claude-code (hooks registration)", () => {
+    const targets = buildTargets(["claude-code"], "global", { homeDir: "/home/test" })
+    expect(targets).toHaveLength(2)
+    expect(targets[0]?.kind).toBe("mcp")
+    expect(targets[1]?.configPath).toBe("/home/test/.claude/settings.json")
+    expect(targets[1]?.kind).toBe("claude-code-hooks")
   })
 })
 
@@ -150,7 +205,7 @@ describe("runInstall", () => {
 })
 
 describe("planInstall all global", () => {
-  it("returns five targets for all tools (opencode counts as two: server + tui)", async () => {
+  it("returns six targets for all tools (opencode and claude-code each count as two)", async () => {
     const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
     try {
       const plan = await planInstall({
@@ -160,7 +215,7 @@ describe("planInstall all global", () => {
         projectDir: root,
         dryRun: true,
       })
-      expect(plan).toHaveLength(5)
+      expect(plan).toHaveLength(6)
     } finally {
       await rm(root, { recursive: true, force: true })
     }

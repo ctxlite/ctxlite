@@ -20,9 +20,11 @@ export { buildTargets, resolveConfigPath, toolLabel } from "./paths.js"
 export {
   applyConfigChange,
   formatJson,
+  mergeClaudeCodeHooksConfig,
   mergeMcpConfig,
   mergeOpenCodeConfig,
   mergeOpenCodeTuiConfig,
+  removeClaudeCodeHooksConfig,
   removeOpenCodeTuiConfig,
 } from "./merge.js"
 export { parseTools, planInstall, runInstall } from "./run.js"
