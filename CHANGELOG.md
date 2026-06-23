@@ -7,6 +7,16 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-06-23
+
+### Added
+- `@ctxlite/opencode`: `smart_read` tool — reads a file itself (no pre-read content required, unlike `trim_context`) and returns declaration signatures with bodies blanked, via real tree-sitter parsing (`web-tree-sitter` + WASM grammars for TypeScript/TSX/JavaScript, no native compilation). Closes the actual gap vs. `@tokenwarden/opencode`'s `smart_read`/`smart_pack`, which intercept *before* the agent ever reads full file content — `trim_context` only filters *after*. Falls back to a budgeted head/tail read for unsupported languages. System prompt nudges the model to prefer it for understanding file shape over editing.
+- `@ctxlite/core`: `extractSymbols()` / `supportsSymbols()` — verified against 9 real parse cases (functions, exported arrows, class methods, interfaces/types/imports kept intact, `.tsx` JSX, plain `.js`).
+
+### Note
+- Adds ~50MB to `@ctxlite/core`'s installed size (`web-tree-sitter` + `tree-sitter-typescript` + `tree-sitter-javascript`, mostly the TypeScript grammar's prebuilt native sources that ship alongside its `.wasm`). Scoped to TS/TSX/JS/JSX only for now — other languages fall back to budgeted reads.
+- Verified working under Node (103 tests, real WASM parsing). Not yet verified under OpenCode's actual Bun runtime — this machine has no standalone Bun binary to test against; needs live verification after publishing.
+
 ## [0.1.16] - 2026-06-23
 
 ### Added

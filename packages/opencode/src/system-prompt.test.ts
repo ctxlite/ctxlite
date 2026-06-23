@@ -12,6 +12,8 @@ describe("buildSystemPromptAddition", () => {
     expect(addition).toContain("preamble")
     expect(addition).toContain("recap")
     expect(addition).toContain("sign-off")
+    expect(addition).toContain("smart_read")
+    expect(addition).toContain("trim_context")
   })
 
   it("is idempotent — same output every call", () => {

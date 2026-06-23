@@ -37,6 +37,12 @@ export function buildStatsBreakdown(summary: Summary): StatsBreakdownRow[] {
       countLabel: "stale outputs",
     },
     {
+      label: "smart_read",
+      tokensSaved: summary.smartReadTokensSaved,
+      count: summary.smartReadRequests,
+      countLabel: "file reads",
+    },
+    {
       label: "trim",
       tokensSaved: summary.trimTokensSaved,
       count: summary.trimmedRequests,

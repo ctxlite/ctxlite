@@ -2,7 +2,7 @@ import { compressToolOutput, logOptimizationSavings } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
 import { takePrecallPending } from "./precall-state.js"
 
-const SKIP_TOOLS = new Set(["get_stats", "trim_context"])
+const SKIP_TOOLS = new Set(["get_stats", "trim_context", "smart_read"])
 
 /**
  * Compresses tool output after execution and logs savings to stats.db.

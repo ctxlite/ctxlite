@@ -2,7 +2,7 @@ import { optimizeToolArgs, logOptimizationSavings } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
 import { markPrecallPending } from "./precall-state.js"
 
-const SKIP_TOOLS = new Set(["get_stats", "trim_context"])
+const SKIP_TOOLS = new Set(["get_stats", "trim_context", "smart_read"])
 
 type BeforeOutput = {
   args: Record<string, unknown>

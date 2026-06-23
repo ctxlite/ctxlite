@@ -6,6 +6,7 @@ import { createStatsEventHandler } from "./stats-events.js"
 import { createToolPrecallHook } from "./tool-precall-hook.js"
 import { createToolCompressHook } from "./tool-compress-hook.js"
 import { getStatsTool, trimContextTool } from "./tools.js"
+import { smartReadTool } from "./smart-read-tool.js"
 
 /**
  * ctxlite OpenCode plugin
@@ -44,6 +45,7 @@ const CtxlitePlugin: Plugin = async ({ client }) => {
     tool: {
       get_stats: getStatsTool,
       trim_context: trimContextTool,
+      smart_read: smartReadTool,
     },
   }
 }

@@ -4,6 +4,12 @@
 export const CONCISENESS_INSTRUCTIONS = `
 ## Token efficiency (ctxlite)
 
+When you need to understand a file's structure or API rather than edit
+it (checking what a module exports, how a class is shaped, whether a
+function exists before calling it), use smart_read instead of the
+regular read tool — it returns signatures without implementation bodies.
+Use the regular read tool when you need exact content to edit.
+
 After reading several candidate files for a multi-file task (refactor,
 "how does X work", cross-file search), call trim_context with their
 content and the task description before continuing — drop the files it

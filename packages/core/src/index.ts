@@ -22,6 +22,8 @@ export type { CompressToolOutputOptions, CompressToolOutputResult } from "./tool
 export { pruneMessageContext, capStaleToolOutputs } from "./context-prune.js"
 export type { PruneMessage, ContextPruneResult, ContextCapResult } from "./context-prune.js"
 
+export { extractSymbols, supportsSymbols } from "./smart-read.js"
+
 export {
   StatsStore,
   defaultDbPath,

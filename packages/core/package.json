@@ -1,6 +1,6 @@
 {
   "name": "@ctxlite/core",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -24,6 +24,9 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.11.0",
+    "tree-sitter-javascript": "^0.25.0",
+    "tree-sitter-typescript": "^0.23.2",
+    "web-tree-sitter": "^0.25.10",
     "zod": "^3.23.0"
   },
   "devDependencies": {
