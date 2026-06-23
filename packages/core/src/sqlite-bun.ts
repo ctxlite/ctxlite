@@ -22,6 +22,7 @@ export function openBunStatsSqlite(dbPath: string): StatsSqlite {
   const db = new Database(dbPath, { create: true })
   db.run("PRAGMA journal_mode = WAL")
   db.run("PRAGMA synchronous = NORMAL")
+  db.run("PRAGMA busy_timeout = 5000")
 
   return {
     exec(sql: string) {

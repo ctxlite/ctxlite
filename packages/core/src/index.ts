@@ -22,8 +22,18 @@ export type { CompressToolOutputOptions, CompressToolOutputResult } from "./tool
 export { pruneMessageContext } from "./context-prune.js"
 export type { PruneMessage, ContextPruneResult } from "./context-prune.js"
 
-export { StatsStore, defaultDbPath, logTrimResult, logConcisenessSavings, logOptimizationSavings } from "./stats.js"
+export {
+  StatsStore,
+  defaultDbPath,
+  logTrimResult,
+  logConcisenessSavings,
+  logOptimizationSavings,
+  closeSharedStores,
+} from "./stats.js"
 export type { ConcisenessLog, OptimizationLog } from "./stats.js"
+
+export { buildStatsBreakdown, formatTokenCount, renderStatsBarChart } from "./report.js"
+export type { StatsBreakdownRow } from "./report.js"
 
 export type {
   CodeFile,

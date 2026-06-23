@@ -1,16 +1,16 @@
 import { z } from "zod"
-import { StatsStore } from "@ctxlite/core"
+import { StatsStore, buildStatsBreakdown, formatTokenCount, renderStatsBarChart } from "@ctxlite/core"
 import { STATS_DB_PATH } from "../shared.js"
 
 export const getStatsSchema = z.object({
   period: z
     .enum(["session", "today", "7d", "30d", "all"])
     .optional()
-    .describe("Time period. Default: today"),
+    .describe("Time period. Default: all"),
 })
 
 export async function handleGetStats(args: z.infer<typeof getStatsSchema>): Promise<string> {
-  const period = args.period ?? "today"
+  const period = args.period ?? "all"
   let store: StatsStore | null = null
 
   try {
@@ -22,24 +22,16 @@ export async function handleGetStats(args: z.infer<typeof getStatsSchema>): Prom
       return `## ctxlite stats — ${period}\n\nNo requests recorded yet.`
     }
 
-    const formatTokens = (n: number): string => {
-      if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-      if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
-      return `${n}`
-    }
+    const chart = renderStatsBarChart(buildStatsBreakdown(summary)).join("\n")
 
     return [
       `## ctxlite stats — ${period}`,
       ``,
-      `| Metric | Value |`,
-      `|--------|-------|`,
-      `| Tokens saved (total) | ${formatTokens(summary.tokensSaved)} |`,
-      `| — precall | ${formatTokens(summary.precallTokensSaved)} (${summary.precallRequests} rewrites/blocks) |`,
-      `| — compress | ${formatTokens(summary.compressTokensSaved)} (${summary.compressRequests} outputs) |`,
-      `| — prune | ${formatTokens(summary.pruneTokensSaved)} (${summary.pruneRequests} passes) |`,
-      `| — trim | ${formatTokens(summary.trimTokensSaved)} (${summary.trimmedRequests} calls) |`,
-      `| — concise | ${formatTokens(summary.concisenessTokensSaved)} (${summary.concisenessRequests} responses) |`,
-      `| Est. cost saved | $${summary.costSaved.toFixed(4)} |`,
+      `**Tokens saved (total):** ${formatTokenCount(summary.tokensSaved)}`,
+      "```",
+      chart,
+      "```",
+      `**Est. cost saved:** $${summary.costSaved.toFixed(4)}`,
     ].join("\n")
   } catch (err) {
     return `ctxlite stats unavailable: ${err instanceof Error ? err.message : String(err)}`

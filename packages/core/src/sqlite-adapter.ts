@@ -60,6 +60,7 @@ function openNodeBetterSqlite3(dbPath: string): StatsSqlite {
   const db = new Database(dbPath)
   db.pragma?.("journal_mode = WAL")
   db.pragma?.("synchronous = NORMAL")
+  db.pragma?.("busy_timeout = 5000")
   return wrapDb(db)
 }
 
@@ -71,6 +72,7 @@ function openNodeBuiltinSqlite(dbPath: string): StatsSqlite {
   const db = new DatabaseSync(dbPath)
   db.exec("PRAGMA journal_mode = WAL")
   db.exec("PRAGMA synchronous = NORMAL")
+  db.exec("PRAGMA busy_timeout = 5000")
   return wrapDb(db)
 }
 

@@ -167,6 +167,33 @@ export class StatsStore {
 }
 
 /**
+ * Shared writer connections, keyed by db path. Hot-path loggers (called on
+ * every tool call / message event from long-lived plugin & MCP processes)
+ * reuse one open connection instead of opening and closing SQLite per call —
+ * opening per call caused "database is locked" under concurrent tool calls,
+ * which the per-call try/catch swallowed silently, dropping rows.
+ */
+const sharedStores = new Map<string, StatsStore>()
+
+function getSharedStore(dbPath?: string): StatsStore {
+  const path = dbPath ?? defaultDbPath()
+  let store = sharedStores.get(path)
+  if (!store) {
+    store = new StatsStore(path)
+    sharedStores.set(path, store)
+  }
+  return store
+}
+
+/** Closes all cached writer connections. For tests and graceful shutdown. */
+export function closeSharedStores(): void {
+  for (const store of sharedStores.values()) {
+    store.close()
+  }
+  sharedStores.clear()
+}
+
+/**
  * Persist token savings from a trim_context run.
  * No-op when nothing was trimmed.
  */
@@ -175,10 +202,8 @@ export function logTrimResult(result: TrimResult, tool: "mcp" | "opencode", dbPa
     return
   }
 
-  let store: StatsStore | null = null
   try {
-    store = new StatsStore(dbPath)
-    store.log({
+    getSharedStore(dbPath).log({
       upstream: tool,
       cacheHit: false,
       tokensIn: result.tokensIn,
@@ -191,8 +216,6 @@ export function logTrimResult(result: TrimResult, tool: "mcp" | "opencode", dbPa
     })
   } catch {
     // Silent — logging must not break tool execution
-  } finally {
-    store?.close()
   }
 }
 
@@ -214,10 +237,8 @@ export function logConcisenessSavings(entry: ConcisenessLog, dbPath?: string): v
   }
 
   const generative = entry.outputTokens + entry.reasoningTokens
-  let store: StatsStore | null = null
   try {
-    store = new StatsStore(dbPath)
-    store.log(
+    getSharedStore(dbPath).log(
       {
         upstream: entry.providerId,
         cacheHit: false,
@@ -233,8 +254,6 @@ export function logConcisenessSavings(entry: ConcisenessLog, dbPath?: string): v
     )
   } catch {
     // Silent — logging must not break the main flow
-  } finally {
-    store?.close()
   }
 }
 
@@ -255,10 +274,8 @@ export function logOptimizationSavings(entry: OptimizationLog, dbPath?: string):
     return
   }
 
-  let store: StatsStore | null = null
   try {
-    store = new StatsStore(dbPath)
-    store.log(
+    getSharedStore(dbPath).log(
       {
         upstream: entry.upstream,
         cacheHit: false,
@@ -274,7 +291,5 @@ export function logOptimizationSavings(entry: OptimizationLog, dbPath?: string):
     )
   } catch {
     // Silent — logging must not break the main flow
-  } finally {
-    store?.close()
   }
 }

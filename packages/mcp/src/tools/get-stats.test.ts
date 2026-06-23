@@ -16,8 +16,8 @@ describe("handleGetStats", () => {
     }
   })
 
-  it("uses today as default when period is undefined", async () => {
+  it("uses all as default when period is undefined", async () => {
     const result = await handleGetStats({})
-    expect(result).toContain("today")
+    expect(result).toContain("all")
   })
 })

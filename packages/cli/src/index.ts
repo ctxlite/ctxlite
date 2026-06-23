@@ -19,7 +19,7 @@ GLOBAL OPTIONS:
   --help, -h         Show this help
 
 STATS OPTIONS:
-  --last <period>    Period: session, today, 7d, 30d, all (default: today)
+  --last <period>    Period: session, today, 7d, 30d, all (default: all)
   --export <format>  Export format: text, json (default: text)
   --db <path>        SQLite database path (default: ~/.ctxlite/stats.db)
 
@@ -43,7 +43,7 @@ function parseArgs(argv: string[]): Args {
   const args: Args = {
     subcommand: null,
     rest: [],
-    last: "today",
+    last: "all",
     export: "text",
     db: defaultDbPath(),
     help: false,

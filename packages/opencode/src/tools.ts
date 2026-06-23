@@ -1,9 +1,12 @@
 import { tool, type ToolDefinition } from "@opencode-ai/plugin"
 import {
   StatsStore,
+  buildStatsBreakdown,
   detectLanguage,
   estimateTokens,
+  formatTokenCount,
   logTrimResult,
+  renderStatsBarChart,
   trimFiles,
 } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
@@ -20,10 +23,10 @@ Returns a formatted report with: total requests, tokens saved, estimated cost sa
     period: tool.schema
       .enum(["session", "today", "7d", "30d", "all"])
       .optional()
-      .describe("Time period for stats. Default: today"),
+      .describe("Time period for stats. Default: all"),
   },
 
-  async execute({ period = "today" }) {
+  async execute({ period = "all" }) {
     let store: StatsStore | null = null
 
     try {
@@ -36,18 +39,15 @@ Returns a formatted report with: total requests, tokens saved, estimated cost sa
         return `## ctxlite stats — ${period}\n\nNo requests recorded yet for this period.`
       }
 
-      const fmt = (n: number) =>
-        n >= 1000 ? `${(n / 1000).toFixed(1)}K` : `${n}`
+      const chart = renderStatsBarChart(buildStatsBreakdown(summary)).join("\n")
 
       const lines = [
         `## ctxlite stats — ${period}`,
         ``,
-        `**Tokens saved:** ${fmt(summary.tokensSaved)} total`,
-        `  - precall: ${fmt(summary.precallTokensSaved)} (${summary.precallRequests} rewrites/blocks)`,
-        `  - compress: ${fmt(summary.compressTokensSaved)} (${summary.compressRequests} tool outputs)`,
-        `  - prune: ${fmt(summary.pruneTokensSaved)} (${summary.pruneRequests} context passes)`,
-        `  - trim: ${fmt(summary.trimTokensSaved)} (${summary.trimmedRequests} calls)`,
-        `  - concise: ${fmt(summary.concisenessTokensSaved)} (${summary.concisenessRequests} responses)`,
+        `**Tokens saved:** ${formatTokenCount(summary.tokensSaved)} total`,
+        "```",
+        chart,
+        "```",
         `**Estimated cost saved:** $${summary.costSaved.toFixed(4)}`,
       ]
 

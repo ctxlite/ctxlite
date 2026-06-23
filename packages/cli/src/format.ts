@@ -1,25 +1,21 @@
-import type { Summary } from "@ctxlite/core"
+import { buildStatsBreakdown, formatTokenCount, renderStatsBarChart, type Summary } from "@ctxlite/core"
 
 export function formatText(summary: Summary): string {
-  const formatTokens = (n: number): string => {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
-    return `${n}`
-  }
-
   if (summary.totalRequests === 0) {
     return `\nctxlite stats — ${summary.period}\n\nNo data recorded yet.\n`
   }
 
+  const chart = renderStatsBarChart(buildStatsBreakdown(summary))
+    .map((line) => `  ${line}`)
+    .join("\n")
+
   return `
 ctxlite stats — ${summary.period}
 ─────────────────────────────────────
-Tokens saved  ${formatTokens(summary.tokensSaved)} total
-  precall     ${formatTokens(summary.precallTokensSaved)} (${summary.precallRequests} rewrites/blocks)
-  compress    ${formatTokens(summary.compressTokensSaved)} (${summary.compressRequests} tool outputs)
-  prune       ${formatTokens(summary.pruneTokensSaved)} (${summary.pruneRequests} context passes)
-  trim        ${formatTokens(summary.trimTokensSaved)} (${summary.trimmedRequests} calls)
-  concise     ${formatTokens(summary.concisenessTokensSaved)} (${summary.concisenessRequests} responses)
+Tokens saved  ${formatTokenCount(summary.tokensSaved)} total
+
+${chart}
+
 Cost saved    ~$${summary.costSaved.toFixed(4)}
 Avg latency   ${summary.avgLatencyMs}ms
 ─────────────────────────────────────

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest"
-import { StatsStore, logTrimResult, logConcisenessSavings, logOptimizationSavings } from "./stats.js"
+import { StatsStore, logTrimResult, logConcisenessSavings, logOptimizationSavings, closeSharedStores } from "./stats.js"
 import { openStatsSqlite } from "./sqlite-adapter.js"
 import { tmpdir } from "os"
 import { join } from "path"
@@ -13,6 +13,7 @@ describe("StatsStore", () => {
 
   afterEach(() => {
     store?.close()
+    closeSharedStores()
     try {
       rmSync(dbPath)
     } catch {
