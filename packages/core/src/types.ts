@@ -49,6 +49,10 @@ export interface Summary {
   compressTokensSaved: number
   pruneTokensSaved: number
   precallTokensSaved: number
+  /** Tokens that would have been used without ctxlite (tokensUsed + tokensSaved). */
+  tokensBefore: number
+  /** tokensSaved / tokensBefore * 100, i.e. the overall reduction percentage. */
+  savingsPercent: number
   costSaved: number
   avgLatencyMs: number
   period: string

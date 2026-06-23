@@ -78,6 +78,7 @@ export class StatsStore {
       prune: number
       precall: number
       saved: number
+      used: number
       trim_saved: number
       concise_saved: number
       compress_saved: number
@@ -94,6 +95,7 @@ export class StatsStore {
         SUM(CASE WHEN source = 'prune' THEN 1 ELSE 0 END)      as prune,
         SUM(CASE WHEN source = 'precall' THEN 1 ELSE 0 END)    as precall,
         COALESCE(SUM(tokens_saved), 0)                        as saved,
+        COALESCE(SUM(tokens_used), 0)                         as used,
         COALESCE(SUM(CASE WHEN source = 'trim' THEN tokens_saved ELSE 0 END), 0) as trim_saved,
         COALESCE(SUM(CASE WHEN source = 'concise' THEN tokens_saved ELSE 0 END), 0) as concise_saved,
         COALESCE(SUM(CASE WHEN source = 'compress' THEN tokens_saved ELSE 0 END), 0) as compress_saved,
@@ -117,6 +119,9 @@ export class StatsStore {
       since,
     )
 
+    const tokensSaved = row?.saved ?? 0
+    const tokensBefore = tokensSaved + (row?.used ?? 0)
+
     return {
       totalRequests: row?.total ?? 0,
       trimmedRequests: (row?.trimmed ?? 0) + (legacy?.trim_count ?? 0),
@@ -124,12 +129,14 @@ export class StatsStore {
       compressRequests: row?.compress ?? 0,
       pruneRequests: row?.prune ?? 0,
       precallRequests: row?.precall ?? 0,
-      tokensSaved: row?.saved ?? 0,
+      tokensSaved,
       trimTokensSaved: (row?.trim_saved ?? 0) + (legacy?.trim_saved ?? 0),
       concisenessTokensSaved: row?.concise_saved ?? 0,
       compressTokensSaved: row?.compress_saved ?? 0,
       pruneTokensSaved: row?.prune_saved ?? 0,
       precallTokensSaved: row?.precall_saved ?? 0,
+      tokensBefore,
+      savingsPercent: tokensBefore > 0 ? (tokensSaved / tokensBefore) * 100 : 0,
       costSaved: row?.cost ?? 0,
       avgLatencyMs: Math.round(row?.avg_lat ?? 0),
       period: since === 0 ? "all time" : "since " + new Date(since * 1000).toLocaleDateString(),

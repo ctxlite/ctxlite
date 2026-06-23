@@ -12,7 +12,7 @@ export function formatText(summary: Summary): string {
   return `
 ctxlite stats — ${summary.period}
 ─────────────────────────────────────
-Tokens saved  ${formatTokenCount(summary.tokensSaved)} total
+Tokens saved  ${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)
 
 ${chart}
 
@@ -37,6 +37,8 @@ export interface JsonExport {
   compressTokensSaved: number
   pruneTokensSaved: number
   precallTokensSaved: number
+  tokensBefore: number
+  savingsPercent: number
   costSavedUsd: number
   avgLatencyMs: number
 }
@@ -57,6 +59,8 @@ export function formatJson(summary: Summary): string {
     compressTokensSaved: summary.compressTokensSaved,
     pruneTokensSaved: summary.pruneTokensSaved,
     precallTokensSaved: summary.precallTokensSaved,
+    tokensBefore: summary.tokensBefore,
+    savingsPercent: summary.savingsPercent,
     costSavedUsd: summary.costSaved,
     avgLatencyMs: summary.avgLatencyMs,
   }

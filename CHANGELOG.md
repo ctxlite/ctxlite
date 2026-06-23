@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-06-23
+
+### Added
+- `Summary` now reports `tokensBefore` (tokens that would have been used without ctxlite: `tokensUsed + tokensSaved`) and `savingsPercent` (`tokensSaved / tokensBefore * 100`). Surfaced as "saved X of Y (Z%)" in the CLI, OpenCode `get_stats`, MCP `get_stats`, and the sidebar widget.
+
 ## [0.1.13] - 2026-06-23
 
 ### Added

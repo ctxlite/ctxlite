@@ -44,7 +44,7 @@ Returns a formatted report with: total requests, tokens saved, estimated cost sa
       const lines = [
         `## ctxlite stats — ${period}`,
         ``,
-        `**Tokens saved:** ${formatTokenCount(summary.tokensSaved)} total`,
+        `**Tokens saved:** ${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)`,
         "```",
         chart,
         "```",

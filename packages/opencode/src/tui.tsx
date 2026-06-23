@@ -26,7 +26,8 @@ function readSnapshot(): StatsSnapshot {
       .filter((row) => row.tokensSaved > 0)
       .map((row) => `${row.label.padEnd(9)} ${formatTokenCount(row.tokensSaved).padStart(6)}`)
 
-    return { totalLine: `${formatTokenCount(summary.tokensSaved)} saved`, rows }
+    const totalLine = `${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(0)}%)`
+    return { totalLine, rows }
   } catch {
     return { totalLine: "", rows: [] }
   } finally {

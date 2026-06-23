@@ -27,7 +27,7 @@ export async function handleGetStats(args: z.infer<typeof getStatsSchema>): Prom
     return [
       `## ctxlite stats — ${period}`,
       ``,
-      `**Tokens saved (total):** ${formatTokenCount(summary.tokensSaved)}`,
+      `**Tokens saved:** ${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)`,
       "```",
       chart,
       "```",

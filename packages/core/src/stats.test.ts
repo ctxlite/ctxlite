@@ -42,6 +42,8 @@ describe("StatsStore", () => {
     expect(summary.tokensSaved).toBe(600)
     expect(summary.trimmedRequests).toBe(1)
     expect(summary.trimTokensSaved).toBe(600)
+    expect(summary.tokensBefore).toBe(1000)
+    expect(summary.savingsPercent).toBeCloseTo(60, 5)
   })
 
   it("summary returns zero for empty db", () => {
@@ -50,6 +52,7 @@ describe("StatsStore", () => {
     const summary = store.summary()
     expect(summary.totalRequests).toBe(0)
     expect(summary.tokensSaved).toBe(0)
+    expect(summary.savingsPercent).toBe(0)
   })
 
   it("log does not throw on error", () => {
