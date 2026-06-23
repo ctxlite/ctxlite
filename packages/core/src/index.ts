@@ -55,8 +55,10 @@ export {
   formatJson,
   mergeMcpConfig,
   mergeOpenCodeConfig,
+  opencodePluginCacheDir,
   parseTools,
   planInstall,
+  refreshOpenCodePlugin,
   resolveConfigPath,
   runInstall,
   toolLabel,
@@ -70,4 +72,5 @@ export type {
   InstallTarget,
   InstallTool,
   McpServerEntry,
+  OpenCodeRefreshResult,
 } from "./install/index.js"

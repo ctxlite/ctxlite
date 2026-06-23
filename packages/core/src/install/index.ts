@@ -19,3 +19,5 @@ export type {
 export { buildTargets, resolveConfigPath, toolLabel } from "./paths.js"
 export { applyConfigChange, formatJson, mergeMcpConfig, mergeOpenCodeConfig } from "./merge.js"
 export { parseTools, planInstall, runInstall } from "./run.js"
+export { opencodePluginCacheDir, refreshOpenCodePlugin } from "./opencode-refresh.js"
+export type { OpenCodeRefreshResult } from "./opencode-refresh.js"

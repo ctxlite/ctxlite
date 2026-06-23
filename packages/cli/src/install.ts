@@ -3,6 +3,7 @@ import { stdin as input, stdout as output } from "node:process"
 import {
   ALL_TOOLS,
   planInstall,
+  refreshOpenCodePlugin,
   runInstall,
   parseTools,
   toolLabel,
@@ -234,6 +235,13 @@ export async function runInstallCommand(argv: string[]): Promise<number> {
   } else {
     process.stdout.write(`Done. Updated ${changed.length} file(s).\n`)
     process.stdout.write("Restart Cursor / OpenCode / Claude Code to load changes.\n")
+  }
+
+  if (!args.remove && tools.includes("opencode")) {
+    const refresh = await refreshOpenCodePlugin(args.scope)
+    if (refresh.attempted) {
+      process.stdout.write(`${refresh.message}.\n`)
+    }
   }
 
   return 0

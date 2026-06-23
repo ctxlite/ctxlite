@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-06-23
+
+### Fixed
+- `@ctxlite/cli install --tool opencode`: clears OpenCode's own stale plugin cache (`~/.cache/opencode/packages/@ctxlite`) and re-runs `opencode plugin @ctxlite/opencode --force` — OpenCode pins a plugin's "latest" resolution at first install and never re-resolves it on its own, so installs could get stuck on a months-old cached version even after publishing newer ones. Best-effort: no-ops if the `opencode` CLI isn't on PATH.
+
 ## [0.1.11] - 2026-06-23
 
 ### Fixed
