@@ -7,6 +7,19 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-06-23
+
+### Fixed
+- `@ctxlite/core`: hot-path stats loggers (`logTrimResult`, `logConcisenessSavings`, `logOptimizationSavings`) now reuse one writer connection per db path instead of opening/closing SQLite on every call — under concurrent tool calls this caused silent `database is locked` failures that dropped rows
+- `@ctxlite/core`: `PRAGMA busy_timeout` set on all three sqlite adapters (`bun:sqlite`, `better-sqlite3`, `node:sqlite`)
+
+### Changed
+- `@ctxlite/cli` / `@ctxlite/mcp` / `@ctxlite/opencode`: stats reports now render a shared ASCII bar chart breakdown instead of a plain list
+- Default `get_stats` / `ctxlite stats` period changed from `today` to `all`
+
+### Added
+- `@ctxlite/opencode`: TUI toast (`client.tui.showToast`) showing per-turn token savings as they happen, instead of requiring an explicit `get_stats` call
+
 ## [0.1.10] - 2026-06-22
 
 ### Added
