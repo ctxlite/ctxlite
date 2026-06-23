@@ -41,26 +41,82 @@ describe("StatsStore", () => {
       tokensSaved: 600,
       costSaved: 0.0018,
       latencyMs: 450,
-      source: "trim",
+      source: "compress",
     })
 
     let summary = store.summary()
     expect(summary.totalRequests).toBe(1)
     expect(summary.tokensSaved).toBe(600)
-    expect(summary.trimmedRequests).toBe(1)
-    expect(summary.trimTokensSaved).toBe(600)
+    expect(summary.compressRequests).toBe(1)
+    expect(summary.compressTokensSaved).toBe(600)
+    expect(summary.realtimeTokensSaved).toBe(600)
     // No session-usage rows logged yet — savingsPercent has no "total" to compare against.
     expect(summary.sessionTokensUsed).toBe(0)
     expect(summary.tokensBefore).toBe(600)
     expect(summary.savingsPercent).toBeCloseTo(100, 5)
 
-    logSessionUsage({ messageId: "msg-1", inputTokens: 2000 }, dbPath)
+    logSessionUsage({ messageId: "msg-1", inputTokens: 2000, outputTokens: 0 }, dbPath)
 
     summary = store.summary()
     expect(summary.totalRequests).toBe(1) // session-usage rows are not "requests"
     expect(summary.sessionTokensUsed).toBe(2000)
     expect(summary.tokensBefore).toBe(2600)
     expect(summary.savingsPercent).toBeCloseTo((600 / 2600) * 100, 5)
+  })
+
+  it("excludes trim from realtimeTokensSaved/savingsPercent (no real session baseline)", () => {
+    dbPath = tmpDb()
+    store = new StatsStore(dbPath)
+
+    store.log({
+      upstream: "opencode",
+      cacheHit: false,
+      tokensIn: 10000,
+      tokensUsed: 2000,
+      tokensOut: 0,
+      tokensSaved: 8000,
+      costSaved: 0.024,
+      latencyMs: 0,
+      source: "trim",
+    })
+    store.log({
+      upstream: "opencode",
+      cacheHit: false,
+      tokensIn: 1000,
+      tokensUsed: 400,
+      tokensOut: 400,
+      tokensSaved: 600,
+      costSaved: 0.0018,
+      latencyMs: 0,
+      source: "compress",
+    })
+    logSessionUsage({ messageId: "msg-1", inputTokens: 5000, outputTokens: 0 }, dbPath)
+
+    const summary = store.summary()
+    expect(summary.tokensSaved).toBe(8600) // trim + compress
+    expect(summary.trimTokensSaved).toBe(8000)
+    expect(summary.realtimeTokensSaved).toBe(600) // trim excluded
+    expect(summary.tokensBefore).toBe(5600) // 600 + 5000, not 8600 + 5000
+    expect(summary.savingsPercent).toBeCloseTo((600 / 5600) * 100, 5)
+  })
+
+  it("compares concise (output) savings against output session usage, not input", () => {
+    dbPath = tmpDb()
+    store = new StatsStore(dbPath)
+
+    logConcisenessSavings(
+      { messageId: "msg-1", providerId: "anthropic", inputTokens: 100, outputTokens: 1000, reasoningTokens: 0 },
+      dbPath,
+    )
+    // 15% of 1000 = 150 saved
+    logSessionUsage({ messageId: "msg-1", inputTokens: 50000, outputTokens: 850 }, dbPath)
+
+    const summary = store.summary()
+    expect(summary.concisenessTokensSaved).toBe(150)
+    expect(summary.realtimeTokensSaved).toBe(150)
+    // before = (concise 150 + output used 850) + (0 input savings + 50000 input used)
+    expect(summary.tokensBefore).toBe(150 + 850 + 50000)
+    expect(summary.savingsPercent).toBeCloseTo((150 / (150 + 850 + 50000)) * 100, 5)
   })
 
   it("summary returns zero for empty db", () => {
@@ -197,7 +253,7 @@ describe("StatsStore", () => {
       { source: "compress", upstream: "opencode", tokensIn: 1000, tokensOut: 700, id: "compress-1" },
       dbPath,
     )
-    logSessionUsage({ messageId: "msg-1", inputTokens: 5000 }, dbPath)
+    logSessionUsage({ messageId: "msg-1", inputTokens: 5000, outputTokens: 0 }, dbPath)
 
     store = new StatsStore(dbPath)
     const summary = store.summary()
@@ -207,14 +263,14 @@ describe("StatsStore", () => {
     expect(summary.tokensBefore).toBe(5300)
 
     // duplicate message id is ignored
-    logSessionUsage({ messageId: "msg-1", inputTokens: 5000 }, dbPath)
+    logSessionUsage({ messageId: "msg-1", inputTokens: 5000, outputTokens: 0 }, dbPath)
     expect(store.summary().sessionTokensUsed).toBe(5000)
     store.close()
   })
 
-  it("logSessionUsage skips zero/negative input tokens", () => {
+  it("logSessionUsage skips zero/negative input and output tokens", () => {
     dbPath = tmpDb()
-    logSessionUsage({ messageId: "msg-1", inputTokens: 0 }, dbPath)
+    logSessionUsage({ messageId: "msg-1", inputTokens: 0, outputTokens: 0 }, dbPath)
 
     store = new StatsStore(dbPath)
     expect(store.summary().sessionTokensUsed).toBe(0)

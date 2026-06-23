@@ -7,6 +7,14 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.21] - 2026-06-23
+
+### Fixed
+- `savingsPercent` was showing a misleading 100% (reported by the user on two machines, "456K of 456K" and "1.1M of 1.1M"). Root cause was two compounding measurement mismatches:
+  1. `trim_context` measures savings against candidate files the agent chose to evaluate, not files that were necessarily about to enter context — it has no real session baseline to compare against, unlike compress/prune/compact/precall/smart_read (all measured before/after on content actually entering a request). Heavy `trim_context` use dominated the numerator.
+  2. `concise` saves *output* tokens but was being weighed against an *input-only* session baseline (`sessionTokensUsed` only tracked `tokens.input`).
+- `trim_context`'s savings are now excluded from `savingsPercent`'s numerator (new `Summary.realtimeTokensSaved` field — still shown on its own in the breakdown) and `logSessionUsage` now tracks output/reasoning tokens too (`tokens_out` on the same `session` row), so input-side and output-side savings are each compared against their own matching baseline before being combined. Verified against a simulated realistic session: dropped from a false 100% to a plausible 34.5%.
+
 ## [0.1.20] - 2026-06-23
 
 ### Added

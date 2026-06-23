@@ -19,6 +19,7 @@ const emptySummary: Summary = {
   compactTokensSaved: 0,
   smartReadRequests: 0,
   smartReadTokensSaved: 0,
+  realtimeTokensSaved: 0,
   sessionTokensUsed: 0,
   tokensBefore: 0,
   savingsPercent: 0,
@@ -44,9 +45,10 @@ const fullSummary: Summary = {
   compactTokensSaved: 18000,
   smartReadRequests: 8,
   smartReadTokensSaved: 22000,
-  sessionTokensUsed: 658800,
+  realtimeTokensSaved: 500000,
+  sessionTokensUsed: 700000,
   tokensBefore: 1200000,
-  savingsPercent: 45.1,
+  savingsPercent: 41.7,
   costSaved: 1.6236,
   avgLatencyMs: 12,
   period: "last 7 days",
@@ -61,12 +63,12 @@ describe("formatText", () => {
 
   it("formats tokens in K for large numbers", () => {
     const out = formatText(fullSummary)
-    expect(out).toContain("541.2K")
+    expect(out).toContain("500.0K")
   })
 
   it("includes all key metrics", () => {
     const out = formatText(fullSummary)
-    expect(out).toContain("541.2K")
+    expect(out).toContain("500.0K")
     expect(out).toContain("150.0K")
     expect(out).toContain("50.0K")
     expect(out).toContain("120 tool outputs")

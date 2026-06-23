@@ -125,8 +125,14 @@ export class StatsStore {
       since,
     )
 
-    const session = this.db.get<{ session_used: number }>(
-      `SELECT COALESCE(SUM(tokens_used), 0) as session_used
+    // tokens_used = real per-turn input tokens, tokens_out = real per-turn
+    // output+reasoning tokens (see logSessionUsage). Tracked separately
+    // because they must be compared against matching savings (input-side vs
+    // output-side) before being combined — see below.
+    const session = this.db.get<{ session_input_used: number; session_output_used: number }>(
+      `SELECT
+        COALESCE(SUM(tokens_used), 0) as session_input_used,
+        COALESCE(SUM(tokens_out), 0)  as session_output_used
        FROM requests
        WHERE (? = 0 OR ts >= ?) AND source = 'session'`,
       since,
@@ -134,8 +140,29 @@ export class StatsStore {
     )
 
     const tokensSaved = row?.saved ?? 0
-    const sessionTokensUsed = session?.session_used ?? 0
-    const tokensBefore = tokensSaved + sessionTokensUsed
+    const trimTokensSaved = (row?.trim_saved ?? 0) + (legacy?.trim_saved ?? 0)
+    const concisenessTokensSaved = row?.concise_saved ?? 0
+
+    // trim_context measures savings against candidate files the agent chose
+    // to evaluate, not files that were necessarily about to enter context —
+    // unlike compress/prune/compact/precall/smart_read (measured before/after
+    // on content actually entering a request) it has no real session
+    // baseline to compare against, so it's excluded from this ratio (still
+    // shown on its own in the breakdown). Heavy trim_context use would
+    // otherwise dominate the numerator and push savingsPercent toward a
+    // misleading 100%.
+    //
+    // concise saves OUTPUT tokens, everything else saves INPUT tokens — each
+    // side is compared against its own matching session baseline before
+    // being combined, so output savings can't be weighed against an
+    // input-only denominator (or vice versa).
+    const inputTokensSaved = tokensSaved - trimTokensSaved - concisenessTokensSaved
+    const sessionInputTokensUsed = session?.session_input_used ?? 0
+    const sessionOutputTokensUsed = session?.session_output_used ?? 0
+    const sessionTokensUsed = sessionInputTokensUsed + sessionOutputTokensUsed
+    const realtimeTokensSaved = inputTokensSaved + concisenessTokensSaved
+    const tokensBefore =
+      inputTokensSaved + sessionInputTokensUsed + concisenessTokensSaved + sessionOutputTokensUsed
 
     return {
       totalRequests: row?.total ?? 0,
@@ -154,9 +181,10 @@ export class StatsStore {
       compactTokensSaved: row?.compact_saved ?? 0,
       smartReadRequests: row?.smart_read ?? 0,
       smartReadTokensSaved: row?.smart_read_saved ?? 0,
+      realtimeTokensSaved,
       sessionTokensUsed,
       tokensBefore,
-      savingsPercent: tokensBefore > 0 ? (tokensSaved / tokensBefore) * 100 : 0,
+      savingsPercent: tokensBefore > 0 ? (realtimeTokensSaved / tokensBefore) * 100 : 0,
       costSaved: row?.cost ?? 0,
       avgLatencyMs: Math.round(row?.avg_lat ?? 0),
       period: since === 0 ? "all time" : "since " + new Date(since * 1000).toLocaleDateString(),
@@ -322,14 +350,20 @@ export function logOptimizationSavings(entry: OptimizationLog, dbPath?: string):
 }
 
 /**
- * Persist the actual input tokens sent to the model for one completed turn.
- * Not a saving by itself — used as the denominator for savingsPercent, so
- * "X% saved" is relative to real session traffic instead of just the subset
- * of content ctxlite touched. INSERT OR IGNORE on messageId — safe across
- * duplicate events.
+ * Persist the actual input and output/reasoning tokens sent to/from the
+ * model for one completed turn. Not a saving by itself — used as the
+ * denominator for savingsPercent, so "X% saved" is relative to real session
+ * traffic instead of just the subset of content ctxlite touched. Tracked
+ * separately (tokensUsed = input, tokensOut = output) because input-side
+ * savings (compress/prune/compact/precall/smart_read) and output-side
+ * savings (concise) must each compare against their own matching baseline.
+ * INSERT OR IGNORE on messageId — safe across duplicate events.
  */
-export function logSessionUsage(entry: { messageId: string; inputTokens: number }, dbPath?: string): void {
-  if (entry.inputTokens <= 0) {
+export function logSessionUsage(
+  entry: { messageId: string; inputTokens: number; outputTokens: number },
+  dbPath?: string,
+): void {
+  if (entry.inputTokens <= 0 && entry.outputTokens <= 0) {
     return
   }
 
@@ -340,7 +374,7 @@ export function logSessionUsage(entry: { messageId: string; inputTokens: number 
         cacheHit: false,
         tokensIn: entry.inputTokens,
         tokensUsed: entry.inputTokens,
-        tokensOut: 0,
+        tokensOut: entry.outputTokens,
         tokensSaved: 0,
         costSaved: 0,
         latencyMs: 0,

@@ -53,11 +53,20 @@ export interface Summary {
   compactTokensSaved: number
   smartReadRequests: number
   smartReadTokensSaved: number
-  /** Actual input tokens sent to the model across the session (from message.updated events) — already reduced by ctxlite, not a hypothetical. */
+  /**
+   * tokensSaved minus trimTokensSaved. trim_context measures savings against
+   * candidate files the agent chose to evaluate, not files that were
+   * necessarily about to enter context, so it has no real session baseline
+   * to compare against — excluded here, used as the numerator for
+   * tokensBefore/savingsPercent instead of tokensSaved. Still shown on its
+   * own in the breakdown.
+   */
+  realtimeTokensSaved: number
+  /** Actual input + output/reasoning tokens sent to/from the model across the session (from message.updated events) — already reduced by ctxlite, not a hypothetical. */
   sessionTokensUsed: number
-  /** Tokens that would have flowed through without ctxlite: tokensSaved + sessionTokensUsed. */
+  /** Tokens that would have flowed through without ctxlite: realtimeTokensSaved + sessionTokensUsed. */
   tokensBefore: number
-  /** tokensSaved / tokensBefore * 100 — savings relative to total session traffic, not just the subset ctxlite touched. */
+  /** realtimeTokensSaved / tokensBefore * 100 — savings relative to total session traffic, not just the subset ctxlite touched, and not inflated by trim_context's speculative accounting. */
   savingsPercent: number
   costSaved: number
   avgLatencyMs: number

@@ -66,13 +66,16 @@ export function formatTokenCount(n: number): string {
 /**
  * "X of Y (Z%)", or a baseline notice when no session traffic has been
  * tracked yet (sessionTokensUsed === 0) — otherwise savingsPercent reads as
- * a misleading 100%, since tokensBefore degrades to just tokensSaved.
+ * a misleading 100%, since tokensBefore would degrade to just
+ * realtimeTokensSaved. Uses realtimeTokensSaved (excludes trim_context), not
+ * tokensSaved, to match what tokensBefore/savingsPercent are actually based
+ * on — trim_context's number is still visible on its own in the breakdown.
  */
 export function formatSavingsLine(summary: Summary): string {
   if (summary.sessionTokensUsed === 0) {
     return `${formatTokenCount(summary.tokensSaved)} saved (no session baseline yet)`
   }
-  return `${formatTokenCount(summary.tokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)`
+  return `${formatTokenCount(summary.realtimeTokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)`
 }
 
 const BAR_WIDTH = 20

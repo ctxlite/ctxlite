@@ -64,7 +64,10 @@ export function createStatsEventHandler(client?: ToastClient): (input: { event: 
       dbPath,
     )
 
-    logSessionUsage({ messageId: info.id, inputTokens: info.tokens.input }, dbPath)
+    logSessionUsage(
+      { messageId: info.id, inputTokens: info.tokens.input, outputTokens: info.tokens.output + info.tokens.reasoning },
+      dbPath,
+    )
 
     if (!client) {
       return

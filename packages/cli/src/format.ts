@@ -37,6 +37,11 @@ export interface JsonExport {
   compressTokensSaved: number
   pruneTokensSaved: number
   precallTokensSaved: number
+  compactRequests: number
+  compactTokensSaved: number
+  smartReadRequests: number
+  smartReadTokensSaved: number
+  realtimeTokensSaved: number
   tokensBefore: number
   savingsPercent: number
   costSavedUsd: number
@@ -59,6 +64,11 @@ export function formatJson(summary: Summary): string {
     compressTokensSaved: summary.compressTokensSaved,
     pruneTokensSaved: summary.pruneTokensSaved,
     precallTokensSaved: summary.precallTokensSaved,
+    compactRequests: summary.compactRequests,
+    compactTokensSaved: summary.compactTokensSaved,
+    smartReadRequests: summary.smartReadRequests,
+    smartReadTokensSaved: summary.smartReadTokensSaved,
+    realtimeTokensSaved: summary.realtimeTokensSaved,
     tokensBefore: summary.tokensBefore,
     savingsPercent: summary.savingsPercent,
     costSavedUsd: summary.costSaved,
