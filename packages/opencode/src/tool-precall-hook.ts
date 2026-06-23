@@ -36,6 +36,8 @@ export function createToolPrecallHook(): (
           tokensIn: result.estimatedTokensSaved,
           tokensOut: 0,
           id: `precall-block-${input.callID}`,
+          host: "opencode",
+          sessionId: input.sessionID,
         },
         dbPath,
       )

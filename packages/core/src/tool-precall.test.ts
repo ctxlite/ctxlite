@@ -19,6 +19,30 @@ describe("optimizeBashCommand", () => {
     const result = optimizeBashCommand("npm test --silent")
     expect(result.modified).toBe(false)
   })
+
+  it("does not rewrite a piped command (regression: flag was landing on the wrong command)", () => {
+    // appendFlag used to stick the flag on the end of the whole string,
+    // turning this into `... | tail -20 --loglevel=warn`, which breaks tail.
+    const result = optimizeBashCommand("npm run build 2>&1 | tail -20")
+    expect(result.modified).toBe(false)
+    expect(result.args.command).toBe("npm run build 2>&1 | tail -20")
+  })
+
+  it("does not rewrite a chained command (regression: same root cause, && instead of |)", () => {
+    const result = optimizeBashCommand("npm test && echo done")
+    expect(result.modified).toBe(false)
+  })
+
+  it("does not rewrite when the matched command isn't the last one in a semicolon list", () => {
+    const result = optimizeBashCommand("npm test; echo done")
+    expect(result.modified).toBe(false)
+  })
+
+  it("still rewrites a simple command with no chaining", () => {
+    const result = optimizeBashCommand("npm run build")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--loglevel=warn")
+  })
 })
 
 describe("optimizeReadPath", () => {

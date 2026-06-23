@@ -1,31 +1,33 @@
 import { z } from "zod"
 import { StatsStore, buildStatsBreakdown, formatSavingsLine, renderStatsBarChart } from "@ctxlite/core"
-import { STATS_DB_PATH } from "../shared.js"
+import { STATS_DB_PATH, MCP_PROCESS_SESSION_ID } from "../shared.js"
 
 export const getStatsSchema = z.object({
   period: z
     .enum(["session", "today", "7d", "30d", "all"])
     .optional()
-    .describe("Time period. Default: all"),
+    .describe(
+      "Time period, across all sessions. Default: current session only — note MCP has no real session id, so this approximates to the lifetime of this server process.",
+    ),
 })
 
 export async function handleGetStats(args: z.infer<typeof getStatsSchema>): Promise<string> {
-  const period = args.period ?? "all"
+  const period = args.period
   let store: StatsStore | null = null
 
   try {
     store = new StatsStore(STATS_DB_PATH)
-    const since = periodToTimestamp(period)
-    const summary = store.summary(since)
+    const label = period ?? "current session"
+    const summary = period ? store.summary(periodToTimestamp(period)) : store.summaryForSession("mcp", MCP_PROCESS_SESSION_ID)
 
     if (summary.totalRequests === 0) {
-      return `## ctxlite stats — ${period}\n\nNo requests recorded yet.`
+      return `## ctxlite stats — ${label}\n\nNo requests recorded yet.`
     }
 
     const chart = renderStatsBarChart(buildStatsBreakdown(summary)).join("\n")
 
     return [
-      `## ctxlite stats — ${period}`,
+      `## ctxlite stats — ${label}`,
       ``,
       `**Tokens saved:** ${formatSavingsLine(summary)}`,
       "```",

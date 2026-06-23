@@ -15,7 +15,7 @@ import { getStatsDbPath } from "./stats-path.js"
  * Tool `get_stats` — session token savings report.
  */
 export const getStatsTool: ToolDefinition = tool({
-  description: `Returns ctxlite token savings statistics for the current session or a specified period.
+  description: `Returns ctxlite token savings statistics for the current session, or a specified time period across all sessions.
 Call this when the user asks about token usage, savings, costs, or ctxlite performance.
 Returns a formatted report with: total requests, tokens saved, estimated cost saved.`,
 
@@ -23,26 +23,26 @@ Returns a formatted report with: total requests, tokens saved, estimated cost sa
     period: tool.schema
       .enum(["session", "today", "7d", "30d", "all"])
       .optional()
-      .describe("Time period for stats. Default: all"),
+      .describe("Time period for stats, across all sessions. Default: current session only."),
   },
 
-  async execute({ period = "all" }) {
+  async execute({ period }, context) {
     let store: StatsStore | null = null
 
     try {
       store = new StatsStore(getStatsDbPath())
 
-      const since = periodToTimestamp(period)
-      const summary = store.summary(since)
+      const label = period ?? "current session"
+      const summary = period ? store.summary(periodToTimestamp(period)) : store.summaryForSession("opencode", context.sessionID)
 
       if (summary.totalRequests === 0) {
-        return `## ctxlite stats — ${period}\n\nNo requests recorded yet for this period.`
+        return `## ctxlite stats — ${label}\n\nNo requests recorded yet for this period.`
       }
 
       const chart = renderStatsBarChart(buildStatsBreakdown(summary)).join("\n")
 
       const lines = [
-        `## ctxlite stats — ${period}`,
+        `## ctxlite stats — ${label}`,
         ``,
         `**Tokens saved:** ${formatSavingsLine(summary)}`,
         "```",
@@ -88,7 +88,7 @@ Provide the files you're considering including and your current task description
       .describe("Maximum tokens budget for selected files. Default: 4096"),
   },
 
-  async execute({ files, query, maxTokens = 4096 }) {
+  async execute({ files, query, maxTokens = 4096 }, context) {
     const codeFiles = files.map((f) => ({
       path: f.path,
       content: f.content,
@@ -97,7 +97,7 @@ Provide the files you're considering including and your current task description
     }))
 
     const result = trimFiles(codeFiles, query, { maxTokens })
-    logTrimResult(result, "opencode")
+    logTrimResult(result, "opencode", getStatsDbPath(), context.sessionID)
 
     if (result.tokensSaved === 0) {
       return `All ${files.length} files are relevant — no trimming needed.`

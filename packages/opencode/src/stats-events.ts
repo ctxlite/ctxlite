@@ -41,7 +41,10 @@ async function updateSessionTitle(client: ToastClient, sessionID: string, total:
  */
 export function createStatsEventHandler(client?: ToastClient): (input: { event: Event }) => Promise<void> {
   const dbPath = getStatsDbPath()
-  let lastTotal: number | null = null
+  // Keyed by sessionID — a single plugin instance can field events from
+  // multiple sessions (switching chat tabs), so one shared counter would
+  // compare one session's delta against a different session's baseline.
+  const lastTotalBySession = new Map<string, number>()
 
   return async ({ event }) => {
     if (event.type !== "message.updated") {
@@ -60,12 +63,20 @@ export function createStatsEventHandler(client?: ToastClient): (input: { event: 
         inputTokens: info.tokens.input,
         outputTokens: info.tokens.output,
         reasoningTokens: info.tokens.reasoning,
+        host: "opencode",
+        sessionId: info.sessionID,
       },
       dbPath,
     )
 
     logSessionUsage(
-      { messageId: info.id, inputTokens: info.tokens.input, outputTokens: info.tokens.output + info.tokens.reasoning },
+      {
+        messageId: info.id,
+        inputTokens: info.tokens.input,
+        outputTokens: info.tokens.output + info.tokens.reasoning,
+        host: "opencode",
+        sessionId: info.sessionID,
+      },
       dbPath,
     )
 
@@ -76,17 +87,18 @@ export function createStatsEventHandler(client?: ToastClient): (input: { event: 
     let store: StatsStore | null = null
     try {
       store = new StatsStore(dbPath)
-      const total = store.summary(0).tokensSaved
+      const total = store.summaryForSession("opencode", info.sessionID).tokensSaved
 
-      // First completed turn after plugin load — set the baseline so we
-      // don't dump all-time history into one toast.
-      if (lastTotal === null) {
-        lastTotal = total
+      // First completed turn seen for this session — set the baseline so we
+      // don't dump pre-existing session history into one toast.
+      const lastTotal = lastTotalBySession.get(info.sessionID)
+      if (lastTotal === undefined) {
+        lastTotalBySession.set(info.sessionID, total)
         return
       }
 
       const delta = total - lastTotal
-      lastTotal = total
+      lastTotalBySession.set(info.sessionID, total)
       if (delta <= 0) {
         return
       }

@@ -35,7 +35,10 @@ export const smartReadTool: ToolDefinition = tool({
       if (symbols !== null) {
         const tokensOut = estimateTokens(symbols)
         if (tokensOut < tokensIn) {
-          logOptimizationSavings({ source: "smart_read", upstream: "opencode", tokensIn, tokensOut }, dbPath)
+          logOptimizationSavings(
+            { source: "smart_read", upstream: "opencode", tokensIn, tokensOut, host: "opencode", sessionId: context.sessionID },
+            dbPath,
+          )
         }
         return { title: `smart_read ${path} (symbols)`, output: symbols }
       }
@@ -44,7 +47,14 @@ export const smartReadTool: ToolDefinition = tool({
     const result = compressToolOutput(content, { minTokens: 1, maxChars: budget * 4 })
     if (result.compressed) {
       logOptimizationSavings(
-        { source: "smart_read", upstream: "opencode", tokensIn: result.tokensIn, tokensOut: result.tokensOut },
+        {
+          source: "smart_read",
+          upstream: "opencode",
+          tokensIn: result.tokensIn,
+          tokensOut: result.tokensOut,
+          host: "opencode",
+          sessionId: context.sessionID,
+        },
         dbPath,
       )
     }

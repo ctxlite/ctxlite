@@ -8,12 +8,14 @@ import { compressToolOutput, defaultDbPath, logOptimizationSavings, optimizeTool
 interface PreToolUseInput {
   tool_name?: string
   tool_input?: Record<string, unknown>
+  session_id?: string
 }
 
 interface PostToolUseInput {
   tool_name?: string
   tool_input?: Record<string, unknown>
   tool_output?: unknown
+  session_id?: string
 }
 
 async function readStdin(stream: AsyncIterable<Buffer | string>): Promise<string> {
@@ -75,7 +77,14 @@ export async function runPreToolUseHook(stdin: AsyncIterable<Buffer | string> = 
 
     if (result.blocked) {
       logOptimizationSavings(
-        { source: "precall", upstream: "claude-code", tokensIn: result.estimatedTokensSaved, tokensOut: 0 },
+        {
+          source: "precall",
+          upstream: "claude-code",
+          tokensIn: result.estimatedTokensSaved,
+          tokensOut: 0,
+          host: "claude-code",
+          sessionId: input.session_id,
+        },
         dbPath,
       )
       writeJson({
@@ -90,7 +99,14 @@ export async function runPreToolUseHook(stdin: AsyncIterable<Buffer | string> = 
 
     if (result.modified) {
       logOptimizationSavings(
-        { source: "precall", upstream: "claude-code", tokensIn: result.estimatedTokensSaved, tokensOut: 0 },
+        {
+          source: "precall",
+          upstream: "claude-code",
+          tokensIn: result.estimatedTokensSaved,
+          tokensOut: 0,
+          host: "claude-code",
+          sessionId: input.session_id,
+        },
         dbPath,
       )
       writeJson({
@@ -121,7 +137,14 @@ export async function runPostToolUseHook(stdin: AsyncIterable<Buffer | string> =
     }
 
     logOptimizationSavings(
-      { source: "compress", upstream: "claude-code", tokensIn: result.tokensIn, tokensOut: result.tokensOut },
+      {
+        source: "compress",
+        upstream: "claude-code",
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut,
+        host: "claude-code",
+        sessionId: input.session_id,
+      },
       defaultDbPath(),
     )
     writeJson({

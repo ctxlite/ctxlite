@@ -34,6 +34,19 @@ export interface RequestLog {
   latencyMs: number
   /** trim | concise | compress | prune | precall | compact | smart_read | cache | session */
   source?: "trim" | "concise" | "compress" | "prune" | "precall" | "compact" | "smart_read" | "cache" | "session"
+  /** opencode | claude-code | cursor | mcp — which integration produced this row, for per-session/per-host reporting. */
+  host?: string | undefined
+  /** Real session/conversation id when the host exposes one (OpenCode, Claude Code, Cursor hooks); absent for MCP tool calls. */
+  sessionId?: string | undefined
+}
+
+export interface SessionBreakdownRow {
+  host: string
+  sessionId: string | null
+  totalRequests: number
+  tokensSaved: number
+  firstTs: number
+  lastTs: number
 }
 
 export interface Summary {

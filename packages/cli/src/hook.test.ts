@@ -11,7 +11,7 @@ vi.mock("os", async (importOriginal) => {
 })
 
 const { runPreToolUseHook, runPostToolUseHook } = await import("./hook.js")
-const { closeSharedStores } = await import("@ctxlite/core")
+const { closeSharedStores, StatsStore } = await import("@ctxlite/core")
 
 async function* stdinOf(value: unknown): AsyncIterable<string> {
   yield JSON.stringify(value)
@@ -90,6 +90,23 @@ describe("runPreToolUseHook", () => {
     } finally {
       out.restore()
     }
+  })
+
+  it("tags the logged row with host=claude-code and the real session_id", async () => {
+    const out = captureStdout()
+    try {
+      await runPreToolUseHook(
+        stdinOf({ tool_name: "Bash", tool_input: { command: "npm test" }, session_id: "ses-cc-1" }),
+      )
+    } finally {
+      out.restore()
+    }
+
+    const { defaultDbPath } = await import("@ctxlite/core")
+    const store = new StatsStore(defaultDbPath())
+    const summary = store.summaryForSession("claude-code", "ses-cc-1")
+    expect(summary.totalRequests).toBe(1)
+    store.close()
   })
 })
 

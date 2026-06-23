@@ -1,5 +1,24 @@
-import { describe, it, expect } from "vitest"
-import { handleTrimContext } from "./trim-context.js"
+import { describe, it, expect, afterAll, vi } from "vitest"
+import { mkdtempSync, rmSync } from "fs"
+import { tmpdir } from "os"
+import { join } from "path"
+
+// shared.ts computes STATS_DB_PATH from homedir() once, at import time — the
+// fake homedir must exist before that import happens, or this test suite
+// writes real rows into the user's actual ~/.ctxlite/stats.db on every run.
+const tmpHome = mkdtempSync(join(tmpdir(), "ctxlite-mcp-trim-context-home-"))
+vi.mock("os", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("os")>()
+  return { ...actual, homedir: () => tmpHome }
+})
+
+const { handleTrimContext } = await import("./trim-context.js")
+const { closeSharedStores } = await import("@ctxlite/core")
+
+afterAll(() => {
+  closeSharedStores()
+  rmSync(tmpHome, { recursive: true, force: true })
+})
 
 describe("handleTrimContext", () => {
   const authFile = {

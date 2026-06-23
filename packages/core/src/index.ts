@@ -35,7 +35,14 @@ export {
 } from "./stats.js"
 export type { ConcisenessLog, OptimizationLog } from "./stats.js"
 
-export { buildStatsBreakdown, formatSavingsLine, formatTokenCount, renderStatsBarChart } from "./report.js"
+export {
+  buildStatsBreakdown,
+  formatSavingsLine,
+  formatTokenCount,
+  hostLabel,
+  renderSessionBreakdown,
+  renderStatsBarChart,
+} from "./report.js"
 export type { StatsBreakdownRow } from "./report.js"
 
 export type {
@@ -45,6 +52,7 @@ export type {
   RequestLog,
   Summary,
   CacheStats,
+  SessionBreakdownRow,
 } from "./types.js"
 
 export {

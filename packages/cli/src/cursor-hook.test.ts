@@ -11,7 +11,7 @@ vi.mock("os", async (importOriginal) => {
 })
 
 const { runCursorPreToolUseHook } = await import("./cursor-hook.js")
-const { closeSharedStores } = await import("@ctxlite/core")
+const { closeSharedStores, StatsStore, defaultDbPath } = await import("@ctxlite/core")
 
 async function* stdinOf(value: unknown): AsyncIterable<string> {
   yield JSON.stringify(value)
@@ -89,5 +89,21 @@ describe("runCursorPreToolUseHook", () => {
     } finally {
       out.restore()
     }
+  })
+
+  it("tags the logged row with host=cursor and the real conversation_id", async () => {
+    const out = captureStdout()
+    try {
+      await runCursorPreToolUseHook(
+        stdinOf({ tool_name: "Shell", tool_input: { command: "npm test" }, conversation_id: "conv-1" }),
+      )
+    } finally {
+      out.restore()
+    }
+
+    const store = new StatsStore(defaultDbPath())
+    const summary = store.summaryForSession("cursor", "conv-1")
+    expect(summary.totalRequests).toBe(1)
+    store.close()
   })
 })

@@ -1,6 +1,6 @@
 /** @jsxImportSource @opentui/solid */
-import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@opencode-ai/plugin/tui"
-import { createSignal, onCleanup, Show } from "solid-js"
+import type { TuiPlugin, TuiPluginApi, TuiPluginModule, TuiSlotContext } from "@opencode-ai/plugin/tui"
+import { createEffect, createSignal, onCleanup, Show } from "solid-js"
 import { StatsStore, buildStatsBreakdown, formatSavingsLine, renderStatsBarChart } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
 
@@ -14,11 +14,12 @@ interface StatsSnapshot {
   costLine: string
 }
 
-function readSnapshot(): StatsSnapshot {
+/** Current session only, not all-time — the sidebar should reflect what this session has saved, not an ever-growing total. */
+function readSnapshot(sessionID: string): StatsSnapshot {
   let store: StatsStore | null = null
   try {
     store = new StatsStore(getStatsDbPath())
-    const summary = store.summary(0)
+    const summary = store.summaryForSession("opencode", sessionID)
     if (summary.totalRequests === 0) {
       return { totalLine: "no savings yet", rows: [], costLine: "" }
     }
@@ -34,10 +35,17 @@ function readSnapshot(): StatsSnapshot {
   }
 }
 
-function SidebarStats(props: { api: TuiPluginApi }) {
-  const [snapshot, setSnapshot] = createSignal<StatsSnapshot>(readSnapshot())
+function SidebarStats(props: { api: TuiPluginApi; sessionID: string }) {
+  const [snapshot, setSnapshot] = createSignal<StatsSnapshot>(readSnapshot(props.sessionID))
 
-  const interval = setInterval(() => setSnapshot(readSnapshot()), REFRESH_INTERVAL_MS)
+  // Re-reads immediately when the visible session changes (e.g. switching
+  // chat tabs) — sessionID is a Solid prop, so this effect re-runs whenever
+  // it does, not just on the polling interval below.
+  createEffect(() => {
+    setSnapshot(readSnapshot(props.sessionID))
+  })
+
+  const interval = setInterval(() => setSnapshot(readSnapshot(props.sessionID)), REFRESH_INTERVAL_MS)
   onCleanup(() => clearInterval(interval))
 
   return (
@@ -67,8 +75,8 @@ const tui: TuiPlugin = async (api) => {
   api.slots.register({
     order: SIDEBAR_ORDER,
     slots: {
-      sidebar_content() {
-        return <SidebarStats api={api} />
+      sidebar_content(_ctx: TuiSlotContext, props: { session_id: string }) {
+        return <SidebarStats api={api} sessionID={props.session_id} />
       },
     },
   })

@@ -11,6 +11,7 @@ import { defaultDbPath, logOptimizationSavings, optimizeToolArgs } from "@ctxlit
 interface CursorPreToolUseInput {
   tool_name?: string
   tool_input?: Record<string, unknown>
+  conversation_id?: string
 }
 
 async function readStdin(stream: AsyncIterable<Buffer | string>): Promise<string> {
@@ -46,7 +47,14 @@ export async function runCursorPreToolUseHook(
 
     if (result.blocked) {
       logOptimizationSavings(
-        { source: "precall", upstream: "cursor", tokensIn: result.estimatedTokensSaved, tokensOut: 0 },
+        {
+          source: "precall",
+          upstream: "cursor",
+          tokensIn: result.estimatedTokensSaved,
+          tokensOut: 0,
+          host: "cursor",
+          sessionId: input.conversation_id,
+        },
         dbPath,
       )
       writeJson({
@@ -58,7 +66,14 @@ export async function runCursorPreToolUseHook(
 
     if (result.modified) {
       logOptimizationSavings(
-        { source: "precall", upstream: "cursor", tokensIn: result.estimatedTokensSaved, tokensOut: 0 },
+        {
+          source: "precall",
+          upstream: "cursor",
+          tokensIn: result.estimatedTokensSaved,
+          tokensOut: 0,
+          host: "cursor",
+          sessionId: input.conversation_id,
+        },
         dbPath,
       )
       writeJson({ updated_input: result.args })

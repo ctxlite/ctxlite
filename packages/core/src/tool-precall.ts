@@ -32,12 +32,26 @@ function appendFlag(command: string, flag: string): string {
 }
 
 /**
+ * `&&`/`||`/`;`/`|` mean the matched command (e.g. "npm run build") isn't
+ * necessarily the last thing in the string — appendFlag's "stick it on the
+ * end" approach would then attach the flag to a DIFFERENT command instead
+ * (e.g. `npm run build | tail -20` becoming `... | tail -20 --loglevel=warn`,
+ * which breaks tail). Checking for any of these chars anywhere is
+ * deliberately conservative — it also skips commands where the operator is
+ * just inside a quoted string, but a missed optimization is harmless while
+ * a wrongly-placed flag breaks the user's actual command.
+ */
+function hasShellChaining(command: string): boolean {
+  return /[|;&]/.test(command)
+}
+
+/**
  * Rewrite bash commands to emit less noise before execution.
  */
 export function optimizeBashCommand(command: string): PrecallResult {
   const base = { args: { command }, modified: false, blocked: false, estimatedTokensSaved: 0 }
 
-  if (!command.trim()) {
+  if (!command.trim() || hasShellChaining(command)) {
     return base
   }
 

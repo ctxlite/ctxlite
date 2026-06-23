@@ -7,6 +7,20 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.22] - 2026-06-23
+
+### Added
+- Per-session/per-host stats tracking: `requests` table gains `host` (`opencode`/`claude-code`/`cursor`/`mcp`) and `session_id` columns, migrated in automatically for existing databases. Threaded through every logging call site across all four integrations — real session/conversation ids for OpenCode (`sessionID`), Claude Code (`session_id`), and Cursor (`conversation_id`) hooks; a per-process pseudo-session id for MCP, which has no real session id in its protocol.
+- `StatsStore.summaryForSession(host, sessionId)` and `StatsStore.sessionBreakdown(since)`.
+- `ctxlite stats --by-session` — breaks the total down by host, then by session, instead of one combined number.
+- OpenCode's `get_stats` tool and the sidebar widget now default to **the current session**, not an ever-growing all-time total — matching the MCP `get_stats` tool, which defaults to its own process-lifetime pseudo-session for the same reason. Pass an explicit `period` to get the old all-sessions behavior.
+- OpenCode's toast/session-title savings counters are now also session-scoped, fixing a latent bug where switching chat tabs would compare one session's delta against a different session's baseline.
+
+### Fixed
+- **Compound bash commands were getting silently corrupted by ctxlite's own pre-call optimization.** `appendFlag()` always stuck the quiet flag on the *end* of the whole command string, assuming the matched command (`npm test`, `npm run build`, etc.) was the last thing in it. For `npm run build 2>&1 | tail -20`, this produced `... | tail -20 --loglevel=warn` — a flag on the wrong command, breaking `tail`. Found live: this exact command failed while building this release, via the real PreToolUse hook configured for this conversation. Now skips the rewrite entirely whenever the command contains `&&`, `||`, `;`, or `|` — a missed optimization is harmless, a wrongly-placed flag isn't.
+- **`ctxlite stats --last <period>` (and `--export`, `--db`) were silently ignored** when placed after the subcommand, the conventional order shown in the CLI's own `--help` text — `parseArgs` returned as soon as it saw the subcommand token, before reaching the flag-parsing switch. `--last today` and `--last all` produced byte-identical output. Fixed without touching `install`/`hook`'s own flag parsing (which still owns everything in their `rest` array). Extracted `parseArgs`/`runStats` out of the CLI's `#!/usr/bin/env node` entry point into a separate, importable module so this has actual test coverage now — there was none before, which is exactly how this went unnoticed.
+- **The MCP test suite was writing real rows into the user's actual `~/.ctxlite/stats.db` on every `npm test` run.** `smart-read.test.ts`, `trim-context.test.ts`, and `get-stats.test.ts` never mocked `os.homedir()`, unlike every other test file that touches stats storage. This is very likely the source of the several stray single-digit-K "MCP" pseudo-sessions visible in `--by-session` output on developer machines that ran the test suite.
+
 ## [0.1.21] - 2026-06-23
 
 ### Fixed

@@ -1,7 +1,7 @@
 // Shared stats-report rendering — used by CLI, OpenCode, and MCP `get_stats`
 // so all three surfaces show the same breakdown bar chart.
 
-import type { Summary } from "./types.js"
+import type { SessionBreakdownRow, Summary } from "./types.js"
 
 export interface StatsBreakdownRow {
   label: string
@@ -95,4 +95,50 @@ export function renderStatsBarChart(rows: StatsBreakdownRow[]): string[] {
     const tokens = formatTokenCount(r.tokensSaved).padStart(tokenWidth)
     return `${label}  ${bar}  ${tokens}  (${r.count} ${r.countLabel})`
   })
+}
+
+const HOST_LABELS: Record<string, string> = {
+  opencode: "OpenCode",
+  "claude-code": "Claude Code",
+  cursor: "Cursor",
+  mcp: "MCP",
+}
+
+export function hostLabel(host: string): string {
+  return HOST_LABELS[host] ?? host
+}
+
+/**
+ * Groups session rows by host (assumes input is already sorted by host,
+ * then most-recent-first — see StatsStore.sessionBreakdown), rendering one
+ * line per session: id, tokens saved, request count, and when it was last
+ * active.
+ */
+export function renderSessionBreakdown(rows: SessionBreakdownRow[]): string[] {
+  if (rows.length === 0) {
+    return ["No sessions recorded yet."]
+  }
+
+  const idWidth = Math.max(...rows.map((r) => (r.sessionId ?? "").length))
+  const tokenWidth = Math.max(...rows.map((r) => formatTokenCount(r.tokensSaved).length))
+
+  const lines: string[] = []
+  let currentHost: string | null = null
+
+  for (const row of rows) {
+    if (row.host !== currentHost) {
+      if (currentHost !== null) {
+        lines.push("")
+      }
+      lines.push(hostLabel(row.host))
+      currentHost = row.host
+    }
+
+    const id = (row.sessionId ?? "").padEnd(idWidth)
+    const tokens = formatTokenCount(row.tokensSaved).padStart(tokenWidth)
+    const lastActive = new Date(row.lastTs * 1000).toLocaleString()
+    lines.push(`  ${id}  ${tokens} saved  (${row.totalRequests} requests)  last active ${lastActive}`)
+  }
+
+  return lines
 }

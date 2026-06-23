@@ -1,10 +1,27 @@
-import { describe, it, expect, afterEach, beforeEach } from "vitest"
+import { describe, it, expect, afterEach, afterAll, beforeEach, vi } from "vitest"
 import { mkdtempSync, rmSync, writeFileSync } from "fs"
 import { tmpdir } from "os"
 import { join } from "path"
-import { handleSmartRead } from "./smart-read.js"
 
 let tmpDir: string
+
+// shared.ts computes STATS_DB_PATH from homedir() once, at import time — the
+// fake homedir must exist before that import happens, not just before each
+// test, or this test suite writes real rows into the user's actual
+// ~/.ctxlite/stats.db on every run.
+const tmpHome = mkdtempSync(join(tmpdir(), "ctxlite-mcp-smart-read-home-"))
+vi.mock("os", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("os")>()
+  return { ...actual, homedir: () => tmpHome }
+})
+
+const { handleSmartRead } = await import("./smart-read.js")
+const { closeSharedStores } = await import("@ctxlite/core")
+
+afterAll(() => {
+  closeSharedStores()
+  rmSync(tmpHome, { recursive: true, force: true })
+})
 
 describe("handleSmartRead", () => {
   beforeEach(() => {

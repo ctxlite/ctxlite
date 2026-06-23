@@ -2,7 +2,7 @@ import { isAbsolute, resolve } from "path"
 import { readFile } from "fs/promises"
 import { z } from "zod"
 import { compressToolOutput, estimateTokens, extractSymbols, logOptimizationSavings, supportsSymbols } from "@ctxlite/core"
-import { STATS_DB_PATH } from "../shared.js"
+import { STATS_DB_PATH, MCP_PROCESS_SESSION_ID } from "../shared.js"
 
 const DEFAULT_BUDGET_TOKENS = 1500
 
@@ -35,7 +35,10 @@ export async function handleSmartRead(args: z.infer<typeof smartReadSchema>): Pr
     if (symbols !== null) {
       const tokensOut = estimateTokens(symbols)
       if (tokensOut < tokensIn) {
-        logOptimizationSavings({ source: "smart_read", upstream: "mcp", tokensIn, tokensOut }, STATS_DB_PATH)
+        logOptimizationSavings(
+          { source: "smart_read", upstream: "mcp", tokensIn, tokensOut, host: "mcp", sessionId: MCP_PROCESS_SESSION_ID },
+          STATS_DB_PATH,
+        )
       }
       return [`## smart_read ${path} (symbols)`, "```", symbols, "```"].join("\n")
     }
@@ -44,7 +47,14 @@ export async function handleSmartRead(args: z.infer<typeof smartReadSchema>): Pr
   const result = compressToolOutput(content, { minTokens: 1, maxChars: budget * 4 })
   if (result.compressed) {
     logOptimizationSavings(
-      { source: "smart_read", upstream: "mcp", tokensIn: result.tokensIn, tokensOut: result.tokensOut },
+      {
+        source: "smart_read",
+        upstream: "mcp",
+        tokensIn: result.tokensIn,
+        tokensOut: result.tokensOut,
+        host: "mcp",
+        sessionId: MCP_PROCESS_SESSION_ID,
+      },
       STATS_DB_PATH,
     )
   }

@@ -27,6 +27,8 @@ export function createToolCompressHook(): (
           tokensIn: precall.estimatedTokensSaved,
           tokensOut: 0,
           id: `precall-${input.callID}`,
+          host: "opencode",
+          sessionId: input.sessionID,
         },
         dbPath,
       )
@@ -45,6 +47,8 @@ export function createToolCompressHook(): (
         tokensIn: result.tokensIn,
         tokensOut: result.tokensOut,
         id: `compress-${input.callID}`,
+        host: "opencode",
+        sessionId: input.sessionID,
       },
       dbPath,
     )

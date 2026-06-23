@@ -1,5 +1,24 @@
-import { describe, it, expect } from "vitest"
-import { handleGetStats } from "./get-stats.js"
+import { describe, it, expect, afterAll, vi } from "vitest"
+import { mkdtempSync, rmSync } from "fs"
+import { tmpdir } from "os"
+import { join } from "path"
+
+// shared.ts computes STATS_DB_PATH from homedir() once, at import time — the
+// fake homedir must exist before that import happens, or this test suite
+// reads/writes the user's actual ~/.ctxlite/stats.db on every run.
+const tmpHome = mkdtempSync(join(tmpdir(), "ctxlite-mcp-get-stats-home-"))
+vi.mock("os", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("os")>()
+  return { ...actual, homedir: () => tmpHome }
+})
+
+const { handleGetStats } = await import("./get-stats.js")
+const { closeSharedStores } = await import("@ctxlite/core")
+
+afterAll(() => {
+  closeSharedStores()
+  rmSync(tmpHome, { recursive: true, force: true })
+})
 
 describe("handleGetStats", () => {
   it("returns formatted stats for empty db", async () => {
@@ -16,8 +35,8 @@ describe("handleGetStats", () => {
     }
   })
 
-  it("uses all as default when period is undefined", async () => {
+  it("uses current session as default when period is undefined", async () => {
     const result = await handleGetStats({})
-    expect(result).toContain("all")
+    expect(result).toContain("current session")
   })
 })

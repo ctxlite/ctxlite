@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-import { StatsStore, defaultDbPath } from "@ctxlite/core"
-import { formatText, formatJson } from "./format.js"
+import { parseArgs, runStats } from "./stats-command.js"
 import { runInstallCommand } from "./install.js"
 import { runPreToolUseHook, runPostToolUseHook } from "./hook.js"
 import { runCursorPreToolUseHook } from "./cursor-hook.js"
@@ -26,116 +25,16 @@ STATS OPTIONS:
   --last <period>    Period: session, today, 7d, 30d, all (default: all)
   --export <format>  Export format: text, json (default: text)
   --db <path>        SQLite database path (default: ~/.ctxlite/stats.db)
+  --by-session       Break the total down by host (OpenCode/Claude Code/Cursor/MCP) then session,
+                      instead of one combined total
 
 EXAMPLES:
   ctxlite stats
   ctxlite stats --last 7d
+  ctxlite stats --by-session
   ctxlite install --tool cursor --scope global --yes
   ctxlite install --tool all --scope global --dry-run
 `.trimStart()
-
-interface Args {
-  subcommand: string | null
-  rest: string[]
-  last: string
-  export: string
-  db: string
-  help: boolean
-}
-
-function parseArgs(argv: string[]): Args {
-  const args: Args = {
-    subcommand: null,
-    rest: [],
-    last: "all",
-    export: "text",
-    db: defaultDbPath(),
-    help: false,
-  }
-
-  let i = 0
-  while (i < argv.length) {
-    const arg = argv[i]
-    switch (arg) {
-      case "--last":
-        args.last = argv[++i] ?? "today"
-        break
-      case "--export":
-        args.export = argv[++i] ?? "text"
-        break
-      case "--db":
-        args.db = argv[++i] ?? defaultDbPath()
-        break
-      case "--help":
-      case "-h":
-        args.help = true
-        break
-      default:
-        if (arg && !arg.startsWith("-") && args.subcommand === null) {
-          args.subcommand = arg
-          args.rest = argv.slice(i + 1)
-          return args
-        }
-    }
-    i++
-  }
-
-  return args
-}
-
-function periodToTimestamp(period: string): number {
-  const now = Math.floor(Date.now() / 1000)
-  switch (period) {
-    case "session":
-      return now - 3600
-    case "today": {
-      const d = new Date()
-      d.setHours(0, 0, 0, 0)
-      return Math.floor(d.getTime() / 1000)
-    }
-    case "7d":
-      return now - 7 * 86400
-    case "30d":
-      return now - 30 * 86400
-    case "all":
-      return 0
-    default: {
-      process.stderr.write(`Unknown period "${period}", using "today"\n`)
-      const d2 = new Date()
-      d2.setHours(0, 0, 0, 0)
-      return Math.floor(d2.getTime() / 1000)
-    }
-  }
-}
-
-function runStats(args: Args): number {
-  const validPeriods = ["session", "today", "7d", "30d", "all"]
-  if (!validPeriods.includes(args.last)) {
-    process.stderr.write(`Invalid period "${args.last}". Valid: ${validPeriods.join(", ")}\n`)
-    return 1
-  }
-
-  const validFormats = ["text", "json"]
-  if (!validFormats.includes(args.export)) {
-    process.stderr.write(`Invalid export format "${args.export}". Valid: text, json\n`)
-    return 1
-  }
-
-  let store: StatsStore | null = null
-  try {
-    store = new StatsStore(args.db)
-    const since = periodToTimestamp(args.last)
-    const summary = store.summary(since)
-    const output = args.export === "json" ? formatJson(summary) : formatText(summary)
-    process.stdout.write(output + "\n")
-    return 0
-  } catch (err) {
-    process.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}\n`)
-    return 1
-  } finally {
-    store?.close()
-  }
-}
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))

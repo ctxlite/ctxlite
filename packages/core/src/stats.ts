@@ -5,7 +5,7 @@ import { dirname, join } from "path"
 import { homedir } from "os"
 import { openStatsSqlite, type StatsSqlite } from "./sqlite-adapter.js"
 import { estimateCost, estimateConcisenessSavings } from "./tokens.js"
-import type { CacheStats, RequestLog, Summary, TrimResult } from "./types.js"
+import type { CacheStats, RequestLog, SessionBreakdownRow, Summary, TrimResult } from "./types.js"
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS requests (
@@ -25,6 +25,22 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_requests_ts ON requests(ts);
 `
 
+/** Added after the original schema — older databases need these columns backfilled. */
+function migrateSchema(db: StatsSqlite): void {
+  for (const stmt of ["ALTER TABLE requests ADD COLUMN host TEXT", "ALTER TABLE requests ADD COLUMN session_id TEXT"]) {
+    try {
+      db.exec(stmt)
+    } catch {
+      // Column already exists — runs on every open, only does work once.
+    }
+  }
+  try {
+    db.exec("CREATE INDEX IF NOT EXISTS idx_requests_session ON requests(host, session_id)")
+  } catch {
+    // Best-effort — missing index just makes session queries slower, not wrong.
+  }
+}
+
 export function defaultDbPath(): string {
   return join(homedir(), ".ctxlite", "stats.db")
 }
@@ -38,6 +54,7 @@ export class StatsStore {
 
     this.db = openStatsSqlite(dbPath)
     this.db.exec(SCHEMA)
+    migrateSchema(this.db)
 
     this.sessionStart = Math.floor(Date.now() / 1000)
   }
@@ -50,8 +67,8 @@ export class StatsStore {
       this.db.run(
         `INSERT OR IGNORE INTO requests
          (id, ts, upstream, trimmed, tokens_in, tokens_used, tokens_out,
-          tokens_saved, cost_saved, latency_ms, source)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          tokens_saved, cost_saved, latency_ms, source, host, session_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         id,
         Math.floor(Date.now() / 1000),
         entry.upstream,
@@ -63,6 +80,8 @@ export class StatsStore {
         entry.costSaved,
         entry.latencyMs,
         source,
+        entry.host ?? null,
+        entry.sessionId ?? null,
       )
     } catch {
       // Silent — logging must not break the main flow
@@ -70,6 +89,16 @@ export class StatsStore {
   }
 
   summary(since = 0): Summary {
+    const periodLabel = since === 0 ? "all time" : "since " + new Date(since * 1000).toLocaleDateString()
+    return this.summaryWithFilter("(? = 0 OR ts >= ?)", [since, since], periodLabel)
+  }
+
+  /** Stats for one host+session pair only — e.g. the OpenCode session currently active in the sidebar. */
+  summaryForSession(host: string, sessionId: string): Summary {
+    return this.summaryWithFilter("host = ? AND session_id = ?", [host, sessionId], "current session")
+  }
+
+  private summaryWithFilter(filterSql: string, filterParams: unknown[], periodLabel: string): Summary {
     const row = this.db.get<{
       total: number
       trimmed: number
@@ -110,9 +139,8 @@ export class StatsStore {
         COALESCE(SUM(cost_saved), 0)                          as cost,
         COALESCE(AVG(CASE WHEN source = 'trim' THEN latency_ms END), 0) as avg_lat
        FROM requests
-       WHERE (? = 0 OR ts >= ?) AND source != 'session'`,
-      since,
-      since,
+       WHERE ${filterSql} AND source != 'session'`,
+      ...filterParams,
     )
 
     const legacy = this.db.get<{ trim_count: number; trim_saved: number }>(
@@ -120,9 +148,8 @@ export class StatsStore {
         COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'compact', 'smart_read', 'cache', 'session') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
         COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'compact', 'smart_read', 'cache', 'session') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
        FROM requests
-       WHERE (? = 0 OR ts >= ?)`,
-      since,
-      since,
+       WHERE ${filterSql}`,
+      ...filterParams,
     )
 
     // tokens_used = real per-turn input tokens, tokens_out = real per-turn
@@ -134,9 +161,8 @@ export class StatsStore {
         COALESCE(SUM(tokens_used), 0) as session_input_used,
         COALESCE(SUM(tokens_out), 0)  as session_output_used
        FROM requests
-       WHERE (? = 0 OR ts >= ?) AND source = 'session'`,
-      since,
-      since,
+       WHERE ${filterSql} AND source = 'session'`,
+      ...filterParams,
     )
 
     const tokensSaved = row?.saved ?? 0
@@ -187,12 +213,45 @@ export class StatsStore {
       savingsPercent: tokensBefore > 0 ? (realtimeTokensSaved / tokensBefore) * 100 : 0,
       costSaved: row?.cost ?? 0,
       avgLatencyMs: Math.round(row?.avg_lat ?? 0),
-      period: since === 0 ? "all time" : "since " + new Date(since * 1000).toLocaleDateString(),
+      period: periodLabel,
     }
   }
 
   sessionSummary(): Summary {
     return this.summary(this.sessionStart)
+  }
+
+  /** One row per host+session, most recent first. Rows logged before this column existed (host/session_id NULL) are excluded. */
+  sessionBreakdown(since = 0): SessionBreakdownRow[] {
+    return this.db.all<{
+      host: string
+      session_id: string
+      total: number
+      saved: number
+      first_ts: number
+      last_ts: number
+    }>(
+      `SELECT
+        host,
+        session_id,
+        COUNT(*)                       as total,
+        COALESCE(SUM(tokens_saved), 0) as saved,
+        MIN(ts)                        as first_ts,
+        MAX(ts)                        as last_ts
+       FROM requests
+       WHERE host IS NOT NULL AND session_id IS NOT NULL AND (? = 0 OR ts >= ?)
+       GROUP BY host, session_id
+       ORDER BY host, last_ts DESC`,
+      since,
+      since,
+    ).map((row) => ({
+      host: row.host,
+      sessionId: row.session_id,
+      totalRequests: row.total,
+      tokensSaved: row.saved,
+      firstTs: row.first_ts,
+      lastTs: row.last_ts,
+    }))
   }
 
   cacheStats(): CacheStats {
@@ -252,7 +311,12 @@ export function closeSharedStores(): void {
  * Persist token savings from a trim_context run.
  * No-op when nothing was trimmed.
  */
-export function logTrimResult(result: TrimResult, tool: "mcp" | "opencode", dbPath?: string): void {
+export function logTrimResult(
+  result: TrimResult,
+  tool: "mcp" | "opencode",
+  dbPath?: string,
+  sessionId?: string,
+): void {
   if (result.tokensSaved <= 0) {
     return
   }
@@ -268,6 +332,8 @@ export function logTrimResult(result: TrimResult, tool: "mcp" | "opencode", dbPa
       costSaved: estimateCost(result.tokensSaved, tool),
       latencyMs: 0,
       source: "trim",
+      host: tool,
+      sessionId,
     })
   } catch {
     // Silent — logging must not break tool execution
@@ -280,6 +346,8 @@ export interface ConcisenessLog {
   inputTokens: number
   outputTokens: number
   reasoningTokens: number
+  host?: string | undefined
+  sessionId?: string | undefined
 }
 
 /**
@@ -304,6 +372,8 @@ export function logConcisenessSavings(entry: ConcisenessLog, dbPath?: string): v
         costSaved: estimateCost(tokensSaved, entry.providerId),
         latencyMs: 0,
         source: "concise",
+        host: entry.host,
+        sessionId: entry.sessionId,
       },
       { id: `concise-${entry.messageId}` },
     )
@@ -318,6 +388,8 @@ export interface OptimizationLog {
   tokensIn: number
   tokensOut: number
   id?: string
+  host?: string | undefined
+  sessionId?: string | undefined
 }
 
 /**
@@ -341,6 +413,8 @@ export function logOptimizationSavings(entry: OptimizationLog, dbPath?: string):
         costSaved: estimateCost(tokensSaved, entry.upstream),
         latencyMs: 0,
         source: entry.source,
+        host: entry.host,
+        sessionId: entry.sessionId,
       },
       entry.id ? { id: entry.id } : undefined,
     )
@@ -360,7 +434,13 @@ export function logOptimizationSavings(entry: OptimizationLog, dbPath?: string):
  * INSERT OR IGNORE on messageId — safe across duplicate events.
  */
 export function logSessionUsage(
-  entry: { messageId: string; inputTokens: number; outputTokens: number },
+  entry: {
+    messageId: string
+    inputTokens: number
+    outputTokens: number
+    host?: string | undefined
+    sessionId?: string | undefined
+  },
   dbPath?: string,
 ): void {
   if (entry.inputTokens <= 0 && entry.outputTokens <= 0) {
@@ -379,6 +459,8 @@ export function logSessionUsage(
         costSaved: 0,
         latencyMs: 0,
         source: "session",
+        host: entry.host,
+        sessionId: entry.sessionId,
       },
       { id: `session-${entry.messageId}` },
     )

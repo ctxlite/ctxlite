@@ -295,4 +295,94 @@ describe("StatsStore", () => {
     const removed = store.pruneOlderThan(7)
     expect(removed).toBe(1)
   })
+
+  it("summaryForSession only counts rows matching that host+session", () => {
+    dbPath = tmpDb()
+    store = new StatsStore(dbPath)
+
+    store.log({
+      upstream: "opencode",
+      cacheHit: false,
+      tokensIn: 1000,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 1000,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "compress",
+      host: "opencode",
+      sessionId: "ses-a",
+    })
+    store.log({
+      upstream: "opencode",
+      cacheHit: false,
+      tokensIn: 2000,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 2000,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "compress",
+      host: "opencode",
+      sessionId: "ses-b",
+    })
+
+    const summaryA = store.summaryForSession("opencode", "ses-a")
+    expect(summaryA.tokensSaved).toBe(1000)
+    expect(summaryA.totalRequests).toBe(1)
+    expect(summaryA.period).toBe("current session")
+
+    const summaryB = store.summaryForSession("opencode", "ses-b")
+    expect(summaryB.tokensSaved).toBe(2000)
+  })
+
+  it("sessionBreakdown groups by host+session, excluding rows without one", () => {
+    dbPath = tmpDb()
+    store = new StatsStore(dbPath)
+
+    store.log({
+      upstream: "opencode",
+      cacheHit: false,
+      tokensIn: 1000,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 1000,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "compress",
+      host: "opencode",
+      sessionId: "ses-a",
+    })
+    store.log({
+      upstream: "claude-code",
+      cacheHit: false,
+      tokensIn: 500,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 500,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "precall",
+      host: "claude-code",
+      sessionId: "ses-c",
+    })
+    // No host/session — e.g. an MCP call or a pre-migration row. Excluded from the breakdown.
+    store.log({
+      upstream: "mcp",
+      cacheHit: false,
+      tokensIn: 100,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 100,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "trim",
+    })
+
+    const rows = store.sessionBreakdown()
+    expect(rows).toHaveLength(2)
+    expect(rows.find((r) => r.host === "opencode")?.sessionId).toBe("ses-a")
+    expect(rows.find((r) => r.host === "opencode")?.tokensSaved).toBe(1000)
+    expect(rows.find((r) => r.host === "claude-code")?.sessionId).toBe("ses-c")
+  })
 })

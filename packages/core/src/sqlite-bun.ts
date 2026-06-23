@@ -9,6 +9,7 @@ type BunDatabase = {
   prepare(sql: string): {
     run(...params: unknown[]): { changes: number }
     get(...params: unknown[]): Record<string, unknown> | undefined
+    all(...params: unknown[]): Record<string, unknown>[]
   }
   close(): void
 }
@@ -33,6 +34,9 @@ export function openBunStatsSqlite(dbPath: string): StatsSqlite {
     },
     get<T extends Record<string, unknown>>(sql: string, ...params: unknown[]) {
       return db.prepare(sql).get(...params) as T | undefined
+    },
+    all<T extends Record<string, unknown>>(sql: string, ...params: unknown[]) {
+      return db.prepare(sql).all(...params) as T[]
     },
     close() {
       db.close()

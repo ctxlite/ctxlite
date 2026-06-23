@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url)
 type SqliteStatement = {
   run(...params: unknown[]): unknown
   get(...params: unknown[]): Record<string, unknown> | undefined
+  all(...params: unknown[]): Record<string, unknown>[]
   changes?: number
 }
 
@@ -34,6 +35,9 @@ function wrapDb(db: PreparedDb): StatsSqlite {
     },
     get<T extends Record<string, unknown>>(sql: string, ...params: unknown[]) {
       return db.prepare(sql).get(...params) as T | undefined
+    },
+    all<T extends Record<string, unknown>>(sql: string, ...params: unknown[]) {
+      return db.prepare(sql).all(...params) as T[]
     },
     close() {
       db.close()
