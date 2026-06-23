@@ -14,13 +14,30 @@ export type ToastClient = {
       }
     }): unknown
   }
+  session: {
+    get(options: { path: { id: string } }): Promise<{ data: { title?: string } | undefined }>
+    update(options: { path: { id: string }; body?: { title?: string } }): unknown
+  }
+}
+
+const TITLE_SUFFIX_PATTERN = / · ctxlite: .*$/
+
+/** Sets the session title to "<original title> · ctxlite: <total> saved", replacing any prior suffix. */
+async function updateSessionTitle(client: ToastClient, sessionID: string, total: number): Promise<void> {
+  const result = await client.session.get({ path: { id: sessionID } })
+  const baseTitle = (result.data?.title ?? "").replace(TITLE_SUFFIX_PATTERN, "")
+  await client.session.update({
+    path: { id: sessionID },
+    body: { title: `${baseTitle} · ctxlite: ${formatTokenCount(total)} saved` },
+  })
 }
 
 /**
  * Logs estimated conciseness savings when an assistant message completes,
- * and — when a client is provided — shows a TUI toast with that turn's
- * savings so users see ctxlite working without having to call get_stats.
- * Uses INSERT OR IGNORE on message id — safe across duplicate events.
+ * and — when a client is provided — shows a TUI toast and updates the
+ * session title with that turn's savings, so users see ctxlite working
+ * without having to call get_stats. Uses INSERT OR IGNORE on message id —
+ * safe across duplicate events.
  */
 export function createStatsEventHandler(client?: ToastClient): (input: { event: Event }) => Promise<void> {
   const dbPath = getStatsDbPath()
@@ -77,8 +94,10 @@ export function createStatsEventHandler(client?: ToastClient): (input: { event: 
           duration: 4000,
         },
       })
+
+      await updateSessionTitle(client, info.sessionID, total)
     } catch {
-      // Silent — a toast failure must not break the chat turn
+      // Silent — a toast/title failure must not break the chat turn
     } finally {
       store?.close()
     }
