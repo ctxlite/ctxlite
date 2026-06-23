@@ -3,7 +3,7 @@
 // in-process plugin hooks, a parse error here must never surface to the
 // user: any unexpected shape is a silent no-op, not a blocked tool call.
 
-import { compressToolOutput, defaultDbPath, logOptimizationSavings, optimizeToolArgs } from "@ctxlite/core"
+import { compressOutputForTool, defaultDbPath, logOptimizationSavings, optimizeToolArgs } from "@ctxlite/core"
 
 interface PreToolUseInput {
   tool_name?: string
@@ -131,7 +131,7 @@ export async function runPostToolUseHook(stdin: AsyncIterable<Buffer | string> =
       return 0
     }
 
-    const result = compressToolOutput(text)
+    const result = compressOutputForTool(input.tool_name ?? "", text)
     if (!result.compressed) {
       return 0
     }

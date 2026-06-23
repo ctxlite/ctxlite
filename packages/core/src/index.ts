@@ -19,6 +19,9 @@ export type { PrecallResult } from "./tool-precall.js"
 export { compressToolOutput } from "./tool-output-compress.js"
 export type { CompressToolOutputOptions, CompressToolOutputResult } from "./tool-output-compress.js"
 
+export { compressGrepOutput, compressOutputForTool } from "./grep-output-compress.js"
+export type { CompressGrepOutputOptions } from "./grep-output-compress.js"
+
 export { pruneMessageContext, capStaleToolOutputs } from "./context-prune.js"
 export type { PruneMessage, ContextPruneResult, ContextCapResult } from "./context-prune.js"
 

@@ -7,6 +7,17 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.23] - 2026-06-23
+
+### Added
+- `optimizeBashCommand` now recognizes more noisy-by-default commands: `npm install`/`ci`, `pip install`, `composer install`/`update`, `bundle install`, `mvn <goal>`, `gradle`/`./gradlew <task>`, `make <target>`, `vite build` — same conservative approach as the existing rules (only suppress progress/noise, never suppress actual findings like lint warnings).
+- `compressGrepOutput()` / `compressOutputForTool()` — Grep's content-mode output (`file:line:text` per match) is grouped by file and capped per-file and per-file-count, instead of `compressToolOutput`'s blind head/tail truncation, which would show every match from the first few files and none from the rest. Wired into both OpenCode's and Claude Code's PostToolUse-equivalent compress hooks (Cursor's `postToolUse` still can't rewrite built-in tool output, confirmed in 0.1.20 — no equivalent there).
+
+### Fixed
+- Investigated whether Claude Code has any hook giving access to the full conversation history before a model request (OpenCode's `experimental.chat.messages.transform` equivalent, which `prune` relies on). Confirmed against current docs: no such hook exists — `UserPromptSubmit` only fires on user input, not every agentic round-trip, and can't rewrite history; `PreCompact` can only block, not rewrite. Documenting this as a real platform limitation rather than leaving it as an open question.
+- A regex word-boundary bug meant the `./gradlew <task>` form (the actual common invocation) never matched the new gradle quiet-flag rule — `\b` doesn't fire before a non-word character (`.`) at the start of a string. Caught by the test for it before shipping.
+- **The precall rewrite matched tool names mentioned in prose, not just real invocations.** Committing this very release failed: the commit message said "npm install/ci" in a sentence, which `optimizeBashCommand` matched as an actual `npm install` call and rewrote — inside a heredoc, no less, so the existing shell-chaining guard didn't apply (no top-level `&&`/`|`/`;`). Fixed by blanking out quoted strings and heredoc bodies before pattern matching (`stripEmbeddedText`), so only actual command syntax is checked — the flag is still applied to the real, unblanked command text.
+
 ## [0.1.22] - 2026-06-23
 
 ### Added

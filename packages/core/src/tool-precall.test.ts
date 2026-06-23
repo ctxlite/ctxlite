@@ -43,6 +43,95 @@ describe("optimizeBashCommand", () => {
     expect(result.modified).toBe(true)
     expect(result.args.command).toContain("--loglevel=warn")
   })
+
+  it("adds --loglevel=warn to npm install", () => {
+    const result = optimizeBashCommand("npm install")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--loglevel=warn")
+  })
+
+  it("adds --loglevel=warn to npm ci", () => {
+    const result = optimizeBashCommand("npm ci")
+    expect(result.modified).toBe(true)
+  })
+
+  it("does not treat npm-run-something-named-install as npm install", () => {
+    const result = optimizeBashCommand("npm run install-deps")
+    expect(result.modified).toBe(false)
+  })
+
+  it("adds -q to pip install", () => {
+    const result = optimizeBashCommand("pip install requests")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("-q")
+  })
+
+  it("adds --quiet to composer install", () => {
+    const result = optimizeBashCommand("composer install")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--quiet")
+  })
+
+  it("adds --quiet to bundle install", () => {
+    const result = optimizeBashCommand("bundle install")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--quiet")
+  })
+
+  it("adds -q to a maven goal", () => {
+    const result = optimizeBashCommand("mvn package")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("-q")
+  })
+
+  it("does not add -q when maven debug flags are already present", () => {
+    const result = optimizeBashCommand("mvn package -X")
+    expect(result.modified).toBe(false)
+  })
+
+  it("adds -q to a gradle task", () => {
+    const result = optimizeBashCommand("./gradlew build")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("-q")
+  })
+
+  it("adds -s to a make target", () => {
+    const result = optimizeBashCommand("make all")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("-s")
+  })
+
+  it("adds --logLevel warn to vite build", () => {
+    const result = optimizeBashCommand("vite build")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--logLevel warn")
+  })
+
+  it("does not rewrite a tool name mentioned in a quoted commit message (regression: false-positive match on prose, not a real invocation)", () => {
+    const command = `git commit -m "fix npm install bug"`
+    const result = optimizeBashCommand(command)
+    expect(result.modified).toBe(false)
+    expect(result.args.command).toBe(command)
+  })
+
+  it("does not rewrite a tool name mentioned inside a heredoc commit message (regression: this exact command broke while writing this release)", () => {
+    const command = `git commit -m "$(cat <<'EOF'\nfix: npm install bug and pytest flakiness\nEOF\n)"`
+    const result = optimizeBashCommand(command)
+    expect(result.modified).toBe(false)
+    expect(result.args.command).toBe(command)
+  })
+
+  it("does not rewrite a tool name mentioned inside an echo string", () => {
+    const result = optimizeBashCommand(`echo "remember to run npm test later"`)
+    expect(result.modified).toBe(false)
+  })
+
+  it("still rewrites the real command even when an unrelated quoted string is also present", () => {
+    const result = optimizeBashCommand(`npm test --testPathPattern="auth"`)
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--silent")
+    expect(result.args.command).toContain(`--testPathPattern="auth"`)
+  })
 })
 
 describe("optimizeReadPath", () => {

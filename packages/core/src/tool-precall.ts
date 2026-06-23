@@ -2,8 +2,16 @@
 const PRECALL_ESTIMATES: Record<string, number> = {
   npm_test: 800,
   npm_build: 400,
+  npm_install: 300,
   cargo_test: 600,
   pytest: 500,
+  pip_install: 300,
+  composer_install: 300,
+  bundle_install: 300,
+  maven: 500,
+  gradle: 500,
+  make: 300,
+  vite_build: 400,
   docker_logs: 700,
   curl: 200,
   generic_quiet: 300,
@@ -41,8 +49,28 @@ function appendFlag(command: string, flag: string): string {
  * just inside a quoted string, but a missed optimization is harmless while
  * a wrongly-placed flag breaks the user's actual command.
  */
-function hasShellChaining(command: string): boolean {
-  return /[|;&]/.test(command)
+function hasShellChaining(skeleton: string): boolean {
+  return /[|;&]/.test(skeleton)
+}
+
+/**
+ * Blanks out quoted strings and heredoc bodies, leaving only actual shell
+ * syntax for the pattern checks below. Without this, a command like
+ * `git commit -m "fixed the npm install bug"` — or worse, a heredoc-based
+ * commit message that happens to mention a tool name in prose — gets
+ * mistaken for an actual npm invocation and rewritten, corrupting the
+ * commit message. Best-effort (doesn't handle every shell quoting edge
+ * case), but a missed optimization is harmless while a corrupted command
+ * isn't — same tradeoff as hasShellChaining above.
+ */
+function stripEmbeddedText(command: string): string {
+  let skeleton = command
+  // Heredoc body: <<'EOF' ... \nEOF (handles quoted/unquoted/<<- delimiters).
+  skeleton = skeleton.replace(/<<-?\s*(['"]?)(\w+)\1[\s\S]*?\n\s*\2\b/g, (m) => " ".repeat(m.length))
+  // Double- and single-quoted strings (basic backslash-escape handling, no nesting).
+  skeleton = skeleton.replace(/"(?:[^"\\]|\\.)*"/g, (m) => " ".repeat(m.length))
+  skeleton = skeleton.replace(/'(?:[^'\\]|\\.)*'/g, (m) => " ".repeat(m.length))
+  return skeleton
 }
 
 /**
@@ -51,38 +79,67 @@ function hasShellChaining(command: string): boolean {
 export function optimizeBashCommand(command: string): PrecallResult {
   const base = { args: { command }, modified: false, blocked: false, estimatedTokensSaved: 0 }
 
-  if (!command.trim() || hasShellChaining(command)) {
+  if (!command.trim()) {
+    return base
+  }
+
+  const skeleton = stripEmbeddedText(command)
+  if (hasShellChaining(skeleton)) {
     return base
   }
 
   let next = command
   let label: string | undefined
 
-  if (/\bnpm\s+(run\s+)?test\b/.test(next) && !hasFlag(next, ["--silent", "--quiet", "--loglevel silent"])) {
+  if (/\bnpm\s+(run\s+)?test\b/.test(skeleton) && !hasFlag(next, ["--silent", "--quiet", "--loglevel silent"])) {
     next = appendFlag(next, "--silent")
     label = "npm_test"
-  } else if (/\bnpm\s+(run\s+)?build\b/.test(next) && !hasFlag(next, ["--loglevel", "--silent"])) {
+  } else if (/\bnpm\s+(run\s+)?build\b/.test(skeleton) && !hasFlag(next, ["--loglevel", "--silent"])) {
     next = appendFlag(next, "--loglevel=warn")
     label = "npm_build"
-  } else if (/\bpnpm\s+test\b/.test(next) && !hasFlag(next, ["--reporter=dot", "--silent"])) {
+  } else if (/\bpnpm\s+test\b/.test(skeleton) && !hasFlag(next, ["--reporter=dot", "--silent"])) {
     next = appendFlag(next, "--reporter=dot")
     label = "npm_test"
-  } else if (/\byarn\s+test\b/.test(next) && !hasFlag(next, ["--silent"])) {
+  } else if (/\byarn\s+test\b/.test(skeleton) && !hasFlag(next, ["--silent"])) {
     next = appendFlag(next, "--silent")
     label = "npm_test"
-  } else if (/\bcargo\s+test\b/.test(next) && !hasFlag(next, ["--quiet", "-q"])) {
+  } else if (/\bcargo\s+test\b/.test(skeleton) && !hasFlag(next, ["--quiet", "-q"])) {
     next = appendFlag(next, "--quiet")
     label = "cargo_test"
-  } else if (/\bpytest\b/.test(next) && !hasFlag(next, ["-q", "--quiet", "-v"])) {
+  } else if (/\bpytest\b/.test(skeleton) && !hasFlag(next, ["-q", "--quiet", "-v"])) {
     next = appendFlag(next, "-q")
     label = "pytest"
-  } else if (/\bpython\s+-m\s+pytest\b/.test(next) && !hasFlag(next, ["-q", "--quiet"])) {
+  } else if (/\bpython\s+-m\s+pytest\b/.test(skeleton) && !hasFlag(next, ["-q", "--quiet"])) {
     next = appendFlag(next, "-q")
     label = "pytest"
-  } else if (/\bdocker(\s+compose)?\s+logs\b/.test(next) && !hasFlag(next, ["--tail", "-n"])) {
+  } else if (/\bnpm\s+(install|ci)\b/.test(skeleton) && !hasFlag(next, ["--loglevel", "--silent"])) {
+    next = appendFlag(next, "--loglevel=warn")
+    label = "npm_install"
+  } else if (/\b(pip|pip3)\s+install\b/.test(skeleton) && !hasFlag(next, ["-q", "--quiet", "-v"])) {
+    next = appendFlag(next, "-q")
+    label = "pip_install"
+  } else if (/\bcomposer\s+(install|update)\b/.test(skeleton) && !hasFlag(next, ["--quiet", "-v"])) {
+    next = appendFlag(next, "--quiet")
+    label = "composer_install"
+  } else if (/\bbundle\s+install\b/.test(skeleton) && !hasFlag(next, ["--quiet", "-v"])) {
+    next = appendFlag(next, "--quiet")
+    label = "bundle_install"
+  } else if (/\bmvn\s+\w/.test(skeleton) && !hasFlag(next, ["-q", "--quiet", "-X", "--debug", "-v"])) {
+    next = appendFlag(next, "-q")
+    label = "maven"
+  } else if (/(\bgradle|\.\/gradlew)\s+\w/.test(skeleton) && !hasFlag(next, ["-q", "--quiet", "--debug", "-v"])) {
+    next = appendFlag(next, "-q")
+    label = "gradle"
+  } else if (/\bmake\s+\w/.test(skeleton) && !hasFlag(next, ["-s", "--silent"])) {
+    next = appendFlag(next, "-s")
+    label = "make"
+  } else if (/\bvite\s+build\b/.test(skeleton) && !hasFlag(next, ["--logLevel", "--debug"])) {
+    next = appendFlag(next, "--logLevel warn")
+    label = "vite_build"
+  } else if (/\bdocker(\s+compose)?\s+logs\b/.test(skeleton) && !hasFlag(next, ["--tail", "-n"])) {
     next = appendFlag(next, "--tail=80")
     label = "docker_logs"
-  } else if (/\bcurl\b/.test(next) && !hasFlag(next, ["-s", "--silent", "-S"])) {
+  } else if (/\bcurl\b/.test(skeleton) && !hasFlag(next, ["-s", "--silent", "-S"])) {
     next = appendFlag(next, "-sS")
     label = "curl"
   }

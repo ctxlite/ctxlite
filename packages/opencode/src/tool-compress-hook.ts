@@ -1,4 +1,4 @@
-import { compressToolOutput, logOptimizationSavings } from "@ctxlite/core"
+import { compressOutputForTool, logOptimizationSavings } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
 import { takePrecallPending } from "./precall-state.js"
 
@@ -34,7 +34,7 @@ export function createToolCompressHook(): (
       )
     }
 
-    const result = compressToolOutput(output.output)
+    const result = compressOutputForTool(input.tool, output.output)
     if (!result.compressed) {
       return
     }
