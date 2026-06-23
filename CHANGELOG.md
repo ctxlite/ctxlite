@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.18] - 2026-06-23
+
+### Added
+- `@ctxlite/mcp`: `smart_read` tool, ported from `@ctxlite/opencode` — same symbol-extraction/budgeted-fallback logic, now available to Cursor and Claude Code, not just OpenCode. Paths resolve absolute-first, falling back to the MCP server's own `process.cwd()` (no `context.directory` equivalent in MCP).
+
 ## [0.1.17] - 2026-06-23
 
 ### Added
