@@ -31,9 +31,15 @@ make test
 
 ## Specs
 
-Specs live in `specs/` (local only, not committed).  
-Read the relevant spec before implementing.  
-After implementation, mark `[x] Done` and link the PR.
+Specs live in `specs/` and are **committed, tracked history** — not local
+scratch. (This changed from an earlier "local only" convention; the old
+specs, SPEC-001 through SPEC-016, were reviewed for sensitive content and
+committed alongside the new Spec Kit-managed `NNN-feature-name/` layout.)
+Per the constitution's Principle I, anything beyond a trivial change goes
+through `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` →
+`/speckit-implement`, which creates the feature's directory under `specs/`
+automatically. Read the relevant spec before implementing. After
+implementation, mark `[x] Done` and link the PR.
 
 ## Commit style
 

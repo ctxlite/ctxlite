@@ -1,5 +1,31 @@
 <!--
 Sync Impact Report
+Version change: 1.2.0 → 1.3.0
+Bump rationale: MINOR — new governing guidance added: `specs/` is now
+  committed, tracked history, superseding an earlier "local only, not
+  committed" convention documented in docs/contributing.md. Triggered by
+  discovering that .gitignore's `specs/` entry was silently blocking the
+  Spec Kit-managed `017-better-sqlite3-security-audit/` feature directory
+  from ever being committed. The 16 pre-existing specs (SPEC-001 through
+  SPEC-016, plus an addendum) were reviewed for sensitive content (none
+  found — generic design docs with only dummy credential examples like
+  "sk-test") and committed rather than migrated to a _legacy/ folder.
+Modified principles: none
+Added sections: a new Additional Constraints bullet — "specs/ is
+  committed, tracked history" — requiring a sensitive-content scan before
+  committing any spec.
+Removed sections: none
+Templates requiring updates:
+  ✅ .gitignore — removed the blanket `specs/` entry (kept
+     `.specify/integrations/.cache/` and `.specify/feature.json`, which are
+     genuinely local-only working state, not specs)
+  ✅ docs/contributing.md — "Specs live in specs/ (local only, not
+     committed)" rewritten to state the new committed-history policy
+  ✅ AGENTS.md / CLAUDE.md / ctxlite-internals skill — reviewed, none
+     repeated the old "local only" claim, no edit needed
+Follow-up TODOs: none
+
+Sync Impact Report (previous)
 Version change: 1.1.0 → 1.2.0
 Bump rationale: MINOR — two changes bundled in one amendment. (1) Principle
   II's coverage bullet tightened from a "don't regress from baseline"
@@ -195,6 +221,16 @@ asked while it's still cheap to answer, not after a user reports it.
 - `AGENTS.md` / `CLAUDE.md` and the `ctxlite-internals` skill are the
   onboarding path for any agent working in this repo; keep them in sync
   with this constitution rather than letting either drift independently.
+- **`specs/` is committed, tracked history**, not local scratch — every
+  `/speckit-specify` output stays in the repository. (This supersedes an
+  earlier "local only, not committed" convention from before Spec Kit was
+  adopted; the pre-existing specs, SPEC-001 through SPEC-016, were reviewed
+  for sensitive content — none found — and committed alongside the new
+  `NNN-feature-name/` layout rather than deleted or hidden.) Before
+  committing any spec, scan it for credentials, tokens, or internal-only
+  detail that shouldn't be public — the review that cleared the pre-Spec
+  Kit specs is a one-time pass, not a standing guarantee for specs written
+  afterward.
 - **Release Discipline**: `./scripts/publish-npm.sh --publish` MUST NOT be
   run without first bumping `config.version` in the root `package.json`
   and running `npm run sync-version`. npm rejects republishing an already-
@@ -252,4 +288,4 @@ implementing. A reviewer who finds a constitution violation blocks the
 merge — "the spec didn't mention it" does not override a NON-NEGOTIABLE
 principle.
 
-**Version**: 1.2.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24
+**Version**: 1.3.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24
