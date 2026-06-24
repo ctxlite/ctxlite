@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.28] - 2026-06-24
+
+### Fixed
+- The OpenCode sidebar's support line was truncated (`wrapMode="none"` cuts the URL off mid-string in the narrow sidebar). Split into two lines: `♥ If ctxlite is saving you tokens` then the URL on its own line below, instead of one long line.
+
 ## [0.1.27] - 2026-06-24
 
 ### Fixed
