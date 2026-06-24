@@ -1,15 +1,21 @@
 <!--
 Sync Impact Report
+Version change: 1.0.0 → 1.1.0
+Modified principles: n/a (existing I–V unchanged)
+Added sections: Principle VI (Implementation Heuristic Gate)
+Removed sections: none
+Templates requiring updates:
+  ✅ .specify/templates/plan-template.md — Constitution Check section was a generic placeholder; replaced with the four Principle VI questions as explicit, fillable fields so the gate can't be skipped by omission
+  ✅ .specify/templates/tasks-template.md — already mandates tests (v1.0.0 change); no further edit needed
+  ✅ .specify/templates/spec-template.md — reviewed, no constitution-specific references to update
+  ✅ AGENTS.md / CLAUDE.md — already point to this file as the binding process; no edit needed
+Follow-up TODOs: none
+
+Sync Impact Report (previous)
 Version change: (template) → 1.0.0
 Modified principles: n/a (initial ratification — all principles newly defined)
 Added sections: Core Principles (I–V), Additional Constraints, Development Workflow & Review Process, Governance
 Removed sections: none
-Templates requiring updates:
-  ✅ .specify/templates/tasks-template.md — "Tests are OPTIONAL" line contradicted Principle II; changed to mandatory
-  ✅ .specify/templates/plan-template.md — Constitution Check gate already generic (reads this file at plan time); no edit needed
-  ✅ .specify/templates/spec-template.md — reviewed, no constitution-specific references to update
-  ✅ AGENTS.md / CLAUDE.md — already point to this file's governing skills; no edit needed
-Follow-up TODOs: none
 -->
 
 # ctxlite Constitution
@@ -87,6 +93,50 @@ content) is validated at the boundary (zod schemas, explicit size limits)
 before use. `npm audit --audit-level=high` MUST pass (run via
 `scripts/ci.sh` / `scripts/publish-npm.sh`) before any release.
 
+### VI. Implementation Heuristic Gate (NON-NEGOTIABLE)
+
+Before `/speckit-tasks` generates a task list, and again before
+`/speckit-implement` starts executing it, the plan MUST answer these four
+questions explicitly, with concrete specifics for *this* change — a vague
+or generic answer ("improves performance", "tested it") fails the gate as
+surely as a missing one:
+
+1. **Benefit** — What does this change actually achieve, for whom? State
+   it as a measurable or directly observable outcome (tokens saved, a bug
+   no longer reproducible, a host that now works that didn't), not as an
+   intention.
+2. **Risk** — What is the specific, most-likely-to-break thing? Which
+   existing behavior, test, or host integration is in the blast radius?
+   "Nothing, it's additive" is only a valid answer when the change truly
+   adds a new code path with zero shared lines with existing ones —
+   justify that claim if you make it.
+3. **Validation** — How was (or will) this be verified? Name the actual
+   test(s), or the actual live check performed (e.g. a real `cursor-agent
+   -p`/`opencode run` session, not just a unit test mocking the host).
+   `npm run typecheck && npm test` passing is necessary but is not by
+   itself a sufficient answer for a change to host-integration behavior —
+   that needs a real or realistic-mock host interaction (see Principle
+   II's note on mocks exercising real failure paths).
+4. **Cross-tool availability** — Does this change apply uniformly across
+   every host ctxlite supports today (OpenCode, Claude Code, Cursor,
+   Claude Desktop where relevant)? If not, is the asymmetry a real
+   platform constraint (e.g. Cursor's `postToolUse` cannot rewrite
+   built-in tool output) that's documented where a future reader would
+   find it, or is it an oversight that should become a follow-up task
+   instead of being shipped silently?
+
+A plan that cannot answer all four concretely is not ready for
+`/speckit-tasks` — resolve the gap via `/speckit-clarify` or by reworking
+the plan, not by writing a placeholder answer to get past the gate.
+
+Rationale: most of this project's real incidents were each missing one of
+these four answers at the time they shipped — a "quiet" precall rule
+nobody checked against chained commands (risk), a hook fix verified only
+by a unit test that turned out not to match how the real host invokes it
+(validation), or a fix built for one host silently left absent on another
+(cross-tool availability). The gate exists to force the question to be
+asked while it's still cheap to answer, not after a user reports it.
+
 ## Additional Constraints
 
 - TypeScript/Go style, security specifics, and monorepo layout rules in
@@ -108,9 +158,13 @@ before use. `npm audit --audit-level=high` MUST pass (run via
    before writing any code. Ambiguities get resolved here or via
    `/speckit-clarify`, not by guessing during implementation.
 2. **Plan** (`/speckit-plan`): the Constitution Check gate in the plan
-   template reads this file — a plan that can't satisfy Principles I–V
+   template reads this file — a plan that can't satisfy Principles I–VI
    must either be redesigned or carry an explicit, justified exception in
-   the plan's Complexity Tracking section.
+   the plan's Complexity Tracking section. The plan template's Constitution
+   Check section has the four Principle VI questions (Benefit / Risk /
+   Validation / Cross-tool availability) as fields to fill, not just a
+   reference back to this file — fill them with specifics for the actual
+   change, not restated boilerplate.
 3. **Tasks** (`/speckit-tasks`): every task list for this repository
    includes test tasks per Principle II; the upstream template's "tests
    are optional" default is overridden here.
@@ -142,4 +196,4 @@ implementing. A reviewer who finds a constitution violation blocks the
 merge — "the spec didn't mention it" does not override a NON-NEGOTIABLE
 principle.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24
+**Version**: 1.1.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24

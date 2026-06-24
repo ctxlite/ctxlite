@@ -40,7 +40,35 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+[Gates determined based on constitution file — Principles I-V from
+`.specify/memory/constitution.md` apply as written. Principle VI
+(Implementation Heuristic Gate) requires the four fields below to be
+filled with specifics for *this* change, not restated boilerplate; a
+generic or missing answer fails this gate.]
+
+**Benefit** — What does this change achieve, measurably or directly
+observably, and for whom?
+[ANSWER — e.g. "OpenCode users stop seeing a stale plugin version after
+upgrade" / "Cursor sessions now appear in --by-session" / NEEDS CLARIFICATION]
+
+**Risk** — What's the specific, most-likely-to-break thing? Which existing
+behavior/test/host integration is in the blast radius?
+[ANSWER — name the actual code path or host behavior at risk, or justify
+why none exists / NEEDS CLARIFICATION]
+
+**Validation** — How was/will this be verified? Name the actual test(s)
+or the actual live host check performed (not just "typecheck and test
+pass").
+[ANSWER — e.g. "unit test in X.test.ts covering Y" plus, if host behavior
+changed, "verified live via `cursor-agent -p`/`opencode run`" / NEEDS
+CLARIFICATION]
+
+**Cross-tool availability** — Does this apply uniformly across every host
+ctxlite supports (OpenCode, Claude Code, Cursor, Claude Desktop where
+relevant)? If not, is the asymmetry a documented platform constraint or an
+oversight to track as a follow-up task?
+[ANSWER — list hosts covered and any host left out, with the reason / NEEDS
+CLARIFICATION]
 
 ## Project Structure
 
