@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.27] - 2026-06-24
+
+### Fixed
+- The support link (`SUPPORT_LINE`) added in 0.1.26 was missing from the OpenCode sidebar widget and from `ctxlite stats --by-session` — `tui.tsx`'s `SidebarStats` doesn't go through `renderCompactSummary`, it rebuilds the same display manually, so adding the line only to the `get_stats` tool missed it. Added a `supportLine` field to the sidebar's snapshot, and added `SUPPORT_LINE` to `renderCompactSummary` itself (the shared helper `--by-session` also uses) — confirmed live in both surfaces.
+
 ## [0.1.26] - 2026-06-24
 
 ### Added
