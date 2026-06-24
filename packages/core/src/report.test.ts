@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest"
-import { renderCompactSummary, renderSessionBreakdownDetailed } from "./report.js"
+import {
+  formatSavingsLine,
+  hostLabel,
+  renderCompactSummary,
+  renderSessionBreakdown,
+  renderSessionBreakdownDetailed,
+} from "./report.js"
 import type { SessionBreakdownRow, Summary } from "./types.js"
 
 function makeSummary(overrides: Partial<Summary> = {}): Summary {
@@ -30,6 +36,63 @@ function makeSummary(overrides: Partial<Summary> = {}): Summary {
     ...overrides,
   }
 }
+
+describe("formatSavingsLine", () => {
+  it("shows a no-baseline notice when sessionTokensUsed is 0", () => {
+    expect(formatSavingsLine(makeSummary({ sessionTokensUsed: 0, tokensSaved: 800 }))).toBe(
+      "800 saved (no session baseline yet)",
+    )
+  })
+
+  it("shows the X of Y (Z%) form once there's a session baseline", () => {
+    const line = formatSavingsLine(
+      makeSummary({ sessionTokensUsed: 1000, realtimeTokensSaved: 400, tokensBefore: 1000, savingsPercent: 40 }),
+    )
+    expect(line).toBe("400 of 1.0K (40.0%)")
+  })
+})
+
+describe("hostLabel", () => {
+  it("maps known hosts to display names", () => {
+    expect(hostLabel("opencode")).toBe("OpenCode")
+    expect(hostLabel("claude-code")).toBe("Claude Code")
+    expect(hostLabel("cursor")).toBe("Cursor")
+    expect(hostLabel("mcp")).toBe("MCP")
+  })
+
+  it("falls back to the raw host string when unknown", () => {
+    expect(hostLabel("some-future-host")).toBe("some-future-host")
+  })
+})
+
+describe("renderSessionBreakdown", () => {
+  function row(overrides: Partial<SessionBreakdownRow> = {}): SessionBreakdownRow {
+    return { host: "opencode", sessionId: "ses_1", totalRequests: 5, tokensSaved: 800, firstTs: 1000, lastTs: 2000, ...overrides }
+  }
+
+  it("returns a placeholder when there are no sessions", () => {
+    expect(renderSessionBreakdown([])).toEqual(["No sessions recorded yet."])
+  })
+
+  it("groups consecutive rows under one host heading, with a blank line between hosts", () => {
+    const lines = renderSessionBreakdown([
+      row({ host: "opencode", sessionId: "a" }),
+      row({ host: "opencode", sessionId: "b" }),
+      row({ host: "cursor", sessionId: "c" }),
+    ])
+
+    expect(lines[0]).toBe("OpenCode")
+    expect(lines.some((l) => l.includes("a") && l.includes("saved"))).toBe(true)
+    expect(lines.some((l) => l.includes("b"))).toBe(true)
+    expect(lines).toContain("")
+    expect(lines).toContain("Cursor")
+  })
+
+  it("falls back to an empty session id when sessionId is null", () => {
+    const lines = renderSessionBreakdown([row({ sessionId: null })])
+    expect(lines[1]).toMatch(/^\s+\d+ saved/)
+  })
+})
 
 describe("renderCompactSummary", () => {
   it("shows the savings line, the bar chart, and a cost line", () => {

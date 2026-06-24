@@ -44,4 +44,7 @@ if grep -rEn '^\s*console\.log\s*\(' packages/mcp/src/ --include='*.ts'; then
 fi
 echo "OK: no console.log in MCP server"
 
+echo "==> security audit (fails only on high/critical — run before every release)"
+npm audit --omit=dev --audit-level=high
+
 echo "==> Local CI passed"

@@ -42,6 +42,9 @@ PACKAGES=(
 echo "==> build"
 npm run build
 
+echo "==> security audit (fails only on high/critical)"
+npm audit --omit=dev --audit-level=high
+
 echo "==> verify versions"
 ROOT_VERSION=$(node -e "console.log(require('./package.json').config.version)")
 for pkg in "${PACKAGES[@]}"; do

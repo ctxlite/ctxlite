@@ -1,5 +1,33 @@
-import { describe, it, expect } from "vitest"
-import { createServer } from "./server.js"
+import { describe, it, expect, afterAll, vi } from "vitest"
+import { mkdtempSync, rmSync } from "fs"
+import { tmpdir } from "os"
+import { join } from "path"
+
+// shared.ts computes STATS_DB_PATH from homedir() once, at import time — the
+// fake homedir must exist before that import happens, or this test suite
+// reads/writes the user's actual ~/.ctxlite/stats.db on every run.
+const tmpHome = mkdtempSync(join(tmpdir(), "ctxlite-mcp-server-home-"))
+vi.mock("os", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("os")>()
+  return { ...actual, homedir: () => tmpHome }
+})
+
+const { createServer } = await import("./server.js")
+const { closeSharedStores } = await import("@ctxlite/core")
+
+afterAll(() => {
+  closeSharedStores()
+  rmSync(tmpHome, { recursive: true, force: true })
+})
+
+/** McpServer's tool registry is `private` at the type level only — the handler is reachable at runtime. */
+function registeredHandler(server: ReturnType<typeof createServer>, name: string) {
+  const tools = (server as unknown as { _registeredTools: Record<string, { handler: (args: unknown) => Promise<unknown> }> })
+    ._registeredTools
+  const tool = tools[name]
+  if (!tool) throw new Error(`tool ${name} not registered`)
+  return tool.handler
+}
 
 describe("createServer", () => {
   it("creates server without throwing", () => {
@@ -10,5 +38,35 @@ describe("createServer", () => {
     const server = createServer()
     expect(server).toBeDefined()
     expect(typeof server.connect).toBe("function")
+  })
+
+  it("get_stats tool wraps handleGetStats' text in MCP content format", async () => {
+    const server = createServer()
+    const result = (await registeredHandler(server, "get_stats")({})) as { content: Array<{ type: string; text: string }> }
+    expect(result.content[0]?.type).toBe("text")
+    expect(result.content[0]?.text).toContain("ctxlite stats")
+  })
+
+  it("smart_read tool wraps handleSmartRead's text in MCP content format", async () => {
+    const { writeFileSync } = await import("fs")
+    const filePath = join(tmpHome, "sample.ts")
+    writeFileSync(filePath, "export const a = 1\n")
+
+    const server = createServer()
+    const result = (await registeredHandler(server, "smart_read")({ path: filePath })) as {
+      content: Array<{ type: string; text: string }>
+    }
+    expect(result.content[0]?.type).toBe("text")
+    expect(result.content[0]?.text).toContain("export const a")
+  })
+
+  it("trim_context tool wraps handleTrimContext's text in MCP content format", async () => {
+    const server = createServer()
+    const result = (await registeredHandler(server, "trim_context")({
+      files: [{ path: "a.ts", content: "export const a = 1" }],
+      query: "a",
+    })) as { content: Array<{ type: string; text: string }> }
+    expect(result.content[0]?.type).toBe("text")
+    expect(typeof result.content[0]?.text).toBe("string")
   })
 })

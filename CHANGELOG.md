@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added
+- Test coverage raised from 73% to 95%+ statements/lines (90%+ on every package) via `@vitest/coverage-v8` — no production source changed, only new test files plus `vitest.config.ts` (coverage scope excludes the legacy Go npm distribution and the two process-entrypoint files that can only be verified by spawning the built binary, both with reasons documented inline).
+- `docs/architecture.md` rewritten to describe the actual current system (the seven optimization mechanisms, per-host integration, the skill format, stats storage) — it previously only documented the legacy Go HTTP proxy.
+- A `ctxlite-internals` contributor skill (`.claude/skills/`, `.cursor/skills/`, `.opencode/skills/`) documenting the specific real bugs that have shipped in `tool-precall.ts`, `core/install/`, and the SQLite schema, plus root `AGENTS.md`/`CLAUDE.md` pointing to it.
+
+No package code changed in this entry — published npm packages are unaffected.
+
 ## [0.1.25] - 2026-06-24
 
 ### Added
