@@ -14,6 +14,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 No package code changed in this entry — published npm packages are unaffected.
 
+### Changed
+- **License**: v0.1.26 and later are MIT with the [Commons Clause](https://commonsclause.com/) condition — free for any use including commercial/internal use at a company; a separate commercial license is needed to resell or rebrand ctxlite itself as a competing product/service. v0.1.0–0.1.25 remain plain MIT permanently (not retroactive). Also fixed a real mistake in the first draft of this change: it said "licensed under the Business Source terms," which would have implied BSL (time-delayed conversion to fully open) — the actual condition is Commons Clause (no such conversion), corrected before anyone acted on the wrong text.
+- Added a Support Link Retention Condition to `LICENSE` and a shared `SUPPORT_LINE` (in `@ctxlite/core`, single source of truth) shown after every stats report: CLI `stats`, CLI `--help`, OpenCode `get_stats`, MCP `get_stats`.
+- Added `"funding"` to all 4 published `package.json` files (npm's native field — shows on each package's npmjs.com page) and copied `LICENSE` into each package directory, which had never shipped one in the published tarball before (confirmed via `npm pack --dry-run` showing no license file prior to this fix).
+
 ## [0.1.25] - 2026-06-24
 
 ### Added
