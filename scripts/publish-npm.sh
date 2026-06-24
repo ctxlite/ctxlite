@@ -39,6 +39,12 @@ PACKAGES=(
   packages/cli
 )
 
+echo "==> sync README and LICENSE into each package (npm reads these from the package dir, not the repo root)"
+for pkg in "${PACKAGES[@]}"; do
+  cp README.md "${pkg}/README.md"
+  cp LICENSE "${pkg}/LICENSE"
+done
+
 echo "==> build"
 npm run build
 

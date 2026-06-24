@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.29] - 2026-06-24
+
+### Fixed
+- Published packages had no README on npmjs.com ("This package does not have a README") — same root cause as the missing-LICENSE issue fixed in 0.1.26: npm reads `README.md`/`LICENSE` from each package's own directory, not the monorepo root. Copied both into all 4 package directories, and added the copy step to `scripts/publish-npm.sh` itself (before build) so this can't go stale again on a future release.
+
 ## [0.1.28] - 2026-06-24
 
 ### Fixed
