@@ -6,6 +6,17 @@ under active development. See `docs/architecture.md` for how the pieces fit
 together, `docs/contributing.md` for build/test/release commands, and
 `docs/configuration.md` for the user-facing per-host setup.
 
+## Governing process: Spec Kit
+
+`.specify/memory/constitution.md` is the binding governance document for
+this repository — read it before anything else here. In short: anything
+beyond a trivial fix goes through `/speckit-specify` → `/speckit-plan` →
+`/speckit-tasks` → `/speckit-implement`, every task includes a test written
+and passing before it's done (never optional, regardless of what a
+template default says), and `/speckit-analyze` plus a correctness review
+run before the work is considered mergeable. The constitution is the
+source of truth if anything below appears to conflict with it.
+
 ## Before touching specific areas
 
 - `packages/core/src/tool-precall.ts`, `packages/core/src/install/`, or the
