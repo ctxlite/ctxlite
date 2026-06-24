@@ -43,7 +43,9 @@ export {
   formatSavingsLine,
   formatTokenCount,
   hostLabel,
+  renderCompactSummary,
   renderSessionBreakdown,
+  renderSessionBreakdownDetailed,
   renderStatsBarChart,
 } from "./report.js"
 export type { StatsBreakdownRow } from "./report.js"

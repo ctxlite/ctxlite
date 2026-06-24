@@ -2,7 +2,15 @@ export type InstallTool = "cursor" | "opencode" | "claude-code" | "claude-deskto
 
 export type InstallScope = "global" | "project"
 
-export type ConfigKind = "mcp" | "opencode" | "opencode-tui" | "claude-code-hooks" | "cursor-hooks"
+export type ConfigKind =
+  | "mcp"
+  | "opencode"
+  | "opencode-tui"
+  | "claude-code-hooks"
+  | "cursor-hooks"
+  | "claude-code-skill"
+  | "cursor-skill"
+  | "opencode-skill"
 
 export interface McpServerEntry {
   command: string

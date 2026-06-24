@@ -75,6 +75,36 @@ function resolveCursorHooksConfigPath(scope: InstallScope, ctx: PathContext = {}
     : join(project(ctx), ".cursor", "hooks.json")
 }
 
+/** Claude Code discovers skills under `.claude/skills/<name>/SKILL.md` (project) or `~/.claude/skills/<name>/SKILL.md` (global). */
+function resolveClaudeCodeSkillConfigPath(scope: InstallScope, ctx: PathContext = {}): string {
+  return scope === "global"
+    ? join(home(ctx), ".claude", "skills", "ctxlite", "SKILL.md")
+    : join(project(ctx), ".claude", "skills", "ctxlite", "SKILL.md")
+}
+
+/**
+ * Cursor discovers user-installed skills under `.cursor/skills/<name>/SKILL.md`
+ * — NOT `skills-cursor/`, which is reserved for Cursor's own bundled meta-skills
+ * (create-hook, create-rule, etc.).
+ */
+function resolveCursorSkillConfigPath(scope: InstallScope, ctx: PathContext = {}): string {
+  return scope === "global"
+    ? join(home(ctx), ".cursor", "skills", "ctxlite", "SKILL.md")
+    : join(project(ctx), ".cursor", "skills", "ctxlite", "SKILL.md")
+}
+
+/**
+ * OpenCode's project-level default skill path is `.opencode/skills/<name>/SKILL.md`
+ * (confirmed from its own config schema). The global equivalent isn't
+ * documented as explicitly — this mirrors its other global config files,
+ * all of which live under `~/.config/opencode/`.
+ */
+function resolveOpenCodeSkillConfigPath(scope: InstallScope, ctx: PathContext = {}): string {
+  return scope === "global"
+    ? join(home(ctx), ".config", "opencode", "skills", "ctxlite", "SKILL.md")
+    : join(project(ctx), ".opencode", "skills", "ctxlite", "SKILL.md")
+}
+
 export function toPathContext(options: Pick<InstallOptions, "homeDir" | "projectDir">): PathContext {
   const ctx: PathContext = {}
   if (options.homeDir !== undefined) {
@@ -100,6 +130,7 @@ export function buildTargets(
       return [
         { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "opencode" },
         { tool, scope, configPath: resolveOpenCodeTuiConfigPath(scope, ctx), kind: "opencode-tui" },
+        { tool, scope, configPath: resolveOpenCodeSkillConfigPath(scope, ctx), kind: "opencode-skill" },
       ]
     }
 
@@ -107,6 +138,7 @@ export function buildTargets(
       return [
         { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "mcp" },
         { tool, scope, configPath: resolveClaudeCodeHooksConfigPath(scope, ctx), kind: "claude-code-hooks" },
+        { tool, scope, configPath: resolveClaudeCodeSkillConfigPath(scope, ctx), kind: "claude-code-skill" },
       ]
     }
 
@@ -114,6 +146,7 @@ export function buildTargets(
       return [
         { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "mcp" },
         { tool, scope, configPath: resolveCursorHooksConfigPath(scope, ctx), kind: "cursor-hooks" },
+        { tool, scope, configPath: resolveCursorSkillConfigPath(scope, ctx), kind: "cursor-skill" },
       ]
     }
 

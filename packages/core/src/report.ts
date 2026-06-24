@@ -142,3 +142,54 @@ export function renderSessionBreakdown(rows: SessionBreakdownRow[]): string[] {
 
   return lines
 }
+
+/** Same "ctxlite · X of Y (Z%)" + bar chart + cost line shown by get_stats, without the boxed header — for embedding under a session listing. */
+export function renderCompactSummary(summary: Summary): string[] {
+  if (summary.totalRequests === 0) {
+    return ["No data recorded yet."]
+  }
+
+  return [
+    `ctxlite · ${formatSavingsLine(summary)}`,
+    ...renderStatsBarChart(buildStatsBreakdown(summary)),
+    `~$${summary.costSaved.toFixed(4)} saved`,
+  ]
+}
+
+/**
+ * Same grouping as renderSessionBreakdown, but with the full per-source bar
+ * chart indented underneath each session instead of just a token total.
+ */
+export function renderSessionBreakdownDetailed(
+  entries: Array<{ row: SessionBreakdownRow; summary: Summary }>,
+): string[] {
+  if (entries.length === 0) {
+    return ["No sessions recorded yet."]
+  }
+
+  const lines: string[] = []
+  let currentHost: string | null = null
+
+  for (const { row, summary } of entries) {
+    if (row.host !== currentHost) {
+      if (currentHost !== null) {
+        lines.push("")
+      }
+      lines.push(hostLabel(row.host))
+      currentHost = row.host
+    }
+
+    const lastActive = new Date(row.lastTs * 1000).toLocaleString()
+    lines.push(`  ${row.sessionId ?? ""}  (${row.totalRequests} requests)  last active ${lastActive}`)
+    for (const line of renderCompactSummary(summary)) {
+      lines.push(`    ${line}`)
+    }
+    lines.push("")
+  }
+
+  if (lines.at(-1) === "") {
+    lines.pop()
+  }
+
+  return lines
+}

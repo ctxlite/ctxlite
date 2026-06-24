@@ -1,4 +1,4 @@
-import { StatsStore, defaultDbPath, renderSessionBreakdown } from "@ctxlite/core"
+import { StatsStore, defaultDbPath, renderSessionBreakdown, renderSessionBreakdownDetailed } from "@ctxlite/core"
 import { formatText, formatJson } from "./format.js"
 
 export interface Args {
@@ -8,6 +8,7 @@ export interface Args {
   export: string
   db: string
   bySession: boolean
+  compact: boolean
   help: boolean
 }
 
@@ -19,6 +20,7 @@ export function parseArgs(argv: string[]): Args {
     export: "text",
     db: defaultDbPath(),
     bySession: false,
+    compact: false,
     help: false,
   }
 
@@ -57,6 +59,9 @@ export function parseArgs(argv: string[]): Args {
         break
       case "--by-session":
         args.bySession = true
+        break
+      case "--compact":
+        args.compact = true
         break
       case "--help":
       case "-h":
@@ -114,10 +119,26 @@ export function runStats(args: Args): number {
 
     if (args.bySession) {
       const rows = store.sessionBreakdown(since)
+
+      if (args.compact) {
+        if (args.export === "json") {
+          process.stdout.write(JSON.stringify(rows, null, 2) + "\n")
+        } else {
+          process.stdout.write(renderSessionBreakdown(rows).join("\n") + "\n")
+        }
+        return 0
+      }
+
+      const entries = rows.map((row) => ({
+        row,
+        summary: store!.summaryForSession(row.host, row.sessionId ?? ""),
+      }))
+
       if (args.export === "json") {
-        process.stdout.write(JSON.stringify(rows, null, 2) + "\n")
+        const detailed = entries.map(({ row, summary }) => ({ ...row, breakdown: summary }))
+        process.stdout.write(JSON.stringify(detailed, null, 2) + "\n")
       } else {
-        process.stdout.write(renderSessionBreakdown(rows).join("\n") + "\n")
+        process.stdout.write(renderSessionBreakdownDetailed(entries).join("\n") + "\n")
       }
       return 0
     }

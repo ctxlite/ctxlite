@@ -192,6 +192,27 @@ describe("optimizeBashCommand", () => {
     expect(result.args.command).toContain("--silent")
     expect(result.args.command).toContain(`--testPathPattern="auth"`)
   })
+
+  it("adds -q to cargo build/run/check/bench (not just cargo test)", () => {
+    for (const sub of ["build", "run", "check", "bench"]) {
+      const result = optimizeBashCommand(`cargo ${sub}`)
+      expect(result.modified).toBe(true)
+      expect(result.args.command).toContain("--quiet")
+    }
+  })
+
+  it("adds --verbosity quiet to dotnet build/test/restore/publish", () => {
+    for (const sub of ["build", "test", "restore", "publish"]) {
+      const result = optimizeBashCommand(`dotnet ${sub}`)
+      expect(result.modified).toBe(true)
+      expect(result.args.command).toContain("--verbosity quiet")
+    }
+  })
+
+  it("does not double up on dotnet verbosity when already set", () => {
+    const result = optimizeBashCommand("dotnet build -v detailed")
+    expect(result.modified).toBe(false)
+  })
 })
 
 describe("optimizeReadPath", () => {

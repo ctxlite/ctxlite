@@ -49,6 +49,12 @@ describe("parseArgs", () => {
     expect(args.subcommand).toBe("hook")
     expect(args.rest).toEqual(["pre-tool-use"])
   })
+
+  it("parses --compact alongside --by-session", () => {
+    const args = parseArgs(["stats", "--by-session", "--compact"])
+    expect(args.bySession).toBe(true)
+    expect(args.compact).toBe(true)
+  })
 })
 
 describe("runStats", () => {
@@ -105,7 +111,7 @@ describe("runStats", () => {
     }
   })
 
-  it("--by-session with --export json prints an array", () => {
+  it("--by-session with --export json prints an array, with a per-session breakdown by default", () => {
     const writes: string[] = []
     const spy = vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
       writes.push(String(chunk))
@@ -115,7 +121,44 @@ describe("runStats", () => {
     try {
       runStats(baseArgs({ bySession: true, export: "json" }))
       const output = writes.join("")
-      expect(Array.isArray(JSON.parse(output))).toBe(true)
+      const parsed = JSON.parse(output) as unknown[]
+      expect(Array.isArray(parsed)).toBe(true)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it("--by-session --compact with --export json omits the per-source breakdown", () => {
+    const writes: string[] = []
+    const spy = vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+      writes.push(String(chunk))
+      return true
+    })
+
+    try {
+      runStats(baseArgs({ bySession: true, compact: true, export: "json" }))
+      const output = writes.join("")
+      const parsed = JSON.parse(output) as Array<Record<string, unknown>>
+      expect(Array.isArray(parsed)).toBe(true)
+      for (const row of parsed) {
+        expect(row.breakdown).toBeUndefined()
+      }
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it("--by-session text output without --compact shows 'No sessions recorded yet.' on an empty db", () => {
+    const writes: string[] = []
+    const spy = vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+      writes.push(String(chunk))
+      return true
+    })
+
+    try {
+      runStats(baseArgs({ bySession: true }))
+      const output = writes.join("")
+      expect(output).toContain("No sessions recorded yet.")
     } finally {
       spy.mockRestore()
     }

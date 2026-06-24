@@ -186,27 +186,30 @@ describe("buildTargets", () => {
     expect(targets[0]?.kind).toBe("opencode")
   })
 
-  it("also targets tui.json for opencode (TUI-side plugin registration)", () => {
+  it("also targets tui.json and a skill file for opencode", () => {
     const targets = buildTargets(["opencode"], "global", { homeDir: "/home/test" })
-    expect(targets).toHaveLength(2)
+    expect(targets).toHaveLength(3)
     expect(targets[1]?.configPath).toBe("/home/test/.config/opencode/tui.json")
     expect(targets[1]?.kind).toBe("opencode-tui")
+    expect(targets[2]?.kind).toBe("opencode-skill")
   })
 
-  it("also targets settings.json for claude-code (hooks registration)", () => {
+  it("also targets settings.json and a skill file for claude-code (hooks registration)", () => {
     const targets = buildTargets(["claude-code"], "global", { homeDir: "/home/test" })
-    expect(targets).toHaveLength(2)
+    expect(targets).toHaveLength(3)
     expect(targets[0]?.kind).toBe("mcp")
     expect(targets[1]?.configPath).toBe("/home/test/.claude/settings.json")
     expect(targets[1]?.kind).toBe("claude-code-hooks")
+    expect(targets[2]?.kind).toBe("claude-code-skill")
   })
 
-  it("also targets hooks.json for cursor (hooks registration)", () => {
+  it("also targets hooks.json and a skill file for cursor (hooks registration)", () => {
     const targets = buildTargets(["cursor"], "global", { homeDir: "/home/test" })
-    expect(targets).toHaveLength(2)
+    expect(targets).toHaveLength(3)
     expect(targets[0]?.kind).toBe("mcp")
     expect(targets[1]?.configPath).toBe("/home/test/.cursor/hooks.json")
     expect(targets[1]?.kind).toBe("cursor-hooks")
+    expect(targets[2]?.kind).toBe("cursor-skill")
   })
 })
 
@@ -253,7 +256,7 @@ describe("runInstall", () => {
 })
 
 describe("planInstall all global", () => {
-  it("returns seven targets for all tools (cursor, opencode, and claude-code each count as two)", async () => {
+  it("returns ten targets for all tools (cursor, opencode, and claude-code each count as three: mcp/config, hooks, skill)", async () => {
     const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
     try {
       const plan = await planInstall({
@@ -263,7 +266,85 @@ describe("planInstall all global", () => {
         projectDir: root,
         dryRun: true,
       })
-      expect(plan).toHaveLength(7)
+      expect(plan).toHaveLength(10)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+})
+
+describe("skill install (claude-code-skill / cursor-skill / opencode-skill)", () => {
+  it("resolves claude-code's skill path under .claude/skills/ctxlite/SKILL.md", () => {
+    const targets = buildTargets(["claude-code"], "global", { homeDir: "/home/test" })
+    expect(targets).toHaveLength(3)
+    expect(targets[2]?.configPath).toBe("/home/test/.claude/skills/ctxlite/SKILL.md")
+    expect(targets[2]?.kind).toBe("claude-code-skill")
+  })
+
+  it("resolves cursor's skill path under .cursor/skills/ctxlite/SKILL.md (not skills-cursor/, which is reserved)", () => {
+    const targets = buildTargets(["cursor"], "project", { projectDir: "/repo" })
+    expect(targets).toHaveLength(3)
+    expect(targets[2]?.configPath).toBe("/repo/.cursor/skills/ctxlite/SKILL.md")
+    expect(targets[2]?.kind).toBe("cursor-skill")
+  })
+
+  it("resolves opencode's skill path under .opencode/skills/ctxlite/SKILL.md for project scope", () => {
+    const targets = buildTargets(["opencode"], "project", { projectDir: "/repo" })
+    expect(targets).toHaveLength(3)
+    expect(targets[2]?.configPath).toBe("/repo/.opencode/skills/ctxlite/SKILL.md")
+    expect(targets[2]?.kind).toBe("opencode-skill")
+  })
+
+  it("writes the SKILL.md file with frontmatter on install", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
+    try {
+      const plan = await runInstall({
+        tools: ["claude-code"],
+        scope: "project",
+        projectDir: root,
+        homeDir: root,
+      })
+
+      const skillItem = plan.find((p) => p.configPath.endsWith("SKILL.md"))
+      expect(skillItem?.action).toBe("create")
+      const content = await readFile(join(root, ".claude", "skills", "ctxlite", "SKILL.md"), "utf8")
+      expect(content).toContain("name: ctxlite")
+      expect(content).toContain("smart_read")
+      expect(content).toContain("trim_context")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it("is idempotent — re-running install skips an already-current SKILL.md", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
+    try {
+      await runInstall({ tools: ["cursor"], scope: "project", projectDir: root, homeDir: root })
+      const plan = await runInstall({ tools: ["cursor"], scope: "project", projectDir: root, homeDir: root })
+      const skillItem = plan.find((p) => p.configPath.endsWith("SKILL.md"))
+      expect(skillItem?.action).toBe("skip")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it("removes the SKILL.md file when remove: true", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
+    try {
+      await runInstall({ tools: ["opencode"], scope: "project", projectDir: root, homeDir: root })
+      const skillPath = join(root, ".opencode", "skills", "ctxlite", "SKILL.md")
+      await expect(readFile(skillPath, "utf8")).resolves.toBeTruthy()
+
+      const plan = await runInstall({
+        tools: ["opencode"],
+        scope: "project",
+        projectDir: root,
+        homeDir: root,
+        remove: true,
+      })
+      const skillItem = plan.find((p) => p.configPath.endsWith("SKILL.md"))
+      expect(skillItem?.action).toBe("remove")
+      await expect(readFile(skillPath, "utf8")).rejects.toThrow()
     } finally {
       await rm(root, { recursive: true, force: true })
     }

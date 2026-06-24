@@ -4,6 +4,8 @@ const PRECALL_ESTIMATES: Record<string, number> = {
   npm_build: 400,
   npm_install: 300,
   cargo_test: 600,
+  cargo_build: 400,
+  dotnet: 500,
   pytest: 500,
   pip_install: 300,
   composer_install: 300,
@@ -144,6 +146,15 @@ function matchQuietPattern(segmentSkeleton: string, segment: string): SegmentMat
   } else if (/\bcargo\s+test\b/.test(segmentSkeleton) && !hasFlag(segment, ["--quiet", "-q"])) {
     next = appendFlag(segment, "--quiet")
     label = "cargo_test"
+  } else if (/\bcargo\s+(build|run|check|bench)\b/.test(segmentSkeleton) && !hasFlag(segment, ["--quiet", "-q"])) {
+    next = appendFlag(segment, "--quiet")
+    label = "cargo_build"
+  } else if (
+    /\bdotnet\s+(build|test|restore|publish)\b/.test(segmentSkeleton) &&
+    !hasFlag(segment, ["--verbosity", "-v"])
+  ) {
+    next = appendFlag(segment, "--verbosity quiet")
+    label = "dotnet"
   } else if (/\bpytest\b/.test(segmentSkeleton) && !hasFlag(segment, ["-q", "--quiet", "-v"])) {
     next = appendFlag(segment, "-q")
     label = "pytest"

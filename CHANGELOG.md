@@ -7,6 +7,20 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.25] - 2026-06-24
+
+### Added
+- `optimizeBashCommand` covers more build tools beyond Java/JavaScript: `cargo build`/`run`/`check`/`bench` (not just `cargo test`), and `dotnet build`/`test`/`restore`/`publish` (`--verbosity quiet`) — both flags verified against current upstream docs, not assumed.
+- A `ctxlite` skill (`SKILL.md`, the same frontmatter+Markdown format Claude Code, Cursor, and OpenCode all read) is now installed for Claude Code, Cursor, and OpenCode — `.claude/skills/ctxlite/`, `.cursor/skills/ctxlite/` (project) or the `~/...` global equivalents, and `.opencode/skills/ctxlite/` / `~/.config/opencode/skills/ctxlite/`. It documents when to use `smart_read`/`trim_context`, as a stronger, host-native nudge alongside the existing MCP server instructions and OpenCode's system-prompt injection. Verified live: `opencode debug skill` confirms ctxlite is discovered at the installed path; OpenCode also auto-loads the Claude Code copy from `~/.claude/skills/` for free.
+- `ctxlite stats --by-session` now shows the full per-source bar chart breakdown (precall/compress/prune/compact/smart_read/trim/concise) under each session, not just a token total — matching what `get_stats` already showed for the current session. `--compact` restores the old one-line-per-session listing.
+
+### Fixed
+- `optimizeBashCommand` no longer bails out entirely on any `&&`/`||`/`;`/`|` in a command. It now splits on top-level shell operators and rewrites only the matching segment, so `cd app && npm test 2>&1 | tail -15` (or `export FOO=bar; export BAZ=qux; ./gradlew build`) gets the right segment quieted without touching the rest. `2>&1`/`>&N`/`&>` redirects are distinguished from real `&` separators so they're never mistaken for a chain boundary.
+- `mvn`/`gradle` quiet-flag rules now also match the wrapper-script and Windows forms: `mvnw`, `./mvnw`, `mvnw.cmd`/`.bat`, bare `gradlew` (not just `./gradlew`), `gradlew.bat` — case-insensitive.
+- Traced and fixed a real install gap: `~/.cursor/hooks.json` was missing on installs done before 0.1.20 added Cursor hooks support, since re-running `ctxlite install` is what picks up newly added install targets. Verified end-to-end against a real `cursor-agent` session (`preToolUse` fires, the rewrite is logged, the session shows up in `--by-session`).
+- Verified live (a real headless `opencode run` session, not just a unit test) that the deferred precall-logging path (`tool.execute.before` → `tool.execute.after`) and the generic output-compression hook both work correctly end-to-end for OpenCode — a 300-line fake `gradlew build` log was correctly rewritten with `-q` and then compressed from 9.3K to 3.7K tokens.
+- Fixed the `clean` npm script's glob missing the dotfile `.tsbuildinfo` (`*.tsbuildinfo` doesn't match a leading dot in bash), which left stale incremental-build caches behind after `npm run clean` and made `tsc --build` think stale output was current.
+
 ## [0.1.24] - 2026-06-23
 
 ### Added
