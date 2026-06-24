@@ -11,4 +11,5 @@ coverage/
 .DS_Store
 .env
 .specify/integrations/.cache/
+.specify/extensions/.cache/
 .specify/feature.json

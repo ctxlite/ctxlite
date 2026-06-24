@@ -1,5 +1,37 @@
 <!--
 Sync Impact Report
+Version change: 1.3.0 → 1.4.0
+Bump rationale: MINOR — new governing guidance added: local git-hook
+  enforcement of typecheck/lint/test is now a constitutional requirement,
+  not left to CI alone. Triggered by a real incident: an
+  @typescript-eslint/no-unsafe-assignment error in
+  packages/core/src/install/merge.ts (Array.isArray narrowing to any[],
+  then spreading it — fixed by casting to unknown[] before the spread)
+  reached GitHub Actions undetected because nothing ran lint locally
+  first.
+Modified principles: none
+Added sections: a new Additional Constraints bullet — "Local enforcement,
+  not CI-only enforcement" — requiring scripts/git-hooks/ to exist and
+  stay wired via package.json's prepare script, and treating its removal
+  without an equivalent replacement as a constitution violation.
+Removed sections: none
+Templates requiring updates:
+  ✅ packages/core/src/install/merge.ts — fixed the actual lint error
+     (cast to `unknown[]` before each unsafe spread)
+  ✅ scripts/git-hooks/pre-commit (new) — lint + typecheck
+  ✅ scripts/git-hooks/pre-push (new) — full scripts/ci.sh
+  ✅ package.json — added "prepare": "git config core.hooksPath
+     scripts/git-hooks"
+  ✅ docs/contributing.md — documented the hook wiring and why it exists,
+     right after the `npm install` setup step
+  ✅ AGENTS.md — added a "don't bypass with --no-verify" constraint
+     alongside the existing typecheck/test/lint/coverage checklist
+  ✅ .specify/templates/plan-template.md / tasks-template.md /
+     spec-template.md — reviewed, no edit needed (this constraint governs
+     repo tooling, not feature-specific planning fields)
+Follow-up TODOs: none
+
+Sync Impact Report (previous)
 Version change: 1.2.0 → 1.3.0
 Bump rationale: MINOR — new governing guidance added: `specs/` is now
   committed, tracked history, superseding an earlier "local only, not
@@ -231,6 +263,24 @@ asked while it's still cheap to answer, not after a user reports it.
   detail that shouldn't be public — the review that cleared the pre-Spec
   Kit specs is a one-time pass, not a standing guarantee for specs written
   afterward.
+- **Local enforcement, not CI-only enforcement**: `npm run typecheck`,
+  `npm run lint`, and `npm test` MUST be enforced by a local git hook, not
+  left as something only GitHub Actions catches. Concretely: `npm
+  install` MUST wire `scripts/git-hooks/` as the active hooks directory
+  (currently via `package.json`'s `prepare` script and git's native
+  `core.hooksPath` — no external dependency required to satisfy this), a
+  `pre-commit` hook MUST run lint+typecheck, and a `pre-push` hook MUST
+  run the full `scripts/ci.sh`. Bypassing with `--no-verify` is not a
+  normal workflow step — treat a hook that blocks a commit/push as a
+  signal to fix the underlying issue, the same as a failing CI run.
+  (Triggered by a real incident: an `@typescript-eslint/no-unsafe-
+  assignment` error in `packages/core/src/install/merge.ts` reached
+  GitHub Actions undetected because nothing enforced lint locally first —
+  the same class of "only caught in CI" gap Release Discipline already
+  closes for publishing.) If `scripts/git-hooks/` or the `prepare` wiring
+  is ever removed, that removal itself is a constitution violation, not a
+  neutral refactor — it must be replaced with an equivalent enforcement
+  mechanism in the same change, not dropped.
 - **Release Discipline**: `./scripts/publish-npm.sh --publish` MUST NOT be
   run without first bumping `config.version` in the root `package.json`
   and running `npm run sync-version`. npm rejects republishing an already-
@@ -288,4 +338,4 @@ implementing. A reviewer who finds a constitution violation blocks the
 merge — "the spec didn't mention it" does not override a NON-NEGOTIABLE
 principle.
 
-**Version**: 1.3.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24
+**Version**: 1.4.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24

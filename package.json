@@ -9,6 +9,7 @@
     "version": "0.1.25"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath scripts/git-hooks",
     "build": "npm run build --workspaces --if-present",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",

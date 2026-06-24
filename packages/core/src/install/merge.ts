@@ -138,7 +138,7 @@ function isCtxliteHookGroup(group: unknown): boolean {
 }
 
 function addCtxliteHookGroup(entries: unknown, command: string): { entries: unknown[]; changed: boolean } {
-  const list = Array.isArray(entries) ? [...entries] : []
+  const list = Array.isArray(entries) ? [...(entries as unknown[])] : []
   if (list.some(isCtxliteHookGroup)) {
     return { entries: list, changed: false }
   }
@@ -213,7 +213,7 @@ function isCtxliteCursorHookEntry(entry: unknown): boolean {
 export function mergeCursorHooksConfig(existing: unknown): { next: JsonObject; changed: boolean } {
   const base = isObject(existing) ? { ...existing } : {}
   const hooks = isObject(base.hooks) ? { ...base.hooks } : {}
-  const preToolUse = Array.isArray(hooks.preToolUse) ? [...hooks.preToolUse] : []
+  const preToolUse = Array.isArray(hooks.preToolUse) ? [...(hooks.preToolUse as unknown[])] : []
 
   if (preToolUse.some(isCtxliteCursorHookEntry)) {
     return { next: base, changed: false }

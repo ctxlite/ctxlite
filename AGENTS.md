@@ -45,3 +45,9 @@ source of truth if anything below appears to conflict with it.
 - 90% statement/line coverage is a hard floor, per package, not a
   soft target — run `npm run test:coverage` and confirm no package in
   `packages/*` dropped below it before calling a change done.
+- `npm install` wires git hooks (`scripts/git-hooks/`, via the `prepare`
+  script) that run lint+typecheck on commit and the full `scripts/ci.sh`
+  on push — don't bypass with `--no-verify`; if a hook blocks you
+  incorrectly, fix the underlying issue, since that's exactly the gap
+  these hooks exist to close (a lint error once reached GitHub Actions
+  undetected because nothing ran it locally first).

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Fast local gate, run automatically on every commit (see package.json's
+# "prepare" script, which points git at this directory via
+# `git config core.hooksPath`). Catches exactly the class of failure that
+# motivated this hook: a lint error that only ever surfaced in CI because
+# nothing ran it locally before pushing.
+#
+# Deliberately fast (lint + typecheck only, no full test suite/coverage —
+# that's scripts/ci.sh's job, run before pushing) so it doesn't make every
+# commit slow enough to be worth bypassing.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT"
+
+echo "==> pre-commit: lint"
+npm run lint
+
+echo "==> pre-commit: typecheck"
+npm run typecheck
+
+echo "==> pre-commit passed"

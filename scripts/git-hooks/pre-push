@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Full local CI parity before push — the same checks GitHub Actions runs,
+# so a failure surfaces here instead of after a push (see
+# docs/contributing.md's "CI without GitHub Actions minutes" section).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT"
+
+./scripts/ci.sh
