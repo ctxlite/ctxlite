@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.32] - 2026-06-24
+
+### Added
+- `ctxlite stats <host>` and `ctxlite stats --by-session <host>` now filter to one host (`opencode`, `claude-code`, `cursor`, or `mcp`), case-insensitively, in either token order relative to `--by-session`. An unrecognized host name returns a clear error naming the valid values instead of being silently dropped (the prior behavior). Omitting the host argument is unchanged — every existing invocation still shows all hosts combined. See `specs/020-stats-filter-by-host/` for the investigation that found this gap (the CLI was silently discarding the positional token, and the query layer had no host filter at all).
+
 ## [0.1.31] - 2026-06-24
 
 ### Added

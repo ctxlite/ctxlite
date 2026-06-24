@@ -9,7 +9,7 @@ const HELP = `
 ctxlite — token optimizer for OpenCode and Cursor
 
 USAGE:
-  ctxlite stats [options]
+  ctxlite stats [<host>] [options]
   ctxlite install [options]
   ctxlite hook <pre-tool-use|post-tool-use|cursor-pre-tool-use>
 
@@ -22,16 +22,19 @@ GLOBAL OPTIONS:
   --help, -h         Show this help
 
 STATS OPTIONS:
-  --last <period>    Period: session, today, 7d, 30d, all (default: all)
-  --export <format>  Export format: text, json (default: text)
-  --db <path>        SQLite database path (default: ~/.ctxlite/stats.db)
-  --by-session       Break the total down by host (OpenCode/Claude Code/Cursor/MCP) then session,
-                      instead of one combined total
+  <host>              Filter to one host: opencode, claude-code, cursor, mcp (default: all hosts combined)
+  --last <period>     Period: session, today, 7d, 30d, all (default: all)
+  --export <format>   Export format: text, json (default: text)
+  --db <path>         SQLite database path (default: ~/.ctxlite/stats.db)
+  --by-session        Break the total down by host (OpenCode/Claude Code/Cursor/MCP) then session,
+                       instead of one combined total
 
 EXAMPLES:
   ctxlite stats
+  ctxlite stats opencode
   ctxlite stats --last 7d
   ctxlite stats --by-session
+  ctxlite stats --by-session cursor
   ctxlite install --tool cursor --scope global --yes
   ctxlite install --tool all --scope global --dry-run
 

@@ -88,9 +88,11 @@ export class StatsStore {
     }
   }
 
-  summary(since = 0): Summary {
+  summary(since = 0, host?: string): Summary {
     const periodLabel = since === 0 ? "all time" : "since " + new Date(since * 1000).toLocaleDateString()
-    return this.summaryWithFilter("(? = 0 OR ts >= ?)", [since, since], periodLabel)
+    const filterSql = host ? "(? = 0 OR ts >= ?) AND host = ?" : "(? = 0 OR ts >= ?)"
+    const filterParams = host ? [since, since, host] : [since, since]
+    return this.summaryWithFilter(filterSql, filterParams, periodLabel)
   }
 
   /** Stats for one host+session pair only — e.g. the OpenCode session currently active in the sidebar. */
@@ -222,7 +224,9 @@ export class StatsStore {
   }
 
   /** One row per host+session, most recent first. Rows logged before this column existed (host/session_id NULL) are excluded. */
-  sessionBreakdown(since = 0): SessionBreakdownRow[] {
+  sessionBreakdown(since = 0, host?: string): SessionBreakdownRow[] {
+    const hostFilterSql = host ? "AND host = ?" : ""
+    const params = host ? [since, since, host] : [since, since]
     return this.db.all<{
       host: string
       session_id: string
@@ -239,11 +243,10 @@ export class StatsStore {
         MIN(ts)                        as first_ts,
         MAX(ts)                        as last_ts
        FROM requests
-       WHERE host IS NOT NULL AND session_id IS NOT NULL AND (? = 0 OR ts >= ?)
+       WHERE host IS NOT NULL AND session_id IS NOT NULL AND (? = 0 OR ts >= ?) ${hostFilterSql}
        GROUP BY host, session_id
        ORDER BY host, last_ts DESC`,
-      since,
-      since,
+      ...params,
     ).map((row) => ({
       host: row.host,
       sessionId: row.session_id,

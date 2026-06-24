@@ -22,7 +22,7 @@ description: "Task list for filtering ctxlite stats by host"
 
 **Purpose**: No new dependencies, no scaffolding — confirm the exact current signatures this plan modifies haven't drifted.
 
-- [ ] T001 Confirm `StatsStore.summary(since = 0)` and `StatsStore.sessionBreakdown(since = 0)` in `packages/core/src/stats.ts` still have no host parameter, and confirm `parseArgs` in `packages/cli/src/stats-command.ts` still silently drops an unrecognized positional token under `stats` (the exact gap described in spec.md's Investigation Findings) — no file changes.
+- [X] T001 Confirm `StatsStore.summary(since = 0)` and `StatsStore.sessionBreakdown(since = 0)` in `packages/core/src/stats.ts` still have no host parameter, and confirm `parseArgs` in `packages/cli/src/stats-command.ts` still silently drops an unrecognized positional token under `stats` (the exact gap described in spec.md's Investigation Findings) — no file changes.
 
 ---
 
@@ -34,15 +34,15 @@ description: "Task list for filtering ctxlite stats by host"
 
 > Write these tests FIRST, ensure they FAIL before implementation.
 
-- [ ] T002 [P] Add cases to `packages/core/src/stats.test.ts`: with a real temp-file DB containing rows logged under `opencode`, `cursor`, AND `claude-code`, `summary(0, "opencode")` returns totals (`totalRequests`, `tokensSaved`, per-category counts) matching only the `opencode` rows; `summary(0)` (no host arg) is unchanged from before this feature (regression check matching SC-002); `summary(0, "nonexistent-host")` returns the same zero-data shape `summary` already returns for an empty DB (not a crash).
-- [ ] T003 [P] Add cases to the same file for `sessionBreakdown`: with the same multi-host fixture, `sessionBreakdown(0, "cursor")` returns only `cursor`-tagged session rows, in the same shape `sessionBreakdown` already returns; `sessionBreakdown(0)` (no host arg) is unchanged (regression check).
-- [ ] T004 [P] Add cases to `packages/cli/src/stats-command.test.ts`'s existing `describe("parseArgs", ...)` block: `ctxlite stats opencode` sets `args.host` to `"opencode"`; `ctxlite stats --by-session opencode` and `ctxlite stats opencode --by-session` (both token orders) both set `args.host` to `"opencode"` AND `args.bySession` to `true`; `ctxlite stats OpenCode` (mixed case) also normalizes to `"opencode"`; `ctxlite stats opncode` (typo) sets `args.host` to the raw unrecognized string `"opncode"` (not silently dropped, not normalized — `runStats` decides what to do with it); `ctxlite stats` (no host) leaves `args.host` `undefined` (regression check); `ctxlite install --some-flag` and `ctxlite hook pre-tool-use` (both real existing positional-arg subcommands) are completely unaffected by this change (regression check that the new logic is scoped to `subcommand === "stats"` only).
+- [X] T002 [P] Add cases to `packages/core/src/stats.test.ts`: with a real temp-file DB containing rows logged under `opencode`, `cursor`, AND `claude-code`, `summary(0, "opencode")` returns totals (`totalRequests`, `tokensSaved`, per-category counts) matching only the `opencode` rows; `summary(0)` (no host arg) is unchanged from before this feature (regression check matching SC-002); `summary(0, "nonexistent-host")` returns the same zero-data shape `summary` already returns for an empty DB (not a crash).
+- [X] T003 [P] Add cases to the same file for `sessionBreakdown`: with the same multi-host fixture, `sessionBreakdown(0, "cursor")` returns only `cursor`-tagged session rows, in the same shape `sessionBreakdown` already returns; `sessionBreakdown(0)` (no host arg) is unchanged (regression check).
+- [X] T004 [P] Add cases to `packages/cli/src/stats-command.test.ts`'s existing `describe("parseArgs", ...)` block: `ctxlite stats opencode` sets `args.host` to `"opencode"`; `ctxlite stats --by-session opencode` and `ctxlite stats opencode --by-session` (both token orders) both set `args.host` to `"opencode"` AND `args.bySession` to `true`; `ctxlite stats OpenCode` (mixed case) also normalizes to `"opencode"`; `ctxlite stats opncode` (typo) sets `args.host` to the raw unrecognized string `"opncode"` (not silently dropped, not normalized — `runStats` decides what to do with it); `ctxlite stats` (no host) leaves `args.host` `undefined` (regression check); `ctxlite install --some-flag` and `ctxlite hook pre-tool-use` (both real existing positional-arg subcommands) are completely unaffected by this change (regression check that the new logic is scoped to `subcommand === "stats"` only).
 
 ### Implementation for Foundational work
 
-- [ ] T005 [P] Implement the `host?: string` parameter on `StatsStore.summary(since = 0, host?: string)` in `packages/core/src/stats.ts`: when provided, append `AND host = ?` to the existing `filterSql` passed to `summaryWithFilter`, pushing `host` onto `filterParams` — parameterized, never string-interpolated. Depends on T002.
-- [ ] T006 [P] Implement the `host?: string` parameter on `StatsStore.sessionBreakdown(since = 0, host?: string)` in the same file: when provided, append `AND host = ?` to the existing `WHERE` clause, with `host` added to the bound parameters. Depends on T003.
-- [ ] T007 In `packages/cli/src/stats-command.ts`'s `Args` interface, add `host?: string`. In `parseArgs`, inside the existing per-token loop, when `args.subcommand === "stats"` and the current token is a non-flag positional token, set `args.host` to the token lowercased if it case-insensitively matches one of `["opencode", "claude-code", "cursor", "mcp"]`, otherwise set `args.host` to the raw token unmodified (so `runStats` can tell valid from invalid — research.md Decision 3). Depends on T004.
+- [X] T005 [P] Implement the `host?: string` parameter on `StatsStore.summary(since = 0, host?: string)` in `packages/core/src/stats.ts`: when provided, append `AND host = ?` to the existing `filterSql` passed to `summaryWithFilter`, pushing `host` onto `filterParams` — parameterized, never string-interpolated. Depends on T002.
+- [X] T006 [P] Implement the `host?: string` parameter on `StatsStore.sessionBreakdown(since = 0, host?: string)` in the same file: when provided, append `AND host = ?` to the existing `WHERE` clause, with `host` added to the bound parameters. Depends on T003.
+- [X] T007 In `packages/cli/src/stats-command.ts`'s `Args` interface, add `host?: string`. In `parseArgs`, inside the existing per-token loop, when `args.subcommand === "stats"` and the current token is a non-flag positional token, set `args.host` to the token lowercased if it case-insensitively matches one of `["opencode", "claude-code", "cursor", "mcp"]`, otherwise set `args.host` to the raw token unmodified (so `runStats` can tell valid from invalid — research.md Decision 3). Depends on T004.
 
 **Checkpoint**: `npm run test --workspace=packages/core` and the CLI's test suite both pass for the new Foundational cases. Both user stories can now proceed.
 
@@ -58,12 +58,12 @@ description: "Task list for filtering ctxlite stats by host"
 
 > Write these tests FIRST, ensure they FAIL before implementation.
 
-- [ ] T008 [P] [US1] Add cases to `packages/cli/src/stats-command.test.ts`'s existing `describe("runStats", ...)` block: `runStats` with `args.host = "opencode"` (and `args.bySession = false`) produces text output reflecting only `opencode`'s totals (using the same multi-host-fixture pattern the existing `--last` regression test already uses); the same with `--export json` produces JSON reflecting only that host's summary; `runStats` with `args.host` set to an unrecognized raw string (e.g. `"opncode"`) writes a clear stderr message naming the 4 valid host values and returns exit code `1`, without running any query.
+- [X] T008 [P] [US1] Add cases to `packages/cli/src/stats-command.test.ts`'s existing `describe("runStats", ...)` block: `runStats` with `args.host = "opencode"` (and `args.bySession = false`) produces text output reflecting only `opencode`'s totals (using the same multi-host-fixture pattern the existing `--last` regression test already uses); the same with `--export json` produces JSON reflecting only that host's summary; `runStats` with `args.host` set to an unrecognized raw string (e.g. `"opncode"`) writes a clear stderr message naming the 4 valid host values and returns exit code `1`, without running any query.
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] In `runStats` (`packages/cli/src/stats-command.ts`), after the existing `--last`/`--export` validation blocks and before the `args.bySession` branch, add the shared host validation: if `args.host` is defined and is NOT one of the 4 known values, write the FR-005 stderr message and `return 1`. Depends on T008 and Phase 2 (T007).
-- [ ] T010 [US1] In the non-`--by-session` branch of `runStats`, pass `args.host` through to `store.summary(since, args.host)`. Depends on T009 and Phase 2 (T005).
+- [X] T009 [US1] In `runStats` (`packages/cli/src/stats-command.ts`), after the existing `--last`/`--export` validation blocks and before the `args.bySession` branch, add the shared host validation: if `args.host` is defined and is NOT one of the 4 known values, write the FR-005 stderr message and `return 1`. Depends on T008 and Phase 2 (T007).
+- [X] T010 [US1] In the non-`--by-session` branch of `runStats`, pass `args.host` through to `store.summary(since, args.host)`. Depends on T009 and Phase 2 (T005).
 
 **Checkpoint**: User Story 1 fully functional and testable independently — `ctxlite stats opencode` works exactly as spec'd, `ctxlite stats` (no host) is unchanged.
 
@@ -79,11 +79,11 @@ description: "Task list for filtering ctxlite stats by host"
 
 > Write these tests FIRST, ensure they FAIL before implementation.
 
-- [ ] T011 [P] [US2] Add cases to the same `describe("runStats", ...)` block: `runStats` with `args.bySession = true` and `args.host = "cursor"` produces text output listing only `cursor` sessions, in the existing per-session detailed format; the same with `--export json` produces a JSON array containing only `cursor` session rows; the shared invalid-host handling from US1 (T009) also applies here — `--by-session` plus an unrecognized host still errors before querying, reusing the exact same check (no duplicate validation logic).
+- [X] T011 [P] [US2] Add cases to the same `describe("runStats", ...)` block: `runStats` with `args.bySession = true` and `args.host = "cursor"` produces text output listing only `cursor` sessions, in the existing per-session detailed format; the same with `--export json` produces a JSON array containing only `cursor` session rows; the shared invalid-host handling from US1 (T009) also applies here — `--by-session` plus an unrecognized host still errors before querying, reusing the exact same check (no duplicate validation logic).
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] In the `--by-session` branch of `runStats`, pass `args.host` through to `store.sessionBreakdown(since, args.host)` (both the `--compact` and detailed/JSON code paths that already call `sessionBreakdown`/iterate its rows). Depends on T011, Phase 2 (T006), and T009 (the shared validation already added for US1).
+- [X] T012 [US2] In the `--by-session` branch of `runStats`, pass `args.host` through to `store.sessionBreakdown(since, args.host)` (both the `--compact` and detailed/JSON code paths that already call `sessionBreakdown`/iterate its rows). Depends on T011, Phase 2 (T006), and T009 (the shared validation already added for US1).
 
 **Checkpoint**: Both user stories independently functional — `ctxlite stats <host>` and `ctxlite stats --by-session <host>` both work, for all 4 real host values, with zero change to either command's no-host-argument form.
 
@@ -91,12 +91,12 @@ description: "Task list for filtering ctxlite stats by host"
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T013 Run the full existing `stats.test.ts` and `stats-command.test.ts` suites and confirm every pre-existing test case passes unmodified — the literal verification of SC-002.
-- [ ] T014 Run `npm run test:coverage` and confirm `packages/core` and `packages/cli` stay at/above the 90% floor (Constitution Principle II).
-- [ ] T015 Run `./scripts/ci.sh` (full local CI) before considering this feature done.
-- [ ] T016 Update the CLI's `--help` text and usage examples in `packages/cli/src/index.ts` (the `ctxlite stats [options]`/examples block) to document the new positional host argument and the 4 valid values.
-- [ ] T017 Version bump: confirm current live versions via `npm view @ctxlite/core version` (and the other 3 packages) before bumping `config.version`, per the constitution's Release Discipline constraint — do not assume the last-known bumped value (0.1.31) is still unpublished.
-- [ ] T018 Add a CHANGELOG.md entry under the new version describing the host filter and citing this spec.
+- [X] T013 Run the full existing `stats.test.ts` and `stats-command.test.ts` suites and confirm every pre-existing test case passes unmodified — the literal verification of SC-002.
+- [X] T014 Run `npm run test:coverage` and confirm `packages/core` and `packages/cli` stay at/above the 90% floor (Constitution Principle II).
+- [X] T015 Run `./scripts/ci.sh` (full local CI) before considering this feature done.
+- [X] T016 Update the CLI's `--help` text and usage examples in `packages/cli/src/index.ts` (the `ctxlite stats [options]`/examples block) to document the new positional host argument and the 4 valid values.
+- [X] T017 Version bump: confirm current live versions via `npm view @ctxlite/core version` (and the other 3 packages) before bumping `config.version`, per the constitution's Release Discipline constraint — do not assume the last-known bumped value (0.1.31) is still unpublished.
+- [X] T018 Add a CHANGELOG.md entry under the new version describing the host filter and citing this spec.
 
 ---
 

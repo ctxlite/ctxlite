@@ -385,4 +385,124 @@ describe("StatsStore", () => {
     expect(rows.find((r) => r.host === "opencode")?.tokensSaved).toBe(1000)
     expect(rows.find((r) => r.host === "claude-code")?.sessionId).toBe("ses-c")
   })
+
+  it("summary(since, host) filters totals to just that host", () => {
+    dbPath = tmpDb()
+    store = new StatsStore(dbPath)
+
+    store.log({
+      upstream: "opencode",
+      cacheHit: false,
+      tokensIn: 1000,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 1000,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "compress",
+      host: "opencode",
+      sessionId: "ses-a",
+    })
+    store.log({
+      upstream: "cursor",
+      cacheHit: false,
+      tokensIn: 500,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 500,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "precall",
+      host: "cursor",
+      sessionId: "ses-b",
+    })
+    store.log({
+      upstream: "claude-code",
+      cacheHit: false,
+      tokensIn: 700,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 700,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "precall",
+      host: "claude-code",
+      sessionId: "ses-c",
+    })
+
+    const opencodeOnly = store.summary(0, "opencode")
+    expect(opencodeOnly.totalRequests).toBe(1)
+    expect(opencodeOnly.tokensSaved).toBe(1000)
+
+    const cursorOnly = store.summary(0, "cursor")
+    expect(cursorOnly.totalRequests).toBe(1)
+    expect(cursorOnly.tokensSaved).toBe(500)
+
+    const allHosts = store.summary(0)
+    expect(allHosts.totalRequests).toBe(3)
+    expect(allHosts.tokensSaved).toBe(2200)
+  })
+
+  it("summary(since, host) returns the same zero-data shape as an empty db for a host with no rows", () => {
+    dbPath = tmpDb()
+    store = new StatsStore(dbPath)
+
+    store.log({
+      upstream: "opencode",
+      cacheHit: false,
+      tokensIn: 1000,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 1000,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "compress",
+      host: "opencode",
+      sessionId: "ses-a",
+    })
+
+    const result = store.summary(0, "nonexistent-host")
+    expect(result.totalRequests).toBe(0)
+    expect(result.tokensSaved).toBe(0)
+  })
+
+  it("sessionBreakdown(since, host) filters session rows to just that host", () => {
+    dbPath = tmpDb()
+    store = new StatsStore(dbPath)
+
+    store.log({
+      upstream: "opencode",
+      cacheHit: false,
+      tokensIn: 1000,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 1000,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "compress",
+      host: "opencode",
+      sessionId: "ses-a",
+    })
+    store.log({
+      upstream: "cursor",
+      cacheHit: false,
+      tokensIn: 500,
+      tokensUsed: 0,
+      tokensOut: 0,
+      tokensSaved: 500,
+      costSaved: 0,
+      latencyMs: 0,
+      source: "precall",
+      host: "cursor",
+      sessionId: "ses-b",
+    })
+
+    const cursorRows = store.sessionBreakdown(0, "cursor")
+    expect(cursorRows).toHaveLength(1)
+    expect(cursorRows.at(0)?.host).toBe("cursor")
+    expect(cursorRows.at(0)?.sessionId).toBe("ses-b")
+
+    const allRows = store.sessionBreakdown(0)
+    expect(allRows).toHaveLength(2)
+  })
 })

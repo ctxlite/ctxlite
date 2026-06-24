@@ -1,6 +1,9 @@
 import { StatsStore, defaultDbPath, renderSessionBreakdown, renderSessionBreakdownDetailed } from "@ctxlite/core"
 import { formatText, formatJson } from "./format.js"
 
+/** The real, currently-logged host values (see specs/020-stats-filter-by-host/spec.md Investigation Findings). */
+export const KNOWN_STATS_HOSTS = ["opencode", "claude-code", "cursor", "mcp"]
+
 export interface Args {
   subcommand: string | null
   rest: string[]
@@ -10,6 +13,8 @@ export interface Args {
   bySession: boolean
   compact: boolean
   help: boolean
+  /** Undefined = no filter. A KNOWN_STATS_HOSTS value = valid filter. Any other string = an unrecognized token runStats must report, not silently ignore. */
+  host?: string
 }
 
 export function parseArgs(argv: string[]): Args {
@@ -43,6 +48,15 @@ export function parseArgs(argv: string[]): Args {
     // install/hook own their own flag syntax — don't let stats' switch
     // below misinterpret e.g. `ctxlite install --help` as the global help.
     if (args.subcommand !== null && args.subcommand !== "stats") {
+      i++
+      continue
+    }
+
+    // A positional, non-flag token after `stats` is a host filter — capture
+    // it (normalized if recognized, raw if not, never silently dropped).
+    if (args.subcommand === "stats" && arg && !arg.startsWith("-")) {
+      const lower = arg.toLowerCase()
+      args.host = KNOWN_STATS_HOSTS.includes(lower) ? lower : arg
       i++
       continue
     }
@@ -112,13 +126,18 @@ export function runStats(args: Args): number {
     return 1
   }
 
+  if (args.host !== undefined && !KNOWN_STATS_HOSTS.includes(args.host)) {
+    process.stderr.write(`Unrecognized host "${args.host}". Valid: ${KNOWN_STATS_HOSTS.join(", ")}\n`)
+    return 1
+  }
+
   let store: StatsStore | null = null
   try {
     store = new StatsStore(args.db)
     const since = periodToTimestamp(args.last)
 
     if (args.bySession) {
-      const rows = store.sessionBreakdown(since)
+      const rows = store.sessionBreakdown(since, args.host)
 
       if (args.compact) {
         if (args.export === "json") {
@@ -143,7 +162,7 @@ export function runStats(args: Args): number {
       return 0
     }
 
-    const summary = store.summary(since)
+    const summary = store.summary(since, args.host)
     const output = args.export === "json" ? formatJson(summary) : formatText(summary)
     process.stdout.write(output + "\n")
     return 0
