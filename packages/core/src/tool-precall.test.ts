@@ -216,6 +216,79 @@ describe("optimizeBashCommand", () => {
     const result = optimizeBashCommand("dotnet build -v detailed")
     expect(result.modified).toBe(false)
   })
+
+  it("adds --reporter=dot to a bare vitest invocation", () => {
+    const result = optimizeBashCommand("vitest")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--reporter=dot")
+    expect(result.estimatedTokensSaved).toBeGreaterThan(0)
+  })
+
+  it("adds --reporter=dot to npx vitest run", () => {
+    const result = optimizeBashCommand("npx vitest run packages/core")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--reporter=dot")
+  })
+
+  it("does not double up vitest reporter when already set", () => {
+    expect(optimizeBashCommand("vitest --reporter=dot").modified).toBe(false)
+    expect(optimizeBashCommand("vitest -r dot").modified).toBe(false)
+  })
+
+  it("does not rewrite vitest watch mode", () => {
+    expect(optimizeBashCommand("vitest watch").modified).toBe(false)
+    expect(optimizeBashCommand("vitest --watch").modified).toBe(false)
+  })
+
+  it("rewrites only the vitest segment of a piped chained command, leaving tail untouched", () => {
+    const result = optimizeBashCommand("cd packages/core && npx vitest run | tail -20")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--reporter=dot")
+    expect(result.args.command).toContain("cd packages/core")
+    expect(result.args.command).toContain("tail -20")
+    expect(result.args.command).not.toContain("tail -20 --reporter=dot")
+  })
+
+  it("adds --silent to a bare jest invocation", () => {
+    const result = optimizeBashCommand("jest")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--silent")
+    expect(result.estimatedTokensSaved).toBeGreaterThan(0)
+  })
+
+  it("adds --silent to npx jest with args", () => {
+    const result = optimizeBashCommand("npx jest src/")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--silent")
+  })
+
+  it("does not double up jest --silent when already set", () => {
+    expect(optimizeBashCommand("jest --silent").modified).toBe(false)
+  })
+
+  it("does not rewrite a jest mention inside a quoted commit message", () => {
+    const command = `git commit -m "fix jest config"`
+    const result = optimizeBashCommand(command)
+    expect(result.modified).toBe(false)
+    expect(result.args.command).toBe(command)
+  })
+
+  it("adds --quiet to a bare eslint invocation", () => {
+    const result = optimizeBashCommand("eslint .")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--quiet")
+    expect(result.estimatedTokensSaved).toBeGreaterThan(0)
+  })
+
+  it("adds --quiet to this repo's own npx eslint lint script invocation", () => {
+    const result = optimizeBashCommand("eslint packages/*/src/**/*.ts")
+    expect(result.modified).toBe(true)
+    expect(result.args.command).toContain("--quiet")
+  })
+
+  it("does not double up eslint --quiet when already set", () => {
+    expect(optimizeBashCommand("npx eslint --quiet .").modified).toBe(false)
+  })
 })
 
 describe("optimizeReadPath", () => {

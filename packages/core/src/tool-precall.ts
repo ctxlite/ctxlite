@@ -19,6 +19,9 @@ const PRECALL_ESTIMATES: Record<string, number> = {
   docker_logs: 700,
   curl: 200,
   generic_quiet: 300,
+  vitest_run: 600,
+  jest_test: 600,
+  eslint_lint: 400,
 }
 
 export interface PrecallResult {
@@ -199,6 +202,19 @@ function matchQuietPattern(segmentSkeleton: string, segment: string): SegmentMat
   } else if (/\bcurl\b/.test(segmentSkeleton) && !hasFlag(segment, ["-s", "--silent", "-S"])) {
     next = appendFlag(segment, "-sS")
     label = "curl"
+  } else if (
+    /\bvitest\b/.test(segmentSkeleton) &&
+    !/\bwatch\b/.test(segmentSkeleton) &&
+    !hasFlag(segment, ["--reporter", "-r "])
+  ) {
+    next = appendFlag(segment, "--reporter=dot")
+    label = "vitest_run"
+  } else if (/\bjest\b/.test(segmentSkeleton) && !hasFlag(segment, ["--silent"])) {
+    next = appendFlag(segment, "--silent")
+    label = "jest_test"
+  } else if (/\beslint\b/.test(segmentSkeleton) && !hasFlag(segment, ["--quiet"])) {
+    next = appendFlag(segment, "--quiet")
+    label = "eslint_lint"
   }
 
   if (label === undefined || next === segment) {

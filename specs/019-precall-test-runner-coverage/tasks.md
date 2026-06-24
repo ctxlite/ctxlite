@@ -22,7 +22,7 @@ description: "Task list for precall vitest/jest/eslint quiet-flag coverage"
 
 **Purpose**: No new dependencies, no scaffolding — this is three new branches in an existing, already-tested function in one existing file.
 
-- [ ] T001 Confirm the current `matchQuietPattern` if/else chain in `packages/core/src/tool-precall.ts` ends with the `curl` branch (sanity check the insertion point described in plan.md/research.md Decision 2 is still accurate) — no file changes.
+- [X] T001 Confirm the current `matchQuietPattern` if/else chain in `packages/core/src/tool-precall.ts` ends with the `curl` branch (sanity check the insertion point described in plan.md/research.md Decision 2 is still accurate) — no file changes.
 
 ---
 
@@ -44,14 +44,14 @@ description: "Task list for precall vitest/jest/eslint quiet-flag coverage"
 
 > Write these tests FIRST, ensure they FAIL before implementation.
 
-- [ ] T002 [P] [US1] Add cases to `packages/core/src/tool-precall.test.ts`'s existing `describe("optimizeBashCommand", ...)` block: bare `vitest` and `npx vitest run` both get `--reporter=dot` appended (`modified: true`, `estimatedTokensSaved > 0`); `vitest --reporter=dot` (already has the flag) and `vitest -r dot` (short-flag form) are both no-ops (`modified: false`); `vitest watch` and `vitest --watch` are NOT rewritten (`modified: false`) per the Edge Cases/research.md Decision 1 exclusion; a chained command `cd packages/core && npx vitest run | tail -20` rewrites only the `vitest` segment, leaving `cd packages/core` and `tail -20` untouched (mirroring the existing `npm run build 2>&1 | tail -20` regression test already in this file).
-- [ ] T003 [P] [US1] Add cases to the same `describe` block for jest: bare `jest` and `npx jest src/` both get `--silent` appended; `jest --silent` (already quiet) is a no-op; a tool name inside a quoted string (e.g. `git commit -m "fix jest config"`) is NOT rewritten (reusing the existing `stripEmbeddedText` regression-test pattern already in this file for `npm install`).
+- [X] T002 [P] [US1] Add cases to `packages/core/src/tool-precall.test.ts`'s existing `describe("optimizeBashCommand", ...)` block: bare `vitest` and `npx vitest run` both get `--reporter=dot` appended (`modified: true`, `estimatedTokensSaved > 0`); `vitest --reporter=dot` (already has the flag) and `vitest -r dot` (short-flag form) are both no-ops (`modified: false`); `vitest watch` and `vitest --watch` are NOT rewritten (`modified: false`) per the Edge Cases/research.md Decision 1 exclusion; a chained command `cd packages/core && npx vitest run | tail -20` rewrites only the `vitest` segment, leaving `cd packages/core` and `tail -20` untouched (mirroring the existing `npm run build 2>&1 | tail -20` regression test already in this file).
+- [X] T003 [P] [US1] Add cases to the same `describe` block for jest: bare `jest` and `npx jest src/` both get `--silent` appended; `jest --silent` (already quiet) is a no-op; a tool name inside a quoted string (e.g. `git commit -m "fix jest config"`) is NOT rewritten (reusing the existing `stripEmbeddedText` regression-test pattern already in this file for `npm install`).
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] In `packages/core/src/tool-precall.ts`, add a `vitest_run: 600` entry and a `jest_test: 600` entry to `PRECALL_ESTIMATES` (matching the existing `cargo_test: 600`/`pytest: 500`-style magnitude for a test-runner rule).
-- [ ] T005 [US1] In `matchQuietPattern`, add an `else if` branch after the `curl` branch: `/\bvitest\b/.test(segmentSkeleton) && !/\bwatch\b/.test(segmentSkeleton) && !hasFlag(segment, ["--reporter", "-r "])` → `appendFlag(segment, "--reporter=dot")`, `label = "vitest_run"`. Depends on T002 (test must exist and fail first) and T004.
-- [ ] T006 [US1] In `matchQuietPattern`, add an `else if` branch immediately after: `/\bjest\b/.test(segmentSkeleton) && !hasFlag(segment, ["--silent"])` → `appendFlag(segment, "--silent")`, `label = "jest_test"`. Depends on T003 and T004.
+- [X] T004 [US1] In `packages/core/src/tool-precall.ts`, add a `vitest_run: 600` entry and a `jest_test: 600` entry to `PRECALL_ESTIMATES` (matching the existing `cargo_test: 600`/`pytest: 500`-style magnitude for a test-runner rule).
+- [X] T005 [US1] In `matchQuietPattern`, add an `else if` branch after the `curl` branch: `/\bvitest\b/.test(segmentSkeleton) && !/\bwatch\b/.test(segmentSkeleton) && !hasFlag(segment, ["--reporter", "-r "])` → `appendFlag(segment, "--reporter=dot")`, `label = "vitest_run"`. Depends on T002 (test must exist and fail first) and T004.
+- [X] T006 [US1] In `matchQuietPattern`, add an `else if` branch immediately after: `/\bjest\b/.test(segmentSkeleton) && !hasFlag(segment, ["--silent"])` → `appendFlag(segment, "--silent")`, `label = "jest_test"`. Depends on T003 and T004.
 
 **Checkpoint**: User Story 1 fully functional and testable independently — `npx vitest run`/`npx jest` get quieted on every host, `npm test`/`cargo test`/etc. remain unaffected.
 
@@ -67,12 +67,12 @@ description: "Task list for precall vitest/jest/eslint quiet-flag coverage"
 
 > Write these tests FIRST, ensure they FAIL before implementation.
 
-- [ ] T007 [P] [US2] Add cases to the same `describe("optimizeBashCommand", ...)` block: `eslint .` and `npx eslint packages/*/src/**/*.ts` (this repo's own `npm run lint` script string) both get `--quiet` appended; `npx eslint --quiet .` (already quiet) is a no-op.
+- [X] T007 [P] [US2] Add cases to the same `describe("optimizeBashCommand", ...)` block: `eslint .` and `npx eslint packages/*/src/**/*.ts` (this repo's own `npm run lint` script string) both get `--quiet` appended; `npx eslint --quiet .` (already quiet) is a no-op.
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] In `packages/core/src/tool-precall.ts`, add an `eslint_lint: 400` entry to `PRECALL_ESTIMATES` (matching the existing `npm_build: 400`-style magnitude for a lint/build-adjacent rule).
-- [ ] T009 [US2] In `matchQuietPattern`, add an `else if` branch immediately after the jest branch: `/\beslint\b/.test(segmentSkeleton) && !hasFlag(segment, ["--quiet"])` → `appendFlag(segment, "--quiet")`, `label = "eslint_lint"`. Depends on T007 and T008.
+- [X] T008 [US2] In `packages/core/src/tool-precall.ts`, add an `eslint_lint: 400` entry to `PRECALL_ESTIMATES` (matching the existing `npm_build: 400`-style magnitude for a lint/build-adjacent rule).
+- [X] T009 [US2] In `matchQuietPattern`, add an `else if` branch immediately after the jest branch: `/\beslint\b/.test(segmentSkeleton) && !hasFlag(segment, ["--quiet"])` → `appendFlag(segment, "--quiet")`, `label = "eslint_lint"`. Depends on T007 and T008.
 
 **Checkpoint**: Both user stories independently functional — `vitest`/`jest`/`eslint` direct invocations are all quieted, with zero change to any of the 17 pre-existing rules.
 
@@ -80,11 +80,11 @@ description: "Task list for precall vitest/jest/eslint quiet-flag coverage"
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T010 Run the full existing `tool-precall.test.ts` suite and confirm every pre-existing test case (all 17 prior rules) still passes unmodified — this is the literal verification of SC-002.
-- [ ] T011 Run `npm run test:coverage` and confirm `packages/core` stays at/above the 90% floor (Constitution Principle II) — `tool-precall.ts` was already well-covered before this change; three new branches with paired tests should not regress it.
-- [ ] T012 Run `./scripts/ci.sh` (full local CI) before considering this feature done.
-- [ ] T013 Version bump: confirm current live versions via `npm view @ctxlite/core version` (and the other 3 packages) before bumping `config.version`, per the constitution's Release Discipline constraint — do not assume the last-known bumped value (0.1.30) is still unpublished.
-- [ ] T014 Add a CHANGELOG.md entry under the new version describing the three new quiet-flag rules and citing this spec.
+- [X] T010 Run the full existing `tool-precall.test.ts` suite and confirm every pre-existing test case (all 17 prior rules) still passes unmodified — this is the literal verification of SC-002.
+- [X] T011 Run `npm run test:coverage` and confirm `packages/core` stays at/above the 90% floor (Constitution Principle II) — `tool-precall.ts` was already well-covered before this change; three new branches with paired tests should not regress it.
+- [X] T012 Run `./scripts/ci.sh` (full local CI) before considering this feature done.
+- [X] T013 Version bump: confirm current live versions via `npm view @ctxlite/core version` (and the other 3 packages) before bumping `config.version`, per the constitution's Release Discipline constraint — do not assume the last-known bumped value (0.1.30) is still unpublished.
+- [X] T014 Add a CHANGELOG.md entry under the new version describing the three new quiet-flag rules and citing this spec.
 
 ---
 

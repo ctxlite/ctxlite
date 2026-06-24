@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.31] - 2026-06-24
+
+### Added
+- Precall now quiets direct `vitest`/`npx vitest` (`--reporter=dot`), `jest`/`npx jest` (`--silent`), and `eslint`/`npx eslint` (`--quiet`) invocations — previously only `npm test`/`npm run lint`-style wrapper commands were recognized, so any session running these tools directly (this repo's own dev workflow included) showed 0 precall rewrites despite heavy bash usage. Verified real flags via current Vitest/Jest/ESLint CLI docs; `vitest watch`/`--watch` is explicitly excluded. See `specs/019-precall-test-runner-coverage/` for the investigation that ruled out a hook-wiring bug on Claude Code/Cursor before finding this gap.
+
 ## [0.1.30] - 2026-06-24
 
 ### Added
