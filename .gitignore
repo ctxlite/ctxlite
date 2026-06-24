@@ -12,3 +12,4 @@ coverage/
 .env
 specs/
 .specify/integrations/.cache/
+.specify/feature.json
