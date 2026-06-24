@@ -1,5 +1,39 @@
 <!--
 Sync Impact Report
+Version change: 1.1.0 → 1.2.0
+Bump rationale: MINOR — two changes bundled in one amendment. (1) Principle
+  II's coverage bullet tightened from a "don't regress from baseline"
+  reference into a literal, hard 90% floor — on its own a PATCH-level
+  clarification. (2) A new Release Discipline constraint was added under
+  Additional Constraints, triggered by a real failure in this same
+  session (`npm publish` rejected re-publishing v0.1.25 because no version
+  bump had happened since it was last published) — adding new governing
+  guidance is MINOR. Bundled, the amendment is MINOR.
+Modified principles: II. Test-First, Zero Skipped Tests — coverage bullet
+  rewritten from "must not regress below the tracked baseline (90%+)" to an
+  explicit "MUST NOT be below 90%, project-wide, per package" floor, naming
+  `npm run test:coverage` as the check and requiring `vitest.config.ts`
+  scope exclusions to carry an inline justification comment.
+Added sections: Release Discipline (under Additional Constraints) —
+  version-bump-before-publish requirement, tied to the real
+  `scripts/publish-npm.sh --publish` failure above.
+Removed sections: none
+Templates requiring updates:
+  ✅ AGENTS.md — added the `npm run test:coverage` check alongside the
+     existing typecheck/test/lint checklist
+  ✅ docs/contributing.md — added an explicit "confirm the bump against
+     npm's published version first" note in the manual-publish section,
+     pointing back to this constraint
+  ✅ .specify/templates/plan-template.md — reviewed; the existing four
+     Principle VI fields already cover validation specifics per change,
+     no edit needed for a project-wide numeric floor or the release rule
+  ✅ .specify/templates/tasks-template.md — reviewed; already mandates
+     tests generally, the 90% floor is a project-wide CI/local gate rather
+     than a per-task template field, no edit needed
+  ✅ .specify/templates/spec-template.md — reviewed, no change needed
+Follow-up TODOs: none
+
+Sync Impact Report (previous)
 Version change: 1.0.0 → 1.1.0
 Modified principles: n/a (existing I–V unchanged)
 Added sections: Principle VI (Implementation Heuristic Gate)
@@ -11,7 +45,7 @@ Templates requiring updates:
   ✅ AGENTS.md / CLAUDE.md — already point to this file as the binding process; no edit needed
 Follow-up TODOs: none
 
-Sync Impact Report (previous)
+Sync Impact Report (initial)
 Version change: (template) → 1.0.0
 Modified principles: n/a (initial ratification — all principles newly defined)
 Added sections: Core Principles (I–V), Additional Constraints, Development Workflow & Review Process, Governance
@@ -48,8 +82,18 @@ override any template language that suggests otherwise.
   merge without a tracked follow-up (a task or memory entry with a concrete
   reason and a condition for re-enabling it) — an indefinitely silent skip
   is equivalent to deleting the test.
-- Statement/line coverage MUST NOT regress below the level established in
-  `vitest.config.ts`'s tracked baseline (90%+ as of this ratification).
+- **Statement/line coverage MUST NOT be below 90%, project-wide, for any
+  package in `packages/*`. This is a hard numeric floor, not a soft
+  "don't regress from whatever the baseline happens to be" — 90% is the
+  number, checked the same way every time: `npm run test:coverage`
+  (`vitest run --coverage`) against the scope defined in
+  `vitest.config.ts`.** A change that drops any package below 90% fails
+  this gate and MUST add tests before it can be considered done — it is
+  not acceptable to ship the drop and "add tests later." Files excluded
+  from the scope in `vitest.config.ts` (currently: the legacy Go npm
+  distribution, and process entrypoints validated by spawning the built
+  binary instead) must stay justified by an inline comment in that file,
+  not silently widened to dodge the floor.
   Mocks must exercise real failure paths (a thrown error, a corrupt file, a
   missing dependency), not just the happy path — a mock that only ever
   returns success is not a real test of error handling.
@@ -151,6 +195,18 @@ asked while it's still cheap to answer, not after a user reports it.
 - `AGENTS.md` / `CLAUDE.md` and the `ctxlite-internals` skill are the
   onboarding path for any agent working in this repo; keep them in sync
   with this constitution rather than letting either drift independently.
+- **Release Discipline**: `./scripts/publish-npm.sh --publish` MUST NOT be
+  run without first bumping `config.version` in the root `package.json`
+  and running `npm run sync-version`. npm rejects republishing an already-
+  published version outright — there is no `--force` for this, and a
+  failed publish attempt against a version that's already live is a sign
+  the bump step was skipped, not a transient error to retry. Before every
+  publish: (1) confirm the version was actually bumped since the last
+  successful publish (check `npm view <package> version` against
+  `package.json`'s `config.version`, don't assume), (2) `npm run
+  typecheck && npm test` pass on the exact commit being published, not a
+  stale local build, (3) `npm audit --audit-level=high` passes (already
+  gated inside the script itself).
 
 ## Development Workflow & Review Process
 
@@ -196,4 +252,4 @@ implementing. A reviewer who finds a constitution violation blocks the
 merge — "the spec didn't mention it" does not override a NON-NEGOTIABLE
 principle.
 
-**Version**: 1.1.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24
+**Version**: 1.2.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24

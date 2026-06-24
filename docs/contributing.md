@@ -108,6 +108,8 @@ Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which:
 
 `Cannot read properties of null (reading 'prerelease')`
 
+**Before publishing, confirm the version was actually bumped** — `npm view @ctxlite/cli version` (or any of the four packages) against `package.json`'s `config.version`. npm rejects republishing a version that's already live with no `--force` option; that's not a transient error, it's a sign the bump-and-sync-version step above was skipped. See the constitution's Release Discipline constraint.
+
 Publish workspace packages in order:
 
 ```bash

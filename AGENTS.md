@@ -42,3 +42,6 @@ source of truth if anything below appears to conflict with it.
 - Run `npm run typecheck && npm test` before considering a TypeScript
   change done. `npm run lint` too if you touched anything under
   `packages/*/src`.
+- 90% statement/line coverage is a hard floor, per package, not a
+  soft target — run `npm run test:coverage` and confirm no package in
+  `packages/*` dropped below it before calling a change done.
