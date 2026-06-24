@@ -25,7 +25,7 @@ export function createToolPrecallHook(): (
     }
 
     const args = output.args ?? {}
-    const result = optimizeToolArgs(input.tool, args)
+    const result = optimizeToolArgs(input.tool, args, process.cwd())
 
     if (result.blocked) {
       output.result = `[ctxlite] ${result.blockReason ?? "Blocked by ctxlite pre-call filter."}`

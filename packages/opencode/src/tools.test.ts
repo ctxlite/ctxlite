@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { mkdtempSync, rmSync } from "fs"
+import { mkdtempSync, rmSync, writeFileSync } from "fs"
 import { tmpdir } from "os"
 import { join } from "path"
 import type { ToolContext } from "@opencode-ai/plugin"
@@ -14,13 +14,13 @@ vi.mock("os", async (importOriginal) => {
 const { getStatsTool, trimContextTool } = await import("./tools.js")
 const { closeSharedStores, StatsStore, defaultDbPath } = await import("@ctxlite/core")
 
-function fakeContext(sessionID = "ses-1"): ToolContext {
+function fakeContext(sessionID = "ses-1", directory = "/tmp"): ToolContext {
   return {
     sessionID,
     messageID: "msg-1",
     agent: "build",
-    directory: "/tmp",
-    worktree: "/tmp",
+    directory,
+    worktree: directory,
     abort: new AbortController().signal,
     metadata: () => {},
     ask: async () => {},
@@ -118,5 +118,26 @@ describe("trimContextTool", () => {
     const summary = store.summaryForSession("opencode", "ses-trim")
     expect(summary.trimmedRequests).toBe(1)
     store.close()
+  })
+
+  it("excludes a .ctxliteignore-matched candidate before BM25 scoring, regardless of relevance (SC-003)", async () => {
+    writeFileSync(join(tmpHome, ".ctxliteignore"), "*.generated.ts\n")
+
+    const files = [
+      { path: "auth.ts", content: "export function login(user: string) { return user }".repeat(50) },
+      { path: "auth.generated.ts", content: "export function login(user: string) { return user }".repeat(50) },
+      { path: "unrelated.ts", content: "export const totallyUnrelatedConstant = 42".repeat(50) },
+    ]
+
+    const result = await trimContextTool.execute(
+      { files, query: "fix the login function bug", maxTokens: 20 },
+      fakeContext("ses-ignore", tmpHome),
+    )
+
+    const text = output(result)
+    // Filtered out before scoring — never appears as Selected or Excluded,
+    // unlike unrelated.ts which IS a real BM25-scored candidate.
+    expect(text).not.toContain("auth.generated.ts")
+    expect(text).toContain("auth.ts")
   })
 })

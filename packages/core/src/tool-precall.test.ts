@@ -1,4 +1,7 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, beforeEach, afterEach } from "vitest"
+import { mkdtempSync, rmSync, writeFileSync } from "fs"
+import { tmpdir } from "os"
+import { join } from "path"
 import { optimizeBashCommand, optimizeReadPath, optimizeToolArgs } from "./tool-precall.js"
 
 describe("optimizeBashCommand", () => {
@@ -225,6 +228,50 @@ describe("optimizeReadPath", () => {
   it("allows normal source reads", () => {
     const result = optimizeReadPath("src/index.ts")
     expect(result.blocked).toBe(false)
+  })
+
+  describe("with a .ctxliteignore (cwd provided)", () => {
+    let tmpDir: string
+
+    beforeEach(() => {
+      tmpDir = mkdtempSync(join(tmpdir(), "ctxlite-precall-ignore-"))
+    })
+
+    afterEach(() => {
+      rmSync(tmpDir, { recursive: true, force: true })
+    })
+
+    it("blocks a path matched by a project .ctxliteignore pattern, with the same message format as a built-in block", () => {
+      writeFileSync(join(tmpDir, ".ctxliteignore"), "vendor/\n")
+      const result = optimizeReadPath("vendor/some-lib/file.go", tmpDir)
+      expect(result.blocked).toBe(true)
+      expect(result.blockReason).toContain("Blocked read of low-signal path:")
+      expect(result.estimatedTokensSaved).toBeGreaterThan(0)
+    })
+
+    it("behaves identically to omitting cwd when no .ctxliteignore exists at cwd (SC-002)", () => {
+      const withCwd = optimizeReadPath("src/index.ts", tmpDir)
+      const withoutCwd = optimizeReadPath("src/index.ts")
+      expect(withCwd).toEqual(withoutCwd)
+    })
+
+    it("skips a malformed line but still blocks the path matched by a valid line on the same file (FR-005)", () => {
+      writeFileSync(join(tmpDir, ".ctxliteignore"), "vendor/\n/\n")
+      const result = optimizeReadPath("vendor/file.go", tmpDir)
+      expect(result.blocked).toBe(true)
+    })
+
+    it("optimizeToolArgs passes cwd through to optimizeReadPath for the read tool", () => {
+      writeFileSync(join(tmpDir, ".ctxliteignore"), "vendor/\n")
+      const result = optimizeToolArgs("read", { path: "vendor/file.go" }, tmpDir)
+      expect(result.blocked).toBe(true)
+    })
+
+    it("optimizeToolArgs passes cwd through to optimizeReadPath for the glob tool", () => {
+      writeFileSync(join(tmpDir, ".ctxliteignore"), "vendor/\n")
+      const result = optimizeToolArgs("glob", { path: "vendor/file.go" }, tmpDir)
+      expect(result.blocked).toBe(true)
+    })
   })
 })
 

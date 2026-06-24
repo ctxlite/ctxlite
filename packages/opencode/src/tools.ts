@@ -5,6 +5,8 @@ import {
   detectLanguage,
   estimateTokens,
   formatSavingsLine,
+  isIgnored,
+  loadIgnorePatterns,
   logTrimResult,
   renderStatsBarChart,
   SUPPORT_LINE,
@@ -92,7 +94,10 @@ Provide the files you're considering including and your current task description
   },
 
   async execute({ files, query, maxTokens = 4096 }, context) {
-    const codeFiles = files.map((f) => ({
+    const ignorePatterns = loadIgnorePatterns(context.directory)
+    const candidateFiles = files.filter((f) => !isIgnored(f.path, ignorePatterns))
+
+    const codeFiles = candidateFiles.map((f) => ({
       path: f.path,
       content: f.content,
       language: detectLanguage(f.path),
@@ -103,7 +108,7 @@ Provide the files you're considering including and your current task description
     logTrimResult(result, "opencode", getStatsDbPath(), context.sessionID)
 
     if (result.tokensSaved === 0) {
-      return `All ${files.length} files are relevant — no trimming needed.`
+      return `All ${candidateFiles.length} files are relevant — no trimming needed.`
     }
 
     const selectedPaths = result.files.map((f) => `- \`${f.path}\``).join("\n")

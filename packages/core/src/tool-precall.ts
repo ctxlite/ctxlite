@@ -1,3 +1,5 @@
+import { loadIgnorePatterns, isIgnored } from "./ctxliteignore.js"
+
 /** Heuristic tokens prevented by quieter command flags (conservative). */
 const PRECALL_ESTIMATES: Record<string, number> = {
   npm_test: 800,
@@ -267,8 +269,11 @@ const BLOCKED_READ_PATTERNS = [
 
 /**
  * Block reads of paths that rarely help the agent and waste context.
+ * When `cwd` is provided, also checks the project's `.ctxliteignore`
+ * patterns (read fresh each call, never cached — SC-001) in addition to
+ * the built-in patterns above (FR-002).
  */
-export function optimizeReadPath(path: string): PrecallResult {
+export function optimizeReadPath(path: string, cwd?: string): PrecallResult {
   const normalized = path.replace(/\\/g, "/")
   for (const pattern of BLOCKED_READ_PATTERNS) {
     if (pattern.test(normalized)) {
@@ -281,13 +286,28 @@ export function optimizeReadPath(path: string): PrecallResult {
       }
     }
   }
+
+  if (cwd && isIgnored(normalized, loadIgnorePatterns(cwd))) {
+    return {
+      args: { path },
+      modified: false,
+      blocked: true,
+      blockReason: `Blocked read of low-signal path: ${path}`,
+      estimatedTokensSaved: 2000,
+    }
+  }
+
   return { args: { path }, modified: false, blocked: false, estimatedTokensSaved: 0 }
 }
 
 /**
  * Optimize tool args before execution (pre-call / input side).
  */
-export function optimizeToolArgs(tool: string, args: Record<string, unknown>): PrecallResult {
+export function optimizeToolArgs(
+  tool: string,
+  args: Record<string, unknown>,
+  cwd?: string,
+): PrecallResult {
   if (tool === "bash" && typeof args.command === "string") {
     return optimizeBashCommand(args.command)
   }
@@ -302,7 +322,7 @@ export function optimizeToolArgs(tool: string, args: Record<string, unknown>): P
           : null
 
   if ((tool === "read" || tool === "glob") && readPath) {
-    return optimizeReadPath(readPath)
+    return optimizeReadPath(readPath, cwd)
   }
 
   return { args, modified: false, blocked: false, estimatedTokensSaved: 0 }

@@ -16,6 +16,9 @@ export { parseTokenUsage, estimateTokens, estimateCost, estimateConcisenessSavin
 export { optimizeToolArgs, optimizeBashCommand, optimizeReadPath } from "./tool-precall.js"
 export type { PrecallResult } from "./tool-precall.js"
 
+export { loadIgnorePatterns, isIgnored } from "./ctxliteignore.js"
+export type { IgnorePattern } from "./ctxliteignore.js"
+
 export { compressToolOutput } from "./tool-output-compress.js"
 export type { CompressToolOutputOptions, CompressToolOutputResult } from "./tool-output-compress.js"
 

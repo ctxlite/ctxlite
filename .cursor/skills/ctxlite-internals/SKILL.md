@@ -2,7 +2,8 @@
 name: ctxlite-internals
 description: >-
   Use when modifying packages/core/src/tool-precall.ts (bash command
-  rewriting), packages/core/src/install/ (per-host config paths), the
+  rewriting), packages/core/src/ctxliteignore.ts (project-configurable
+  ignore patterns), packages/core/src/install/ (per-host config paths), the
   SQLite schema in packages/core/src/stats.ts, or anything that ships a new
   quiet-flag/build-tool rule. These are the areas where ctxlite has shipped
   real regressions before — read this first.
@@ -48,6 +49,35 @@ the user's actual command. Three real bugs shipped here:
 - Add a regression test for: the bare command, a chained form (`cmd1 &&
   <new rule> | tail`), and the tool name appearing inside a quoted string
   (must NOT rewrite).
+
+## `ctxliteignore.ts` — project-configurable ignore patterns
+
+Reads an optional `.ctxliteignore` from the project root (gitignore-style
+syntax, deliberately limited subset — `*`, `**`, trailing `/` for
+directories, `#` comments — no negation, no character classes, no new
+dependency added to support it: see `specs/018-ctxliteignore-support/`).
+Two call sites consume it independently: `tool-precall.ts`'s
+`optimizeReadPath`/`optimizeToolArgs` (via an optional `cwd` parameter) for
+blocking reads, and both `trim_context` tool implementations
+(`packages/opencode/src/tools.ts`, `packages/mcp/src/tools/trim-context.ts`)
+for filtering candidates before BM25 scoring.
+
+- The file is read fresh on every call (`loadIgnorePatterns(cwd)`), never
+  cached — a maintainer editing `.ctxliteignore` must see the effect on the
+  very next tool call, not after a host restart.
+- A malformed line must never throw and must never disable the rest of the
+  file — `compilePattern` returns `null` for anything that fails to
+  compile, and the caller just skips that one line.
+- `trimmer.ts`/`bm25.ts` deliberately know nothing about this file — the
+  filtering happens at the tool layer, one call site per host, before
+  `trimFiles` is ever invoked. Don't move this filtering into `trimFiles`
+  itself; that would force filesystem-awareness (and cwd-mocking) into a
+  module whose tests are currently pure and filesystem-free.
+- OpenCode's `trimContextTool` has `context.directory` available directly
+  on its `ToolContext` — use that instead of `process.cwd()` there. The
+  CLI/Cursor/OpenCode *precall* hook bridges and the MCP `trim_context`
+  tool have no such context object, so they use `process.cwd()`, matching
+  the convention already established in `packages/mcp/src/tools/smart-read.ts`.
 
 ## `core/install/` — per-host config paths
 

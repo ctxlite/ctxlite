@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { mkdtempSync, rmSync } from "fs"
+import { mkdtempSync, rmSync, writeFileSync } from "fs"
 import { tmpdir } from "os"
 import { join } from "path"
 
@@ -107,6 +107,23 @@ describe("runPreToolUseHook", () => {
     const summary = store.summaryForSession("claude-code", "ses-cc-1")
     expect(summary.totalRequests).toBe(1)
     store.close()
+  })
+
+  it("blocks a read matched by the project's .ctxliteignore (cwd threaded through to optimizeReadPath)", async () => {
+    const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(tmpHome)
+    writeFileSync(join(tmpHome, ".ctxliteignore"), "vendor/\n")
+    const out = captureStdout()
+    try {
+      const code = await runPreToolUseHook(
+        stdinOf({ tool_name: "Read", tool_input: { file_path: "vendor/some-lib/file.go" } }),
+      )
+      expect(code).toBe(0)
+      const body = JSON.parse(out.calls.join("")) as { hookSpecificOutput: { permissionDecision: string } }
+      expect(body.hookSpecificOutput.permissionDecision).toBe("deny")
+    } finally {
+      out.restore()
+      cwdSpy.mockRestore()
+    }
   })
 })
 

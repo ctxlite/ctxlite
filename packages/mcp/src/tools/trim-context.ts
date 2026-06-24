@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { trimFiles, estimateTokens, logTrimResult } from "@ctxlite/core"
+import { trimFiles, estimateTokens, isIgnored, loadIgnorePatterns, logTrimResult } from "@ctxlite/core"
 import type { CodeFile } from "@ctxlite/core"
 import { STATS_DB_PATH, MCP_PROCESS_SESSION_ID } from "../shared.js"
 
@@ -34,7 +34,10 @@ export async function handleTrimContext(
 ): Promise<string> {
   const { files, query, maxTokens = 4096 } = args
 
-  const codeFiles: CodeFile[] = files.map((f) => ({
+  const ignorePatterns = loadIgnorePatterns(process.cwd())
+  const candidateFiles = files.filter((f) => !isIgnored(f.path, ignorePatterns))
+
+  const codeFiles: CodeFile[] = candidateFiles.map((f) => ({
     path: f.path,
     content: f.content,
     language: f.language ?? f.path.split(".").pop() ?? "",
@@ -48,7 +51,7 @@ export async function handleTrimContext(
     return [
       `## trim_context`,
       ``,
-      `All ${files.length} files are relevant for this task — no trimming applied.`,
+      `All ${candidateFiles.length} files are relevant for this task — no trimming applied.`,
       `Total tokens: ${result.tokensIn}`,
     ].join("\n")
   }

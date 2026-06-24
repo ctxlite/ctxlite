@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll, vi } from "vitest"
-import { mkdtempSync, rmSync } from "fs"
+import { mkdtempSync, rmSync, writeFileSync } from "fs"
 import { tmpdir } from "os"
 import { join } from "path"
 
@@ -93,5 +93,26 @@ describe("handleTrimContext", () => {
         query: "something",
       }),
     ).resolves.toBeTypeOf("string")
+  })
+
+  it("excludes a .ctxliteignore-matched candidate before BM25 scoring, regardless of relevance (SC-003)", async () => {
+    const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(tmpHome)
+    writeFileSync(join(tmpHome, ".ctxliteignore"), "*.generated.ts\n")
+    try {
+      const result = await handleTrimContext({
+        files: [
+          { ...authFile, content: authFile.content.repeat(50) },
+          { path: "auth.generated.ts", content: authFile.content.repeat(50), language: "typescript" },
+          { ...templateFile, content: templateFile.content.repeat(50) },
+        ],
+        query: "implement user login with JWT authentication",
+        maxTokens: 20,
+      })
+
+      expect(result).not.toContain("auth.generated.ts")
+      expect(result).toContain("src/auth/login.ts")
+    } finally {
+      cwdSpy.mockRestore()
+    }
   })
 })

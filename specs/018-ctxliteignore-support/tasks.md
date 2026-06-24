@@ -22,7 +22,7 @@ description: "Task list for .ctxliteignore support"
 
 **Purpose**: No new dependencies, no scaffolding needed — this is a small addition to an existing monorepo package. Nothing to do here beyond confirming the target file doesn't already exist.
 
-- [ ] T001 Confirm `packages/core/src/ctxliteignore.ts` does not already exist (`ls packages/core/src/ctxliteignore.ts` should fail) — sanity check only, no file changes.
+- [X] T001 Confirm `packages/core/src/ctxliteignore.ts` does not already exist (`ls packages/core/src/ctxliteignore.ts` should fail) — sanity check only, no file changes.
 
 ---
 
@@ -34,12 +34,12 @@ description: "Task list for .ctxliteignore support"
 
 > Write these tests FIRST, ensure they FAIL before implementation (the module doesn't exist yet, so this is a natural given).
 
-- [ ] T002 [P] Write `packages/core/src/ctxliteignore.test.ts` using real temp directories (`mkdtempSync`, no filesystem mocking — per `ctxlite-internals` convention) covering: `loadIgnorePatterns(cwd)` returns `[]` when no `.ctxliteignore` exists (FR-004); returns parsed patterns for a file with `*.ext`, `dir/` (trailing slash → `directoryOnly: true`), `**` wildcard, `#` comments, and blank lines; skips a malformed line without throwing and without dropping other valid lines in the same file (FR-005); `isIgnored(path, patterns)` matches Windows-style `\` paths after normalization (Edge Cases in spec.md), matches directory patterns against files nested arbitrarily deep under that directory, and returns `false` for an empty `patterns` array.
+- [X] T002 [P] Write `packages/core/src/ctxliteignore.test.ts` using real temp directories (`mkdtempSync`, no filesystem mocking — per `ctxlite-internals` convention) covering: `loadIgnorePatterns(cwd)` returns `[]` when no `.ctxliteignore` exists (FR-004); returns parsed patterns for a file with `*.ext`, `dir/` (trailing slash → `directoryOnly: true`), `**` wildcard, `#` comments, and blank lines; skips a malformed line without throwing and without dropping other valid lines in the same file (FR-005); `isIgnored(path, patterns)` matches Windows-style `\` paths after normalization (Edge Cases in spec.md), matches directory patterns against files nested arbitrarily deep under that directory, and returns `false` for an empty `patterns` array.
 
 ### Implementation for Foundational module
 
-- [ ] T003 Implement `packages/core/src/ctxliteignore.ts`: `loadIgnorePatterns(cwd: string): IgnorePattern[]` (reads `${cwd}/.ctxliteignore` via `existsSync`/`readFileSync`, returns `[]` if absent; splits into lines; skips blank/`#`-prefixed lines; for each remaining line, compiles a regex per the limited glob subset in `research.md` Decision 1 — `*` → `[^/]*`, `**` → `.*`, trailing `/` sets `directoryOnly: true` and matches the dir plus everything under it; wraps compilation in try/catch so a line that somehow fails to produce a valid `RegExp` is skipped per FR-005, never thrown) and `isIgnored(path: string, patterns: IgnorePattern[]): boolean` (normalizes `\` to `/` per existing `optimizeReadPath` convention, tests `path` against each pattern's `regex`). Depends on T002 (test file must exist and fail first).
-- [ ] T004 Export `loadIgnorePatterns` and `isIgnored` (plus the `IgnorePattern` type) from `packages/core/src/index.ts`, alongside the existing `tool-precall.js` exports. Depends on T003.
+- [X] T003 Implement `packages/core/src/ctxliteignore.ts`: `loadIgnorePatterns(cwd: string): IgnorePattern[]` (reads `${cwd}/.ctxliteignore` via `existsSync`/`readFileSync`, returns `[]` if absent; splits into lines; skips blank/`#`-prefixed lines; for each remaining line, compiles a regex per the limited glob subset in `research.md` Decision 1 — `*` → `[^/]*`, `**` → `.*`, trailing `/` sets `directoryOnly: true` and matches the dir plus everything under it; wraps compilation in try/catch so a line that somehow fails to produce a valid `RegExp` is skipped per FR-005, never thrown) and `isIgnored(path: string, patterns: IgnorePattern[]): boolean` (normalizes `\` to `/` per existing `optimizeReadPath` convention, tests `path` against each pattern's `regex`). Depends on T002 (test file must exist and fail first).
+- [X] T004 Export `loadIgnorePatterns` and `isIgnored` (plus the `IgnorePattern` type) from `packages/core/src/index.ts`, alongside the existing `tool-precall.js` exports. Depends on T003.
 
 **Checkpoint**: `npm run test --workspace=packages/core` (or root `npm test`) passes for `ctxliteignore.test.ts`. Foundation ready — both user stories can now proceed.
 
@@ -55,12 +55,12 @@ description: "Task list for .ctxliteignore support"
 
 > Write these tests FIRST, ensure they FAIL before implementation.
 
-- [ ] T005 [P] [US1] Add cases to `packages/core/src/tool-precall.test.ts`: `optimizeReadPath` with a `cwd` pointing at a real temp dir containing a `.ctxliteignore` with `vendor/` blocks `vendor/some-lib/file.go` with `blockReason` starting `"Blocked read of low-signal path:"` (same format as built-in patterns, FR-003); `optimizeReadPath` with a `cwd` pointing at a temp dir with NO `.ctxliteignore` behaves identically to calling it with no `cwd` at all (SC-002, zero behavior change); `optimizeReadPath` with a `cwd` whose `.ctxliteignore` has one malformed line and one valid line still blocks the path matching the valid line (FR-005); `optimizeToolArgs("read", { path }, cwd)` and `optimizeToolArgs("glob", { path }, cwd)` both pass `cwd` through to `optimizeReadPath`.
+- [X] T005 [P] [US1] Add cases to `packages/core/src/tool-precall.test.ts`: `optimizeReadPath` with a `cwd` pointing at a real temp dir containing a `.ctxliteignore` with `vendor/` blocks `vendor/some-lib/file.go` with `blockReason` starting `"Blocked read of low-signal path:"` (same format as built-in patterns, FR-003); `optimizeReadPath` with a `cwd` pointing at a temp dir with NO `.ctxliteignore` behaves identically to calling it with no `cwd` at all (SC-002, zero behavior change); `optimizeReadPath` with a `cwd` whose `.ctxliteignore` has one malformed line and one valid line still blocks the path matching the valid line (FR-005); `optimizeToolArgs("read", { path }, cwd)` and `optimizeToolArgs("glob", { path }, cwd)` both pass `cwd` through to `optimizeReadPath`.
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Modify `packages/core/src/tool-precall.ts`: give `optimizeReadPath(path: string, cwd?: string)` an optional second parameter; when provided, call `loadIgnorePatterns(cwd)` and check `isIgnored` against the normalized path in addition to the existing `BLOCKED_READ_PATTERNS` loop (same block-message format, FR-002/FR-003); thread an optional `cwd` parameter through `optimizeToolArgs(tool, args, cwd?)` to `optimizeReadPath`. No change to behavior when `cwd` is omitted (existing callers, existing tests, stay valid as-is — SC-002). Depends on T005 and on Phase 2 (T003/T004).
-- [ ] T007 [US1] Identify and update every call site of `optimizeToolArgs`/`optimizeReadPath` across the host packages (Claude Code/Cursor hook bridge, OpenCode plugin precall) to pass the project root as `cwd` — grep for `optimizeToolArgs(` and `optimizeReadPath(` outside `packages/core` to find them. Depends on T006.
+- [X] T006 [US1] Modify `packages/core/src/tool-precall.ts`: give `optimizeReadPath(path: string, cwd?: string)` an optional second parameter; when provided, call `loadIgnorePatterns(cwd)` and check `isIgnored` against the normalized path in addition to the existing `BLOCKED_READ_PATTERNS` loop (same block-message format, FR-002/FR-003); thread an optional `cwd` parameter through `optimizeToolArgs(tool, args, cwd?)` to `optimizeReadPath`. No change to behavior when `cwd` is omitted (existing callers, existing tests, stay valid as-is — SC-002). Depends on T005 and on Phase 2 (T003/T004).
+- [X] T007 [US1] Identify and update every call site of `optimizeToolArgs`/`optimizeReadPath` across the host packages (Claude Code/Cursor hook bridge, OpenCode plugin precall) to pass the project root as `cwd` — grep for `optimizeToolArgs(` and `optimizeReadPath(` outside `packages/core` to find them. Depends on T006.
 
 **Checkpoint**: User Story 1 fully functional and testable independently — a `.ctxliteignore` with `vendor/` blocks matching reads on every host that calls precall.
 
@@ -76,13 +76,13 @@ description: "Task list for .ctxliteignore support"
 
 > Write these tests FIRST, ensure they FAIL before implementation.
 
-- [ ] T008 [P] [US2] Add a case to `packages/opencode/src/tools.test.ts`: with a real temp dir (used as the tool's effective `cwd`) containing a `.ctxliteignore` matching `*.generated.ts`, `trimContextTool.execute` with a candidate list including a `*.generated.ts` file excludes it from `result.files`/the selected output regardless of its content's relevance to `query` (SC-003).
-- [ ] T009 [P] [US2] Add the equivalent case to `packages/mcp/src/tools/trim-context.test.ts`: `handleTrimContext` excludes a `.ctxliteignore`-matched candidate from the "Selected" section of its returned text, regardless of relevance (SC-003).
+- [X] T008 [P] [US2] Add a case to `packages/opencode/src/tools.test.ts`: with a real temp dir (used as the tool's effective `cwd`) containing a `.ctxliteignore` matching `*.generated.ts`, `trimContextTool.execute` with a candidate list including a `*.generated.ts` file excludes it from `result.files`/the selected output regardless of its content's relevance to `query` (SC-003).
+- [X] T009 [P] [US2] Add the equivalent case to `packages/mcp/src/tools/trim-context.test.ts`: `handleTrimContext` excludes a `.ctxliteignore`-matched candidate from the "Selected" section of its returned text, regardless of relevance (SC-003).
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Modify `packages/opencode/src/tools.ts`'s `trimContextTool.execute`: before calling `trimFiles(codeFiles, query, { maxTokens })`, load `.ctxliteignore` patterns for the project root (use the same `cwd` source the tool already has available — `process.cwd()`, consistent with how `getStatsDbPath()` resolves project-relative paths elsewhere in this file) and filter `codeFiles` via `isIgnored` before scoring. Depends on T008 and Phase 2.
-- [ ] T011 [US2] Mirror the same filtering in `packages/mcp/src/tools/trim-context.ts`'s `handleTrimContext`, before its `trimFiles` call. Depends on T009 and Phase 2.
+- [X] T010 [US2] Modify `packages/opencode/src/tools.ts`'s `trimContextTool.execute`: before calling `trimFiles(codeFiles, query, { maxTokens })`, load `.ctxliteignore` patterns for the project root (use the same `cwd` source the tool already has available — `process.cwd()`, consistent with how `getStatsDbPath()` resolves project-relative paths elsewhere in this file) and filter `codeFiles` via `isIgnored` before scoring. Depends on T008 and Phase 2.
+- [X] T011 [US2] Mirror the same filtering in `packages/mcp/src/tools/trim-context.ts`'s `handleTrimContext`, before its `trimFiles` call. Depends on T009 and Phase 2.
 
 **Checkpoint**: Both user stories independently functional — `.ctxliteignore` affects both precall reads and `trim_context` candidate selection, on every host.
 
@@ -90,11 +90,11 @@ description: "Task list for .ctxliteignore support"
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T012 [P] Update `docs/architecture.md` and the `ctxlite-internals` skill (all three copies — `.claude/skills/ctxlite-internals/SKILL.md`, `.cursor/skills/ctxlite-internals/SKILL.md`, `.opencode/skills/ctxlite-internals/SKILL.md`) with a short note on `.ctxliteignore`'s existence and where its logic lives (`packages/core/src/ctxliteignore.ts`), consistent with that skill's existing pattern of documenting real shipped mechanisms.
-- [ ] T013 [P] Update `README.md`'s feature list / usage section to mention `.ctxliteignore`, linking to `specs/018-ctxliteignore-support/contracts/ctxliteignore-format.md` for the format if a "docs" link is the project's existing convention (check how other features are documented in README.md first).
-- [ ] T014 Run `npm run test:coverage` and confirm the 90% floor (Constitution Principle II) still holds for `packages/core`, `packages/opencode`, and `packages/mcp` after the new module and call-site changes.
-- [ ] T015 Run `./scripts/ci.sh` (full local CI, matching what `pre-push` already runs) before considering this feature done.
-- [ ] T016 Version bump: confirm current live versions via `npm view @ctxlite/core version` (and the other 3 packages) before bumping `config.version`, per the constitution's Release Discipline constraint — do not assume the last-known bumped value is still unpublished.
+- [X] T012 [P] Update `docs/architecture.md` and the `ctxlite-internals` skill (all three copies — `.claude/skills/ctxlite-internals/SKILL.md`, `.cursor/skills/ctxlite-internals/SKILL.md`, `.opencode/skills/ctxlite-internals/SKILL.md`) with a short note on `.ctxliteignore`'s existence and where its logic lives (`packages/core/src/ctxliteignore.ts`), consistent with that skill's existing pattern of documenting real shipped mechanisms.
+- [X] T013 [P] Update `README.md`'s feature list / usage section to mention `.ctxliteignore`, linking to `specs/018-ctxliteignore-support/contracts/ctxliteignore-format.md` for the format if a "docs" link is the project's existing convention (check how other features are documented in README.md first).
+- [X] T014 Run `npm run test:coverage` and confirm the 90% floor (Constitution Principle II) still holds for `packages/core`, `packages/opencode`, and `packages/mcp` after the new module and call-site changes.
+- [X] T015 Run `./scripts/ci.sh` (full local CI, matching what `pre-push` already runs) before considering this feature done.
+- [X] T016 Version bump: confirm current live versions via `npm view @ctxlite/core version` (and the other 3 packages) before bumping `config.version`, per the constitution's Release Discipline constraint — do not assume the last-known bumped value is still unpublished.
 
 ---
 

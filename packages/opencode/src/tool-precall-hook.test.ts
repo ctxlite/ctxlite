@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { mkdtempSync, rmSync } from "fs"
+import { mkdtempSync, rmSync, writeFileSync } from "fs"
 import { tmpdir } from "os"
 import { join } from "path"
 
@@ -83,5 +83,20 @@ describe("createToolPrecallHook", () => {
     await expect(
       hook({ tool: "bash", sessionID: "ses-5", callID: "call-5" }, output as { args: Record<string, unknown> }),
     ).resolves.not.toThrow()
+  })
+
+  it("blocks a read matched by the project's .ctxliteignore (cwd threaded through to optimizeReadPath)", async () => {
+    const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(tmpHome)
+    try {
+      writeFileSync(join(tmpHome, ".ctxliteignore"), "vendor/\n")
+      const hook = createToolPrecallHook()
+      const output = baseOutput({ filePath: "vendor/some-lib/file.go" })
+
+      await hook({ tool: "read", sessionID: "ses-6", callID: "call-6" }, output)
+
+      expect(output.result).toContain("Blocked")
+    } finally {
+      cwdSpy.mockRestore()
+    }
   })
 })

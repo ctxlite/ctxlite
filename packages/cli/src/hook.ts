@@ -72,7 +72,7 @@ export async function runPreToolUseHook(stdin: AsyncIterable<Buffer | string> = 
       return 0
     }
 
-    const result = optimizeToolArgs(tool, input.tool_input ?? {})
+    const result = optimizeToolArgs(tool, input.tool_input ?? {}, process.cwd())
     const dbPath = defaultDbPath()
 
     if (result.blocked) {

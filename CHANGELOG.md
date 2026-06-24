@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.30] - 2026-06-24
+
+### Added
+- `.ctxliteignore` support: an optional, project-root file (gitignore-style patterns — `*`, `**`, trailing `/` for directories, `#` comments; no new dependency) that extends `optimizeReadPath`'s built-in blocked-path list with project-specific exclusions (e.g. a Go `vendor/`, a generated-migrations folder), and that both `trim_context` tool implementations (OpenCode, MCP) check before BM25 scoring so matched candidates are dropped regardless of relevance. Applies uniformly across every host (Claude Code, Cursor, OpenCode, Claude Desktop via MCP) through the shared `@ctxlite/core` module. See `specs/018-ctxliteignore-support/contracts/ctxliteignore-format.md` for the format.
+
 ## [0.1.29] - 2026-06-24
 
 ### Fixed

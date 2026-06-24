@@ -42,7 +42,7 @@ export async function runCursorPreToolUseHook(
       return 0
     }
 
-    const result = optimizeToolArgs(normalizeToolName(toolName), input.tool_input ?? {})
+    const result = optimizeToolArgs(normalizeToolName(toolName), input.tool_input ?? {}, process.cwd())
     const dbPath = defaultDbPath()
 
     if (result.blocked) {
