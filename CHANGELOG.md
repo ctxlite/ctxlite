@@ -7,6 +7,14 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.33] - 2026-06-24
+
+### Added
+- `ctxlite install` now writes a `.claude/rules/ctxlite-conciseness.md` (Claude Code) and `.cursor/rules/ctxlite-conciseness.mdc` (Cursor, `alwaysApply: true`) file with the same token-efficiency instructions (skip preamble/recap/sign-off, etc.) OpenCode's system prompt already gets — previously only OpenCode sessions received them. Investigated why `prune`/`compact`/`smart_read`/`trim`/`concise` always show zero in `ctxlite stats --by-session` for Claude Code/Cursor sessions: `smart_read`/`trim` are on-demand MCP tools logged as `host: "mcp"` (not a bug — see `specs/020-stats-filter-by-host/`); `prune`/`compact` are confirmed architecturally unsupported on both hosts' current documented hook surfaces (neither exposes the full conversation message array needed); `concise` was a genuine, now partially-closed gap — its instructions were simply never delivered to these hosts at all. Savings *measurement* for `concise` on Claude Code/Cursor remains unimplemented (would require parsing undocumented internals). See `specs/021-conciseness-instructions-non-opencode/` for the full investigation.
+
+### Fixed
+- `docs/architecture.md` incorrectly claimed `concise` savings were "piggybacked on the hook bridge for Claude Code/Cursor" — they never were; corrected to match the verified investigation above.
+
 ## [0.1.32] - 2026-06-24
 
 ### Added

@@ -105,6 +105,20 @@ function resolveOpenCodeSkillConfigPath(scope: InstallScope, ctx: PathContext = 
     : join(project(ctx), ".opencode", "skills", "ctxlite", "SKILL.md")
 }
 
+/** Claude Code loads every file under `.claude/rules/` unconditionally (no `paths` frontmatter) — same priority as `CLAUDE.md`. */
+function resolveClaudeCodeConcisenessRulePath(scope: InstallScope, ctx: PathContext = {}): string {
+  return scope === "global"
+    ? join(home(ctx), ".claude", "rules", "ctxlite-conciseness.md")
+    : join(project(ctx), ".claude", "rules", "ctxlite-conciseness.md")
+}
+
+/** Cursor loads `.cursor/rules/*.mdc` files with `alwaysApply: true` unconditionally — matching this project's own `.cursor/rules/security.mdc`. */
+function resolveCursorConcisenessRulePath(scope: InstallScope, ctx: PathContext = {}): string {
+  return scope === "global"
+    ? join(home(ctx), ".cursor", "rules", "ctxlite-conciseness.mdc")
+    : join(project(ctx), ".cursor", "rules", "ctxlite-conciseness.mdc")
+}
+
 export function toPathContext(options: Pick<InstallOptions, "homeDir" | "projectDir">): PathContext {
   const ctx: PathContext = {}
   if (options.homeDir !== undefined) {
@@ -139,6 +153,12 @@ export function buildTargets(
         { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "mcp" },
         { tool, scope, configPath: resolveClaudeCodeHooksConfigPath(scope, ctx), kind: "claude-code-hooks" },
         { tool, scope, configPath: resolveClaudeCodeSkillConfigPath(scope, ctx), kind: "claude-code-skill" },
+        {
+          tool,
+          scope,
+          configPath: resolveClaudeCodeConcisenessRulePath(scope, ctx),
+          kind: "claude-code-conciseness-rule",
+        },
       ]
     }
 
@@ -147,6 +167,7 @@ export function buildTargets(
         { tool, scope, configPath: resolveConfigPath(tool, scope, ctx), kind: "mcp" },
         { tool, scope, configPath: resolveCursorHooksConfigPath(scope, ctx), kind: "cursor-hooks" },
         { tool, scope, configPath: resolveCursorSkillConfigPath(scope, ctx), kind: "cursor-skill" },
+        { tool, scope, configPath: resolveCursorConcisenessRulePath(scope, ctx), kind: "cursor-conciseness-rule" },
       ]
     }
 

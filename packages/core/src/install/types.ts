@@ -11,6 +11,8 @@ export type ConfigKind =
   | "claude-code-skill"
   | "cursor-skill"
   | "opencode-skill"
+  | "claude-code-conciseness-rule"
+  | "cursor-conciseness-rule"
 
 export interface McpServerEntry {
   command: string

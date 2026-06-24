@@ -4,13 +4,25 @@ import { buildTargets, toPathContext } from "./paths.js"
 import { applyConfigChange, formatJson } from "./merge.js"
 import { toolLabel } from "./paths.js"
 import { CTXLITE_SKILL_CONTENT } from "./skill-content.js"
+import { CLAUDE_CODE_CONCISENESS_RULE_CONTENT, CURSOR_CONCISENESS_RULE_CONTENT } from "./conciseness-rule-content.js"
 import type { ConfigKind, InstallOptions, InstallPlanItem, InstallTool } from "./types.js"
 import { ALL_TOOLS } from "./types.js"
 
-const SKILL_KINDS = new Set<ConfigKind>(["claude-code-skill", "cursor-skill", "opencode-skill"])
+/**
+ * Full-file-ownership kinds — plain text/Markdown, not JSON, so they bypass
+ * applyConfigChange/formatJson entirely. Each kind owns its whole file: no
+ * merge logic, since nothing else ever writes to these paths.
+ */
+const FULL_FILE_CONTENT: Record<string, string> = {
+  "claude-code-skill": CTXLITE_SKILL_CONTENT,
+  "cursor-skill": CTXLITE_SKILL_CONTENT,
+  "opencode-skill": CTXLITE_SKILL_CONTENT,
+  "claude-code-conciseness-rule": CLAUDE_CODE_CONCISENESS_RULE_CONTENT,
+  "cursor-conciseness-rule": CURSOR_CONCISENESS_RULE_CONTENT,
+}
 
-function isSkillKind(kind: ConfigKind): boolean {
-  return SKILL_KINDS.has(kind)
+function isFullFileKind(kind: ConfigKind): boolean {
+  return kind in FULL_FILE_CONTENT
 }
 
 async function readTextFile(path: string): Promise<{ exists: boolean; content: string }> {
@@ -24,12 +36,16 @@ async function readTextFile(path: string): Promise<{ exists: boolean; content: s
   }
 }
 
-/** Plan/apply for skill files — plain Markdown, not JSON, so they bypass applyConfigChange/formatJson. */
-function skillChange(existingContent: string, remove: boolean): { content: string; changed: boolean } {
+/** Plan/apply for full-file-ownership kinds (skills, conciseness rules). */
+function fullFileChange(
+  existingContent: string,
+  expectedContent: string,
+  remove: boolean,
+): { content: string; changed: boolean } {
   if (remove) {
     return { content: "", changed: existingContent.length > 0 }
   }
-  return { content: CTXLITE_SKILL_CONTENT, changed: existingContent !== CTXLITE_SKILL_CONTENT }
+  return { content: expectedContent, changed: existingContent !== expectedContent }
 }
 
 async function readJsonFile(path: string): Promise<{ exists: boolean; data: unknown }> {
@@ -82,10 +98,10 @@ export async function planInstall(options: InstallOptions): Promise<InstallPlanI
     let exists: boolean
     let changed: boolean
 
-    if (isSkillKind(target.kind)) {
+    if (isFullFileKind(target.kind)) {
       const file = await readTextFile(target.configPath)
       exists = file.exists
-      changed = skillChange(file.content, remove).changed
+      changed = fullFileChange(file.content, FULL_FILE_CONTENT[target.kind] ?? "", remove).changed
     } else {
       const { exists: jsonExists, data } = await readJsonFile(target.configPath)
       exists = jsonExists
@@ -129,13 +145,13 @@ export async function runInstall(options: InstallOptions): Promise<InstallPlanIt
       continue
     }
 
-    if (isSkillKind(target.kind)) {
+    if (isFullFileKind(target.kind)) {
       if (planItem.action === "remove") {
         await rm(target.configPath, { force: true })
         continue
       }
       await mkdir(dirname(target.configPath), { recursive: true })
-      await writeFile(target.configPath, CTXLITE_SKILL_CONTENT, "utf8")
+      await writeFile(target.configPath, FULL_FILE_CONTENT[target.kind] ?? "", "utf8")
       continue
     }
 

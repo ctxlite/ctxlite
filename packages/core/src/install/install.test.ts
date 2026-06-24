@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { mkdtemp, readFile, rm } from "node:fs/promises"
+import { mkdtemp, mkdir, readFile, writeFile, rm } from "node:fs/promises"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import {
@@ -194,22 +194,40 @@ describe("buildTargets", () => {
     expect(targets[2]?.kind).toBe("opencode-skill")
   })
 
-  it("also targets settings.json and a skill file for claude-code (hooks registration)", () => {
+  it("also targets settings.json, a skill file, and a conciseness rule file for claude-code (hooks registration)", () => {
     const targets = buildTargets(["claude-code"], "global", { homeDir: "/home/test" })
-    expect(targets).toHaveLength(3)
+    expect(targets).toHaveLength(4)
     expect(targets[0]?.kind).toBe("mcp")
     expect(targets[1]?.configPath).toBe("/home/test/.claude/settings.json")
     expect(targets[1]?.kind).toBe("claude-code-hooks")
     expect(targets[2]?.kind).toBe("claude-code-skill")
+    expect(targets[3]?.kind).toBe("claude-code-conciseness-rule")
   })
 
-  it("also targets hooks.json and a skill file for cursor (hooks registration)", () => {
+  it("also targets hooks.json, a skill file, and a conciseness rule file for cursor (hooks registration)", () => {
     const targets = buildTargets(["cursor"], "global", { homeDir: "/home/test" })
-    expect(targets).toHaveLength(3)
+    expect(targets).toHaveLength(4)
     expect(targets[0]?.kind).toBe("mcp")
     expect(targets[1]?.configPath).toBe("/home/test/.cursor/hooks.json")
     expect(targets[1]?.kind).toBe("cursor-hooks")
     expect(targets[2]?.kind).toBe("cursor-skill")
+    expect(targets[3]?.kind).toBe("cursor-conciseness-rule")
+  })
+
+  it("resolves claude-code's conciseness rule path under .claude/rules/ctxlite-conciseness.md", () => {
+    const globalTargets = buildTargets(["claude-code"], "global", { homeDir: "/home/test" })
+    expect(globalTargets[3]?.configPath).toBe("/home/test/.claude/rules/ctxlite-conciseness.md")
+
+    const projectTargets = buildTargets(["claude-code"], "project", { projectDir: "/repo" })
+    expect(projectTargets[3]?.configPath).toBe("/repo/.claude/rules/ctxlite-conciseness.md")
+  })
+
+  it("resolves cursor's conciseness rule path under .cursor/rules/ctxlite-conciseness.mdc", () => {
+    const globalTargets = buildTargets(["cursor"], "global", { homeDir: "/home/test" })
+    expect(globalTargets[3]?.configPath).toBe("/home/test/.cursor/rules/ctxlite-conciseness.mdc")
+
+    const projectTargets = buildTargets(["cursor"], "project", { projectDir: "/repo" })
+    expect(projectTargets[3]?.configPath).toBe("/repo/.cursor/rules/ctxlite-conciseness.mdc")
   })
 })
 
@@ -256,7 +274,7 @@ describe("runInstall", () => {
 })
 
 describe("planInstall all global", () => {
-  it("returns ten targets for all tools (cursor, opencode, and claude-code each count as three: mcp/config, hooks, skill)", async () => {
+  it("returns twelve targets for all tools (cursor and claude-code each count as four: mcp/config, hooks, skill, conciseness rule; opencode counts as three: config, tui, skill; claude-desktop counts as one)", async () => {
     const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
     try {
       const plan = await planInstall({
@@ -266,7 +284,7 @@ describe("planInstall all global", () => {
         projectDir: root,
         dryRun: true,
       })
-      expect(plan).toHaveLength(10)
+      expect(plan).toHaveLength(12)
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -276,14 +294,14 @@ describe("planInstall all global", () => {
 describe("skill install (claude-code-skill / cursor-skill / opencode-skill)", () => {
   it("resolves claude-code's skill path under .claude/skills/ctxlite/SKILL.md", () => {
     const targets = buildTargets(["claude-code"], "global", { homeDir: "/home/test" })
-    expect(targets).toHaveLength(3)
+    expect(targets).toHaveLength(4)
     expect(targets[2]?.configPath).toBe("/home/test/.claude/skills/ctxlite/SKILL.md")
     expect(targets[2]?.kind).toBe("claude-code-skill")
   })
 
   it("resolves cursor's skill path under .cursor/skills/ctxlite/SKILL.md (not skills-cursor/, which is reserved)", () => {
     const targets = buildTargets(["cursor"], "project", { projectDir: "/repo" })
-    expect(targets).toHaveLength(3)
+    expect(targets).toHaveLength(4)
     expect(targets[2]?.configPath).toBe("/repo/.cursor/skills/ctxlite/SKILL.md")
     expect(targets[2]?.kind).toBe("cursor-skill")
   })
@@ -345,6 +363,112 @@ describe("skill install (claude-code-skill / cursor-skill / opencode-skill)", ()
       const skillItem = plan.find((p) => p.configPath.endsWith("SKILL.md"))
       expect(skillItem?.action).toBe("remove")
       await expect(readFile(skillPath, "utf8")).rejects.toThrow()
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+})
+
+describe("conciseness rule install (claude-code-conciseness-rule / cursor-conciseness-rule)", () => {
+  it("writes .claude/rules/ctxlite-conciseness.md with the conciseness instructions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
+    try {
+      const plan = await runInstall({ tools: ["claude-code"], scope: "project", projectDir: root, homeDir: root })
+
+      const item = plan.find((p) => p.configPath.endsWith("ctxlite-conciseness.md"))
+      expect(item?.action).toBe("create")
+      const content = await readFile(join(root, ".claude", "rules", "ctxlite-conciseness.md"), "utf8")
+      expect(content).toContain("Skip preamble")
+      expect(content).toContain("Skip recap")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it("writes .cursor/rules/ctxlite-conciseness.mdc with alwaysApply: true frontmatter and the conciseness instructions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
+    try {
+      const plan = await runInstall({ tools: ["cursor"], scope: "project", projectDir: root, homeDir: root })
+
+      const item = plan.find((p) => p.configPath.endsWith("ctxlite-conciseness.mdc"))
+      expect(item?.action).toBe("create")
+      const content = await readFile(join(root, ".cursor", "rules", "ctxlite-conciseness.mdc"), "utf8")
+      expect(content).toContain("alwaysApply: true")
+      expect(content).toContain("Skip preamble")
+      expect(content).toContain("Skip recap")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it("is idempotent — re-running install skips an already-current conciseness rule file (both hosts)", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
+    try {
+      await runInstall({ tools: ["claude-code", "cursor"], scope: "project", projectDir: root, homeDir: root })
+      const plan = await runInstall({ tools: ["claude-code", "cursor"], scope: "project", projectDir: root, homeDir: root })
+
+      const claudeItem = plan.find((p) => p.configPath.endsWith("ctxlite-conciseness.md"))
+      expect(claudeItem?.action).toBe("skip")
+      const cursorItem = plan.find((p) => p.configPath.endsWith("ctxlite-conciseness.mdc"))
+      expect(cursorItem?.action).toBe("skip")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it("removes both conciseness rule files when remove: true", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
+    try {
+      await runInstall({ tools: ["claude-code", "cursor"], scope: "project", projectDir: root, homeDir: root })
+      const claudePath = join(root, ".claude", "rules", "ctxlite-conciseness.md")
+      const cursorPath = join(root, ".cursor", "rules", "ctxlite-conciseness.mdc")
+      await expect(readFile(claudePath, "utf8")).resolves.toBeTruthy()
+      await expect(readFile(cursorPath, "utf8")).resolves.toBeTruthy()
+
+      const plan = await runInstall({
+        tools: ["claude-code", "cursor"],
+        scope: "project",
+        projectDir: root,
+        homeDir: root,
+        remove: true,
+      })
+
+      const claudeItem = plan.find((p) => p.configPath.endsWith("ctxlite-conciseness.md"))
+      expect(claudeItem?.action).toBe("remove")
+      const cursorItem = plan.find((p) => p.configPath.endsWith("ctxlite-conciseness.mdc"))
+      expect(cursorItem?.action).toBe("remove")
+      await expect(readFile(claudePath, "utf8")).rejects.toThrow()
+      await expect(readFile(cursorPath, "utf8")).rejects.toThrow()
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it("never touches an existing CLAUDE.md or an existing .cursor/rules/security.mdc-style file", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
+    try {
+      const claudeMdPath = join(root, "CLAUDE.md")
+      await writeFile(claudeMdPath, "# My project instructions\nDo not touch this.\n", "utf8")
+
+      await mkdir(join(root, ".cursor", "rules"), { recursive: true })
+      const otherRulePath = join(root, ".cursor", "rules", "security.mdc")
+      const otherRuleContent = "---\ndescription: Security rules\nalwaysApply: true\n---\n\n# Security Rules\n"
+      await writeFile(otherRulePath, otherRuleContent, "utf8")
+
+      const before = {
+        claudeMd: await readFile(claudeMdPath, "utf8"),
+        otherRule: await readFile(otherRulePath, "utf8"),
+      }
+
+      await runInstall({ tools: ["claude-code", "cursor"], scope: "project", projectDir: root, homeDir: root })
+
+      const after = {
+        claudeMd: await readFile(claudeMdPath, "utf8"),
+        otherRule: await readFile(otherRulePath, "utf8"),
+      }
+
+      expect(after.claudeMd).toBe(before.claudeMd)
+      expect(after.otherRule).toBe(before.otherRule)
     } finally {
       await rm(root, { recursive: true, force: true })
     }

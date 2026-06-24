@@ -37,13 +37,23 @@ column — this is also what the `precall` / `compress` / `prune` / `compact`
 | `compact` | Caps any large tool output in an older (non-latest) message to a fixed token budget, regardless of duplication | `core/context-prune.ts` (`capStaleToolOutputs`) | Same hook as `prune` (OpenCode only) |
 | `smart_read` | Returns a file's signatures (functions/classes/types/exports) with bodies blanked, instead of full content | `core/smart-read.ts` | Agent-initiated MCP/plugin tool call — never automatic, the agent has to decide to call it |
 | `trim` | Scores a list of candidate files against a task description (BM25 + import-graph boosting) and drops the irrelevant ones | `core/trimmer.ts`, `core/bm25.ts`, `core/imports.ts` | Agent-initiated tool call (`trim_context`) |
-| `concise` | A flat percentage estimate of tokens saved by the conciseness instructions injected into the system prompt | `core/tokens.ts` (`estimateConcisenessSavings`) | Logged on every completed assistant turn — `message.updated` event (OpenCode), or piggybacked on the hook bridge for Claude Code/Cursor |
+| `concise` | A flat percentage estimate of tokens saved by the conciseness instructions injected into the system prompt | `core/tokens.ts` (`estimateConcisenessSavings`) | Logged on every completed assistant turn — `message.updated` event (OpenCode only; no equivalent measurement exists for Claude Code/Cursor, see below) |
 
 `precall`/`compress` are automatic on every matching tool call. `prune`/
 `compact`/`concise` are automatic on every request, but only on OpenCode —
-no other host exposes the hook they need. `smart_read`/`trim` are entirely
-opt-in: the agent has to decide to call them, which is why a [skill](#skills)
-exists to nudge that decision (see below).
+no other host exposes the hook they need (confirmed against both Claude
+Code's and Cursor's complete current hook-event documentation: neither
+exposes the full conversation message array `prune`/`compact` need, and
+neither documents per-turn token usage in any hook payload, which `concise`
+measurement would need — `specs/021-conciseness-instructions-non-opencode/`
+has the full investigation). `concise`'s *instructions* (not its
+measurement) are the one part of this gap that's closeable without relying
+on undocumented internals — Claude Code and Cursor each get the same
+instructions via a dedicated, always-loaded rule file instead
+(`core/install/conciseness-rule-content.ts` → `.claude/rules/` /
+`.cursor/rules/`, alongside the skill files below). `smart_read`/`trim` are
+entirely opt-in: the agent has to decide to call them, which is why a
+[skill](#skills) exists to nudge that decision (see below).
 
 ## Per-host integration
 
@@ -114,6 +124,17 @@ those two tools, and a host-native skill is more likely to actually be
 read. OpenCode additionally auto-discovers skills written for Claude Code
 (`~/.claude/skills/`), so the two aren't fully redundant even though only
 one needs to be installed per host.
+
+`ctxlite install` also writes a second, separate always-loaded file per
+host — `.claude/rules/ctxlite-conciseness.md` (Claude Code) and
+`.cursor/rules/ctxlite-conciseness.mdc` (Cursor, `alwaysApply: true`) — the
+conciseness instructions OpenCode already gets via its own unconditional
+system-prompt injection (`core/install/conciseness-rule-content.ts`). This
+is a separate mechanism from the skill above: a skill is *discovered* by
+the host on its own when relevant, while a rules-directory file is loaded
+into every session unconditionally, the same way `CLAUDE.md` is — there is
+no equivalent "always loaded" injection point for OpenCode's own plugin
+hooks to skip, so OpenCode doesn't need this second file.
 
 ## Stats storage
 
