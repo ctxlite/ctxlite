@@ -40,7 +40,7 @@ A maintainer can close the better-sqlite3 portion of an open security alert with
 
 **Risk** — What's the specific, most-likely-to-break thing? Which existing
 behavior/test/host integration is in the blast radius?
-None — this is a documentation-only change. No source file under `packages/*/src` is modified, no dependency version changes, no test changes. The only way this could be "wrong" is if the research conclusion itself is wrong (e.g., the Snyk pages were stale or misread); that risk is mitigated by citing the exact pages and quoting their content in spec.md's Findings section, so a reader can re-verify rather than trust the conclusion blindly.
+None — this is a documentation-only change. No source file under `packages/*/src` is modified, no dependency version changes, no test changes. The only way this could be "wrong" is if the research conclusion itself is wrong (e.g., the Snyk pages were stale or misread); that risk is mitigated by citing the exact pages and quoting their content in spec.md's Findings section, so a reader can re-verify rather than trust the conclusion blindly. To disambiguate explicitly: spec.md's "no version change needed" conclusion is about `better-sqlite3`'s pinned version, not ctxlite's own `config.version` — the latter is untouched by this feature, and the constitution's Release Discipline bump requirement only fires at `./scripts/publish-npm.sh --publish` time, which this feature never invokes.
 
 **Validation** — How was/will this be verified? Name the actual test(s)
 or the actual live host check performed (not just "typecheck and test
