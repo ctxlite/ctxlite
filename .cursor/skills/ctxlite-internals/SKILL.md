@@ -91,6 +91,21 @@ Two SQLite backends exist (`bun:sqlite` for the OpenCode/Bun runtime,
 the schema or query layer needs both backends to stay in sync — there's no
 shared SQL execution path between them, just a shared interface shape.
 
+**On PRAGMA calls specifically**: both backends call `PRAGMA`
+(`journal_mode = WAL`, `synchronous = NORMAL`, `busy_timeout = 5000`) via
+direct string interpolation (`PRAGMA ${source}` inside better-sqlite3's own
+`pragma()` method, `db.exec`/`db.run` with a literal template in ours) —
+this is not a bug, it's the only way any SQLite driver implements PRAGMA,
+since SQLite's grammar doesn't support bound parameters for it. It's
+*safe* here only because all three call sites pass hardcoded literals,
+never external input (investigated and confirmed in
+`specs/017-better-sqlite3-security-audit/spec.md` after a Socket.dev scan
+flagged the pattern). If a future PRAGMA call takes a variable argument —
+an exposed "vacuum" or "integrity_check" admin tool, say — that call MUST
+go through the Implementation Heuristic Gate (constitution Principle VI)
+with the Risk question answered specifically against this exact injection
+pattern, not waved off as "it's just a PRAGMA."
+
 ## Don't mock the filesystem; do mock `os.homedir()`
 
 Tests use real temp directories (`mkdtempSync`) for actual file I/O — never
