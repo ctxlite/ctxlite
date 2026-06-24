@@ -1,7 +1,7 @@
 /** @jsxImportSource @opentui/solid */
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule, TuiSlotContext } from "@opencode-ai/plugin/tui"
 import { createEffect, createSignal, onCleanup, Show } from "solid-js"
-import { StatsStore, buildStatsBreakdown, formatSavingsLine, renderStatsBarChart } from "@ctxlite/core"
+import { StatsStore, buildStatsBreakdown, formatSavingsLine, renderStatsBarChart, SUPPORT_LINE } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
 
 const id = "@ctxlite/opencode"
@@ -12,6 +12,7 @@ interface StatsSnapshot {
   totalLine: string
   rows: string[]
   costLine: string
+  supportLine: string
 }
 
 /** Current session only, not all-time — the sidebar should reflect what this session has saved, not an ever-growing total. */
@@ -21,15 +22,15 @@ function readSnapshot(sessionID: string): StatsSnapshot {
     store = new StatsStore(getStatsDbPath())
     const summary = store.summaryForSession("opencode", sessionID)
     if (summary.totalRequests === 0) {
-      return { totalLine: "no savings yet", rows: [], costLine: "" }
+      return { totalLine: "no savings yet", rows: [], costLine: "", supportLine: "" }
     }
 
     const rows = renderStatsBarChart(buildStatsBreakdown(summary))
     const totalLine = formatSavingsLine(summary)
     const costLine = `~$${summary.costSaved.toFixed(4)} saved`
-    return { totalLine, rows, costLine }
+    return { totalLine, rows, costLine, supportLine: SUPPORT_LINE }
   } catch {
-    return { totalLine: "", rows: [], costLine: "" }
+    return { totalLine: "", rows: [], costLine: "", supportLine: "" }
   } finally {
     store?.close()
   }
@@ -64,6 +65,11 @@ function SidebarStats(props: { api: TuiPluginApi; sessionID: string }) {
         <Show when={snapshot().costLine}>
           <text fg={props.api.theme.current.textMuted} wrapMode="none">
             {snapshot().costLine}
+          </text>
+        </Show>
+        <Show when={snapshot().supportLine}>
+          <text fg={props.api.theme.current.textMuted} wrapMode="none">
+            {snapshot().supportLine}
           </text>
         </Show>
       </box>

@@ -160,6 +160,7 @@ export function renderCompactSummary(summary: Summary): string[] {
     `ctxlite · ${formatSavingsLine(summary)}`,
     ...renderStatsBarChart(buildStatsBreakdown(summary)),
     `~$${summary.costSaved.toFixed(4)} saved`,
+    SUPPORT_LINE,
   ]
 }
 

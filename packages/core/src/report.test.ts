@@ -102,11 +102,12 @@ describe("renderSessionBreakdown", () => {
 })
 
 describe("renderCompactSummary", () => {
-  it("shows the savings line, the bar chart, and a cost line", () => {
+  it("shows the savings line, the bar chart, a cost line, and the support line", () => {
     const lines = renderCompactSummary(makeSummary())
     expect(lines[0]).toContain("ctxlite ·")
     expect(lines.some((l) => l.startsWith("precall"))).toBe(true)
-    expect(lines.at(-1)).toContain("saved")
+    expect(lines.some((l) => l.includes("saved") && l.startsWith("~$"))).toBe(true)
+    expect(lines.at(-1)).toBe(SUPPORT_LINE)
   })
 
   it("reports no data for an empty summary", () => {
