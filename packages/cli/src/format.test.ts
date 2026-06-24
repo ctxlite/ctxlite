@@ -75,6 +75,11 @@ describe("formatText", () => {
     expect(out).toContain("45 context passes")
     expect(out).toContain("$1.6236")
   })
+
+  it("includes the support link (LICENSE's Support Link Retention Condition)", () => {
+    const out = formatText(fullSummary)
+    expect(out).toContain("https://ko-fi.com/techdebeci")
+  })
 })
 
 describe("formatJson", () => {

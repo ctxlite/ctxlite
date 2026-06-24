@@ -47,6 +47,7 @@ export {
   renderSessionBreakdown,
   renderSessionBreakdownDetailed,
   renderStatsBarChart,
+  SUPPORT_LINE,
 } from "./report.js"
 export type { StatsBreakdownRow } from "./report.js"
 

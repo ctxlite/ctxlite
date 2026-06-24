@@ -34,6 +34,9 @@ EXAMPLES:
   ctxlite stats --by-session
   ctxlite install --tool cursor --scope global --yes
   ctxlite install --tool all --scope global --dry-run
+
+SUPPORT:
+  If ctxlite is saving you tokens: https://ko-fi.com/techdebeci
 `.trimStart()
 
 async function main(): Promise<void> {

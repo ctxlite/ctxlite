@@ -7,6 +7,7 @@ import {
   formatSavingsLine,
   logTrimResult,
   renderStatsBarChart,
+  SUPPORT_LINE,
   trimFiles,
 } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
@@ -54,6 +55,8 @@ Returns a formatted report with: total requests, tokens saved, estimated cost sa
       if (summary.avgLatencyMs > 0) {
         lines.push(`**Avg trim latency:** ${summary.avgLatencyMs}ms`)
       }
+
+      lines.push(``, SUPPORT_LINE)
 
       return lines.join("\n")
     } catch (err) {

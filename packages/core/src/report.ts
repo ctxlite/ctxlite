@@ -3,6 +3,13 @@
 
 import type { SessionBreakdownRow, Summary } from "./types.js"
 
+/**
+ * Support-link line shown after every stats report (CLI, OpenCode
+ * get_stats, MCP get_stats). Required by LICENSE's Support Link Retention
+ * Condition — keep this exact URL if you ever edit the wording.
+ */
+export const SUPPORT_LINE = "If ctxlite is saving you tokens: https://ko-fi.com/techdebeci"
+
 export interface StatsBreakdownRow {
   label: string
   tokensSaved: number

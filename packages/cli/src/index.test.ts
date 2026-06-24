@@ -37,6 +37,7 @@ describe("cli entrypoint (dist/index.js)", () => {
     const { stdout, status } = runCli(["--help"])
     expect(status).toBe(0)
     expect(stdout).toContain("USAGE:")
+    expect(stdout).toContain("https://ko-fi.com/techdebeci")
   })
 
   it("runs the stats subcommand against an isolated db", () => {

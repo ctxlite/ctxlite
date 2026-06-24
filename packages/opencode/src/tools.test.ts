@@ -57,6 +57,7 @@ describe("getStatsTool", () => {
     const resultA = await getStatsTool.execute({}, fakeContext("ses-a"))
     expect(output(resultA)).toContain("ctxlite stats — current session")
     expect(output(resultA)).toContain("precall")
+    expect(output(resultA)).toContain("https://ko-fi.com/techdebeci")
 
     const resultB = await getStatsTool.execute({}, fakeContext("ses-b"))
     expect(output(resultB)).toContain("No requests recorded")

@@ -5,8 +5,15 @@ import {
   renderCompactSummary,
   renderSessionBreakdown,
   renderSessionBreakdownDetailed,
+  SUPPORT_LINE,
 } from "./report.js"
 import type { SessionBreakdownRow, Summary } from "./types.js"
+
+describe("SUPPORT_LINE", () => {
+  it("points at the LICENSE-mandated Ko-fi URL", () => {
+    expect(SUPPORT_LINE).toContain("https://ko-fi.com/techdebeci")
+  })
+})
 
 function makeSummary(overrides: Partial<Summary> = {}): Summary {
   return {

@@ -2,6 +2,11 @@
   "name": "@ctxlite/cli",
   "version": "0.1.25",
   "description": "ctxlite CLI — stats reporting and tool installer for Cursor, OpenCode, and Claude Code",
+  "license": "SEE LICENSE IN LICENSE",
+  "funding": {
+    "type": "ko-fi",
+    "url": "https://ko-fi.com/techdebeci"
+  },
   "type": "module",
   "bin": {
     "ctxlite": "./dist/index.js"

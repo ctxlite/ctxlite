@@ -4,7 +4,10 @@
 
 [![CI](https://github.com/ctxlite/ctxlite/actions/workflows/ci.yml/badge.svg)](https://github.com/ctxlite/ctxlite/actions)
 [![npm](https://img.shields.io/npm/v/@ctxlite/opencode)](https://www.npmjs.com/package/@ctxlite/opencode)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT + Commons Clause](https://img.shields.io/badge/License-MIT%20%2B%20Commons%20Clause-yellow.svg)](LICENSE)
+[![Sponsor on Ko-fi](https://img.shields.io/badge/sponsor-ko--fi-FF5E5B.svg)](https://ko-fi.com/techdebeci)
+
+If ctxlite is saving you tokens, consider [supporting the project on Ko-fi](https://ko-fi.com/techdebeci).
 
 ## How it works
 
@@ -113,4 +116,7 @@ See [docs/contributing.md](docs/contributing.md).
 
 ## License
 
-MIT
+- **v0.1.0 – v0.1.25**: plain MIT, permanently (already published, not retroactively changed).
+- **v0.1.26 and later**: MIT with the [Commons Clause](https://commonsclause.com/) condition — free to use, modify, and run for any purpose, including commercial/internal use at a company. What requires a separate commercial license: reselling or rebranding ctxlite itself (or a derivative whose value comes substantially from it) as a competing product or service.
+
+See [LICENSE](LICENSE) for the full text.

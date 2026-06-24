@@ -1,6 +1,7 @@
 {
   "name": "ctxlite-monorepo",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "workspaces": [
     "packages/*"

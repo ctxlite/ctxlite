@@ -51,6 +51,7 @@ describe("handleGetStats", () => {
     expect(result).toContain("Tokens saved")
     expect(result).toContain("precall")
     expect(result).toContain("Est. cost saved")
+    expect(result).toContain("https://ko-fi.com/techdebeci")
   })
 
   it("returns a clear error message instead of throwing when the db file is corrupt", async () => {

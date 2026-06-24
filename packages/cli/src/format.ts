@@ -1,4 +1,11 @@
-import { buildStatsBreakdown, formatSavingsLine, formatTokenCount, renderStatsBarChart, type Summary } from "@ctxlite/core"
+import {
+  buildStatsBreakdown,
+  formatSavingsLine,
+  formatTokenCount,
+  renderStatsBarChart,
+  SUPPORT_LINE,
+  type Summary,
+} from "@ctxlite/core"
 
 export function formatText(summary: Summary): string {
   if (summary.totalRequests === 0) {
@@ -19,6 +26,7 @@ ${chart}
 Cost saved    ~$${summary.costSaved.toFixed(4)}
 Avg latency   ${summary.avgLatencyMs}ms
 ─────────────────────────────────────
+${SUPPORT_LINE}
 `.trimStart()
 }
 

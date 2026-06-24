@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { StatsStore, buildStatsBreakdown, formatSavingsLine, renderStatsBarChart } from "@ctxlite/core"
+import { StatsStore, buildStatsBreakdown, formatSavingsLine, renderStatsBarChart, SUPPORT_LINE } from "@ctxlite/core"
 import { STATS_DB_PATH, MCP_PROCESS_SESSION_ID } from "../shared.js"
 
 export const getStatsSchema = z.object({
@@ -34,6 +34,8 @@ export async function handleGetStats(args: z.infer<typeof getStatsSchema>): Prom
       chart,
       "```",
       `**Est. cost saved:** $${summary.costSaved.toFixed(4)}`,
+      ``,
+      SUPPORT_LINE,
     ].join("\n")
   } catch (err) {
     return `ctxlite stats unavailable: ${err instanceof Error ? err.message : String(err)}`

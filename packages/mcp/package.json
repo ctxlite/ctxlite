@@ -2,6 +2,11 @@
   "name": "@ctxlite/mcp",
   "version": "0.1.25",
   "description": "ctxlite MCP server for Cursor editor and Cursor agent CLI",
+  "license": "SEE LICENSE IN LICENSE",
+  "funding": {
+    "type": "ko-fi",
+    "url": "https://ko-fi.com/techdebeci"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
