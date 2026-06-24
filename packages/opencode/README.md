@@ -22,6 +22,8 @@ Which of these run **automatically** vs. **on demand** depends on what each tool
 | **Cursor** | pre-call rewrite only — Cursor's hooks can't rewrite output for built-in tools, so output compression has no automatic path here | `get_stats`, `trim_context`, `smart_read` (MCP) |
 | **Claude Desktop** | — (no hook/plugin API) | `get_stats`, `trim_context`, `smart_read` (MCP) |
 
+Add a project-root `.ctxliteignore` (gitignore-style patterns) to block reads and `trim_context` candidates from project-specific generated/vendor paths that aren't already covered by ctxlite's built-in blocked-path list — see [the format reference](specs/018-ctxliteignore-support/contracts/ctxliteignore-format.md).
+
 ## Install
 
 ### OpenCode
