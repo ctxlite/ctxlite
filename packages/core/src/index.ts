@@ -19,6 +19,10 @@ export type { PrecallResult } from "./tool-precall.js"
 export { loadIgnorePatterns, isIgnored } from "./ctxliteignore.js"
 export type { IgnorePattern } from "./ctxliteignore.js"
 
+/** Low-level SQLite access — for tests that need to inspect a raw logged row (e.g. `upstream`) beyond what StatsStore's aggregate methods expose. */
+export { openStatsSqlite } from "./sqlite-adapter.js"
+export type { StatsSqlite } from "./sqlite-adapter.js"
+
 export { compressToolOutput } from "./tool-output-compress.js"
 export type { CompressToolOutputOptions, CompressToolOutputResult } from "./tool-output-compress.js"
 

@@ -79,7 +79,7 @@ export async function runPreToolUseHook(stdin: AsyncIterable<Buffer | string> = 
       logOptimizationSavings(
         {
           source: "precall",
-          upstream: "claude-code",
+          upstream: tool,
           tokensIn: result.estimatedTokensSaved,
           tokensOut: 0,
           host: "claude-code",
@@ -101,7 +101,7 @@ export async function runPreToolUseHook(stdin: AsyncIterable<Buffer | string> = 
       logOptimizationSavings(
         {
           source: "precall",
-          upstream: "claude-code",
+          upstream: tool,
           tokensIn: result.estimatedTokensSaved,
           tokensOut: 0,
           host: "claude-code",
@@ -139,7 +139,7 @@ export async function runPostToolUseHook(stdin: AsyncIterable<Buffer | string> =
     logOptimizationSavings(
       {
         source: "compress",
-        upstream: "claude-code",
+        upstream: (input.tool_name ?? "").toLowerCase(),
         tokensIn: result.tokensIn,
         tokensOut: result.tokensOut,
         host: "claude-code",

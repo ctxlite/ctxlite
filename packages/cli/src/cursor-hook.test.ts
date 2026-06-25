@@ -11,10 +11,20 @@ vi.mock("os", async (importOriginal) => {
 })
 
 const { runCursorPreToolUseHook } = await import("./cursor-hook.js")
-const { closeSharedStores, StatsStore, defaultDbPath } = await import("@ctxlite/core")
+const { closeSharedStores, StatsStore, defaultDbPath, openStatsSqlite } = await import("@ctxlite/core")
 
 async function* stdinOf(value: unknown): AsyncIterable<string> {
   yield JSON.stringify(value)
+}
+
+/** Reads the (single, isolated-per-test) logged row's upstream/host directly — StatsStore's aggregate methods don't expose raw per-row fields. */
+function readLoggedRow(dbPath: string): { upstream: string; host: string | null } | undefined {
+  const raw = openStatsSqlite(dbPath)
+  try {
+    return raw.get<{ upstream: string; host: string | null }>("SELECT upstream, host FROM requests LIMIT 1")
+  } finally {
+    raw.close()
+  }
 }
 
 function captureStdout(): { calls: string[]; restore: () => void } {
@@ -136,5 +146,31 @@ describe("runCursorPreToolUseHook", () => {
       out.restore()
       cwdSpy.mockRestore()
     }
+  })
+
+  it("logs the real tool name as upstream (not the host) for a rewritten Shell command, leaving host unchanged", async () => {
+    const out = captureStdout()
+    try {
+      await runCursorPreToolUseHook(stdinOf({ tool_name: "Shell", tool_input: { command: "npm test" } }))
+    } finally {
+      out.restore()
+    }
+    const row = readLoggedRow(defaultDbPath())
+    expect(row?.upstream).toBe("bash")
+    expect(row?.host).toBe("cursor")
+  })
+
+  it("logs the real tool name as upstream for a blocked read", async () => {
+    const out = captureStdout()
+    try {
+      await runCursorPreToolUseHook(
+        stdinOf({ tool_name: "Read", tool_input: { file_path: "node_modules/foo/index.js" } }),
+      )
+    } finally {
+      out.restore()
+    }
+    const row = readLoggedRow(defaultDbPath())
+    expect(row?.upstream).toBe("read")
+    expect(row?.host).toBe("cursor")
   })
 })

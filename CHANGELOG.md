@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.34] - 2026-06-25
+
+### Fixed
+- `upstream` on logged `precall`/`compress` rows for Claude Code and Cursor was hardcoded to the host name (`"claude-code"`/`"cursor"`), discarding the real tool name (`"bash"`, `"read"`, `"grep"`, etc.) that was already in scope at the logging call site — duplicating what the separate `host` column already records, and silently throwing away the data needed to verify why one savings category dominates a given session. OpenCode's bridge already logged the real tool name correctly; Claude Code's `hook.ts` and Cursor's `cursor-hook.ts` now do too. `host` and cost estimates are unaffected (`estimateCost`'s price table is keyed by provider, not host or tool name, so neither the old nor new `upstream` values ever matched a real key). Does not by itself add a by-tool breakdown to `ctxlite stats`'s display — it only corrects what gets written. See `specs/022-fix-upstream-tool-attribution/` for the investigation (prompted by a user noticing one savings category accounting for ~100% of activity within several Claude Code sessions — confirmed not a bug in itself, but unverifiable without this fix).
+
 ## [0.1.33] - 2026-06-24
 
 ### Added

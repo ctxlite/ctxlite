@@ -11,7 +11,17 @@ vi.mock("os", async (importOriginal) => {
 })
 
 const { runPreToolUseHook, runPostToolUseHook } = await import("./hook.js")
-const { closeSharedStores, StatsStore } = await import("@ctxlite/core")
+const { closeSharedStores, StatsStore, openStatsSqlite, defaultDbPath } = await import("@ctxlite/core")
+
+/** Reads the (single, isolated-per-test) logged row's upstream/host directly — StatsStore's aggregate methods don't expose raw per-row fields. */
+function readLoggedRow(dbPath: string): { upstream: string; host: string | null } | undefined {
+  const raw = openStatsSqlite(dbPath)
+  try {
+    return raw.get<{ upstream: string; host: string | null }>("SELECT upstream, host FROM requests LIMIT 1")
+  } finally {
+    raw.close()
+  }
+}
 
 async function* stdinOf(value: unknown): AsyncIterable<string> {
   yield JSON.stringify(value)
@@ -125,6 +135,30 @@ describe("runPreToolUseHook", () => {
       cwdSpy.mockRestore()
     }
   })
+
+  it("logs the real tool name as upstream (not the host) for a rewritten bash command, leaving host unchanged", async () => {
+    const out = captureStdout()
+    try {
+      await runPreToolUseHook(stdinOf({ tool_name: "Bash", tool_input: { command: "npm test" } }))
+    } finally {
+      out.restore()
+    }
+    const row = readLoggedRow(defaultDbPath())
+    expect(row?.upstream).toBe("bash")
+    expect(row?.host).toBe("claude-code")
+  })
+
+  it("logs the real tool name as upstream for a blocked read", async () => {
+    const out = captureStdout()
+    try {
+      await runPreToolUseHook(stdinOf({ tool_name: "Read", tool_input: { file_path: "node_modules/foo/index.js" } }))
+    } finally {
+      out.restore()
+    }
+    const row = readLoggedRow(defaultDbPath())
+    expect(row?.upstream).toBe("read")
+    expect(row?.host).toBe("claude-code")
+  })
 })
 
 describe("runPostToolUseHook", () => {
@@ -194,5 +228,13 @@ describe("runPostToolUseHook", () => {
       })(),
     )
     expect(code).toBe(0)
+  })
+
+  it("logs the real tool name as upstream (not the host) for a compressed output, leaving host unchanged", async () => {
+    const big = "line\n".repeat(5000)
+    await runPostToolUseHook(stdinOf({ tool_name: "Grep", tool_input: { pattern: "foo" }, tool_output: big }))
+    const row = readLoggedRow(defaultDbPath())
+    expect(row?.upstream).toBe("grep")
+    expect(row?.host).toBe("claude-code")
   })
 })

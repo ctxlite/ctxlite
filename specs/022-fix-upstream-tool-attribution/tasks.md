@@ -22,7 +22,7 @@ description: "Task list for fixing upstream tool attribution on Claude Code/Curs
 
 **Purpose**: Confirm the exact current hardcoded values haven't drifted since spec/plan were written.
 
-- [ ] T001 Confirm `packages/cli/src/hook.ts`'s `runPreToolUseHook` (both branches) and `runPostToolUseHook` still hardcode `upstream: "claude-code"`, and `packages/cli/src/cursor-hook.ts`'s `runCursorPreToolUseHook` (both branches) still hardcode `upstream: "cursor"` — no file changes yet.
+- [X] T001 Confirm `packages/cli/src/hook.ts`'s `runPreToolUseHook` (both branches) and `runPostToolUseHook` still hardcode `upstream: "claude-code"`, and `packages/cli/src/cursor-hook.ts`'s `runCursorPreToolUseHook` (both branches) still hardcode `upstream: "cursor"` — no file changes yet.
 
 ---
 
@@ -36,14 +36,14 @@ description: "Task list for fixing upstream tool attribution on Claude Code/Curs
 
 > Write these tests FIRST, ensure they FAIL before implementation.
 
-- [ ] T002 [P] [US1] In `packages/cli/src/hook.test.ts`, add cases (using the existing `StatsStore`/temp-`homedir()` pattern already in this file): after `runPreToolUseHook` rewrites a noisy `Bash` command, read the logged row back via `StatsStore` and assert `upstream === "bash"` (not `"claude-code"`) and `host === "claude-code"` (unchanged, regression check for FR-004); after it blocks a `Read` call (e.g. `node_modules/...`), assert the logged row's `upstream === "read"`; after `runPostToolUseHook` compresses a large tool output for a `Grep`-style call, assert the logged row's `upstream === "grep"`.
-- [ ] T003 [P] [US1] In `packages/cli/src/cursor-hook.test.ts`, add cases: after `runCursorPreToolUseHook` rewrites a noisy `Shell` command, assert the logged row's `upstream === "bash"` (via the same `normalizeToolName` mapping `optimizeToolArgs` already uses) and `host === "cursor"` (unchanged); after it blocks a `Read` call, assert `upstream === "read"`.
+- [X] T002 [P] [US1] In `packages/cli/src/hook.test.ts`, add cases (using the existing `StatsStore`/temp-`homedir()` pattern already in this file): after `runPreToolUseHook` rewrites a noisy `Bash` command, read the logged row back via `StatsStore` and assert `upstream === "bash"` (not `"claude-code"`) and `host === "claude-code"` (unchanged, regression check for FR-004); after it blocks a `Read` call (e.g. `node_modules/...`), assert the logged row's `upstream === "read"`; after `runPostToolUseHook` compresses a large tool output for a `Grep`-style call, assert the logged row's `upstream === "grep"`.
+- [X] T003 [P] [US1] In `packages/cli/src/cursor-hook.test.ts`, add cases: after `runCursorPreToolUseHook` rewrites a noisy `Shell` command, assert the logged row's `upstream === "bash"` (via the same `normalizeToolName` mapping `optimizeToolArgs` already uses) and `host === "cursor"` (unchanged); after it blocks a `Read` call, assert `upstream === "read"`.
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] In `packages/cli/src/hook.ts`'s `runPreToolUseHook`, change `upstream: "claude-code"` to `upstream: tool` in both the `result.blocked` and `result.modified` `logOptimizationSavings` calls (`tool` is already the lowercased tool name computed earlier in the function for the `optimizeToolArgs` call — reuse it, do not recompute). Depends on T002.
-- [ ] T005 [US1] In `packages/cli/src/hook.ts`'s `runPostToolUseHook`, change `upstream: "claude-code"` to `upstream: (input.tool_name ?? "").toLowerCase()` in its `logOptimizationSavings` call, matching the lowercase convention `runPreToolUseHook`'s `tool` variable already uses. Depends on T002.
-- [ ] T006 [US1] In `packages/cli/src/cursor-hook.ts`'s `runCursorPreToolUseHook`, change `upstream: "cursor"` to `upstream: normalizeToolName(toolName)` in both the `result.blocked` and `result.modified` `logOptimizationSavings` calls (reuse the same normalized value already computed for the `optimizeToolArgs` call, do not recompute). Depends on T003.
+- [X] T004 [US1] In `packages/cli/src/hook.ts`'s `runPreToolUseHook`, change `upstream: "claude-code"` to `upstream: tool` in both the `result.blocked` and `result.modified` `logOptimizationSavings` calls (`tool` is already the lowercased tool name computed earlier in the function for the `optimizeToolArgs` call — reuse it, do not recompute). Depends on T002.
+- [X] T005 [US1] In `packages/cli/src/hook.ts`'s `runPostToolUseHook`, change `upstream: "claude-code"` to `upstream: (input.tool_name ?? "").toLowerCase()` in its `logOptimizationSavings` call, matching the lowercase convention `runPreToolUseHook`'s `tool` variable already uses. Depends on T002.
+- [X] T006 [US1] In `packages/cli/src/cursor-hook.ts`'s `runCursorPreToolUseHook`, change `upstream: "cursor"` to `upstream: normalizeToolName(toolName)` in both the `result.blocked` and `result.modified` `logOptimizationSavings` calls (reuse the same normalized value already computed for the `optimizeToolArgs` call, do not recompute). Depends on T003.
 
 **Checkpoint**: User Story 1 fully functional and independently testable — every Claude Code/Cursor `precall`/`compress` row now carries the real tool name in `upstream`; `host` and cost calculations are unchanged.
 
@@ -51,11 +51,11 @@ description: "Task list for fixing upstream tool attribution on Claude Code/Curs
 
 ## Phase 3: Polish & Cross-Cutting Concerns
 
-- [ ] T007 Run the full existing `hook.test.ts`/`cursor-hook.test.ts` (and the rest of the monorepo's test suite) and confirm every pre-existing test case passes unmodified — the literal verification that `host`/stdin/stdout behavior is untouched.
-- [ ] T008 Run `npm run test:coverage` and confirm `packages/cli` stays at/above the 90% floor (Constitution Principle II).
-- [ ] T009 Run `./scripts/ci.sh` (full local CI) before considering this feature done.
-- [ ] T010 Version bump: confirm current live versions via `npm view @ctxlite/core version` (and the other 3 packages) before bumping `config.version`, per the constitution's Release Discipline constraint — do not assume the last-known bumped value (0.1.33) is still unpublished.
-- [ ] T011 Add a CHANGELOG.md entry under the new version describing the `upstream` fix, citing this spec and explaining what it does and doesn't resolve (the precall/compress skew itself was already explained as not-a-bug; this fix only makes that explanation independently verifiable going forward).
+- [X] T007 Run the full existing `hook.test.ts`/`cursor-hook.test.ts` (and the rest of the monorepo's test suite) and confirm every pre-existing test case passes unmodified — the literal verification that `host`/stdin/stdout behavior is untouched.
+- [X] T008 Run `npm run test:coverage` and confirm `packages/cli` stays at/above the 90% floor (Constitution Principle II).
+- [X] T009 Run `./scripts/ci.sh` (full local CI) before considering this feature done.
+- [X] T010 Version bump: confirm current live versions via `npm view @ctxlite/core version` (and the other 3 packages) before bumping `config.version`, per the constitution's Release Discipline constraint — do not assume the last-known bumped value (0.1.33) is still unpublished.
+- [X] T011 Add a CHANGELOG.md entry under the new version describing the `upstream` fix, citing this spec and explaining what it does and doesn't resolve (the precall/compress skew itself was already explained as not-a-bug; this fix only makes that explanation independently verifiable going forward).
 
 ---
 

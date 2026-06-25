@@ -49,7 +49,7 @@ export async function runCursorPreToolUseHook(
       logOptimizationSavings(
         {
           source: "precall",
-          upstream: "cursor",
+          upstream: normalizeToolName(toolName),
           tokensIn: result.estimatedTokensSaved,
           tokensOut: 0,
           host: "cursor",
@@ -68,7 +68,7 @@ export async function runCursorPreToolUseHook(
       logOptimizationSavings(
         {
           source: "precall",
-          upstream: "cursor",
+          upstream: normalizeToolName(toolName),
           tokensIn: result.estimatedTokensSaved,
           tokensOut: 0,
           host: "cursor",
