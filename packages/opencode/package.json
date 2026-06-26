@@ -37,6 +37,6 @@
     "solid-js": "^1.9.12"
   },
   "devDependencies": {
-    "vitest": "^1.6.0"
+    "vitest": "^4.1.9"
   }
 }
