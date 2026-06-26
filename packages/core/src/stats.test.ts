@@ -60,6 +60,7 @@ describe("StatsStore", () => {
     summary = store.summary()
     expect(summary.totalRequests).toBe(1) // session-usage rows are not "requests"
     expect(summary.sessionTokensUsed).toBe(2000)
+    expect(summary.sessionTurnCount).toBe(1)
     expect(summary.tokensBefore).toBe(2600)
     expect(summary.savingsPercent).toBeCloseTo((600 / 2600) * 100, 5)
   })

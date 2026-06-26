@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "config": {
-    "version": "0.1.34"
+    "version": "0.1.35"
   },
   "scripts": {
     "prepare": "git config core.hooksPath scripts/git-hooks",
