@@ -2,6 +2,8 @@ import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   test: {
+    pool: "threads",
+    exclude: ["**/node_modules/**", "**/dist/**"],
     coverage: {
       provider: "v8",
       include: ["packages/*/src/**/*.ts", "packages/*/src/**/*.tsx"],
