@@ -2,6 +2,7 @@ import {
   buildStatsBreakdown,
   formatSavingsLine,
   formatTokenCount,
+  hasStableSavingsBaseline,
   renderStatsBarChart,
   SUPPORT_LINE,
   type Summary,
@@ -50,8 +51,10 @@ export interface JsonExport {
   smartReadRequests: number
   smartReadTokensSaved: number
   realtimeTokensSaved: number
+  sessionTurnCount: number
   tokensBefore: number
   savingsPercent: number
+  savingsPercentStable: boolean
   costSavedUsd: number
   avgLatencyMs: number
 }
@@ -77,8 +80,10 @@ export function formatJson(summary: Summary): string {
     smartReadRequests: summary.smartReadRequests,
     smartReadTokensSaved: summary.smartReadTokensSaved,
     realtimeTokensSaved: summary.realtimeTokensSaved,
+    sessionTurnCount: summary.sessionTurnCount,
     tokensBefore: summary.tokensBefore,
     savingsPercent: summary.savingsPercent,
+    savingsPercentStable: hasStableSavingsBaseline(summary),
     costSavedUsd: summary.costSaved,
     avgLatencyMs: summary.avgLatencyMs,
   }

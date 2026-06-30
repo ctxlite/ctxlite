@@ -1,0 +1,13 @@
+# Default owner for the repository.
+* @skaliber
+
+# Fragile areas — regressions have shipped from these before.
+/packages/core/src/tool-precall.ts @skaliber
+/packages/core/src/ctxliteignore.ts @skaliber
+/packages/core/src/stats.ts @skaliber
+/packages/core/src/install/ @skaliber
+
+# CI, release, and repo governance.
+/.github/ @skaliber
+/.specify/ @skaliber
+/scripts/ @skaliber

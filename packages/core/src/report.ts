@@ -10,6 +10,13 @@ import type { SessionBreakdownRow, Summary } from "./types.js"
  */
 export const SUPPORT_LINE = "If ctxlite is saving you tokens: https://ko-fi.com/techdebeci"
 
+/** Minimum logged assistant turns before showing savingsPercent — avoids early-session inflation. */
+export const MIN_SESSION_TURNS_FOR_PERCENT = 10
+
+export function hasStableSavingsBaseline(summary: Summary): boolean {
+  return summary.sessionTurnCount >= MIN_SESSION_TURNS_FOR_PERCENT
+}
+
 export interface StatsBreakdownRow {
   label: string
   tokensSaved: number
@@ -56,7 +63,7 @@ export function buildStatsBreakdown(summary: Summary): StatsBreakdownRow[] {
       countLabel: "calls",
     },
     {
-      label: "concise",
+      label: "concise (est.)",
       tokensSaved: summary.concisenessTokensSaved,
       count: summary.concisenessRequests,
       countLabel: "responses",
@@ -79,10 +86,13 @@ export function formatTokenCount(n: number): string {
  * on — trim_context's number is still visible on its own in the breakdown.
  */
 export function formatSavingsLine(summary: Summary): string {
-  if (summary.sessionTokensUsed === 0) {
-    return `${formatTokenCount(summary.tokensSaved)} saved (no session baseline yet)`
+  if (summary.sessionTokensUsed === 0 && summary.sessionTurnCount === 0) {
+    return `${formatTokenCount(summary.realtimeTokensSaved || summary.tokensSaved)} saved (no session baseline yet)`
   }
-  return `${formatTokenCount(summary.realtimeTokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}%)`
+  if (!hasStableSavingsBaseline(summary)) {
+    return `${formatTokenCount(summary.realtimeTokensSaved)} saved (${summary.sessionTurnCount}/${MIN_SESSION_TURNS_FOR_PERCENT} turns — % after baseline)`
+  }
+  return `${formatTokenCount(summary.realtimeTokensSaved)} of ${formatTokenCount(summary.tokensBefore)} (${summary.savingsPercent.toFixed(1)}% context avoided)`
 }
 
 const BAR_WIDTH = 20

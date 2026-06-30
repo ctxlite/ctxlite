@@ -158,10 +158,15 @@ export class StatsStore {
     // output+reasoning tokens (see logSessionUsage). Tracked separately
     // because they must be compared against matching savings (input-side vs
     // output-side) before being combined — see below.
-    const session = this.db.get<{ session_input_used: number; session_output_used: number }>(
+    const session = this.db.get<{
+      session_input_used: number
+      session_output_used: number
+      session_turn_count: number
+    }>(
       `SELECT
         COALESCE(SUM(tokens_used), 0) as session_input_used,
-        COALESCE(SUM(tokens_out), 0)  as session_output_used
+        COALESCE(SUM(tokens_out), 0)  as session_output_used,
+        COUNT(*)                      as session_turn_count
        FROM requests
        WHERE ${filterSql} AND source = 'session'`,
       ...filterParams,
@@ -211,6 +216,7 @@ export class StatsStore {
       smartReadTokensSaved: row?.smart_read_saved ?? 0,
       realtimeTokensSaved,
       sessionTokensUsed,
+      sessionTurnCount: session?.session_turn_count ?? 0,
       tokensBefore,
       savingsPercent: tokensBefore > 0 ? (realtimeTokensSaved / tokensBefore) * 100 : 0,
       costSaved: row?.cost ?? 0,

@@ -35,6 +35,7 @@ function makeSummary(overrides: Partial<Summary> = {}): Summary {
     smartReadTokensSaved: 0,
     realtimeTokensSaved: 800,
     sessionTokensUsed: 0,
+    sessionTurnCount: 0,
     tokensBefore: 800,
     savingsPercent: 0,
     costSaved: 0.0024,
@@ -51,11 +52,31 @@ describe("formatSavingsLine", () => {
     )
   })
 
-  it("shows the X of Y (Z%) form once there's a session baseline", () => {
+  it("hides the percent until enough assistant turns are logged", () => {
+    expect(
+      formatSavingsLine(
+        makeSummary({
+          sessionTokensUsed: 5000,
+          sessionTurnCount: 3,
+          realtimeTokensSaved: 4200000,
+          tokensBefore: 4300000,
+          savingsPercent: 97.7,
+        }),
+      ),
+    ).toBe("4.2M saved (3/10 turns — % after baseline)")
+  })
+
+  it("shows the X of Y (Z% context avoided) form once the baseline is stable", () => {
     const line = formatSavingsLine(
-      makeSummary({ sessionTokensUsed: 1000, realtimeTokensSaved: 400, tokensBefore: 1000, savingsPercent: 40 }),
+      makeSummary({
+        sessionTokensUsed: 1000,
+        sessionTurnCount: 10,
+        realtimeTokensSaved: 400,
+        tokensBefore: 1000,
+        savingsPercent: 40,
+      }),
     )
-    expect(line).toBe("400 of 1.0K (40.0%)")
+    expect(line).toBe("400 of 1.0K (40.0% context avoided)")
   })
 })
 
@@ -103,9 +124,10 @@ describe("renderSessionBreakdown", () => {
 
 describe("renderCompactSummary", () => {
   it("shows the savings line, the bar chart, a cost line, and the support line", () => {
-    const lines = renderCompactSummary(makeSummary())
+    const lines = renderCompactSummary(makeSummary({ sessionTurnCount: 10, sessionTokensUsed: 1000 }))
     expect(lines[0]).toContain("ctxlite ·")
     expect(lines.some((l) => l.startsWith("precall"))).toBe(true)
+    expect(lines.some((l) => l.startsWith("concise (est.)"))).toBe(true)
     expect(lines.some((l) => l.includes("saved") && l.startsWith("~$"))).toBe(true)
     expect(lines.at(-1)).toBe(SUPPORT_LINE)
   })

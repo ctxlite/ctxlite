@@ -77,6 +77,8 @@ export interface Summary {
   realtimeTokensSaved: number
   /** Actual input + output/reasoning tokens sent to/from the model across the session (from message.updated events) — already reduced by ctxlite, not a hypothetical. */
   sessionTokensUsed: number
+  /** Completed assistant turns with provider usage logged (source = session). */
+  sessionTurnCount: number
   /** Tokens that would have flowed through without ctxlite: realtimeTokensSaved + sessionTokensUsed. */
   tokensBefore: number
   /** realtimeTokensSaved / tokensBefore * 100 — savings relative to total session traffic, not just the subset ctxlite touched, and not inflated by trim_context's speculative accounting. */
