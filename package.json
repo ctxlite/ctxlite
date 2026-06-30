@@ -22,6 +22,9 @@
     "publish:npm": "./scripts/publish-npm.sh",
     "publish:npm:live": "./scripts/publish-npm.sh --publish"
   },
+  "overrides": {
+    "@babel/core": "7.29.7"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",

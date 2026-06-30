@@ -32,8 +32,8 @@
   "dependencies": {
     "@ctxlite/core": "0.1.34",
     "@opencode-ai/plugin": "latest",
-    "@opentui/core": "^0.2.16",
-    "@opentui/solid": "^0.2.16",
+    "@opentui/core": "^0.4.2",
+    "@opentui/solid": "^0.4.2",
     "solid-js": "^1.9.12"
   },
   "devDependencies": {
