@@ -1,5 +1,4 @@
 import * as readline from "node:readline/promises"
-import { stdin as input, stdout as output } from "node:process"
 import {
   ALL_TOOLS,
   planInstall,
@@ -108,11 +107,11 @@ function parseScope(value: string | undefined): InstallScope {
 }
 
 async function promptTools(): Promise<InstallTool[]> {
-  const rl = readline.createInterface({ input, output })
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
   try {
-    output.write("Select tools (comma-separated numbers, default: all):\n")
+    process.stdout.write("Select tools (comma-separated numbers, default: all):\n")
     ALL_TOOLS.forEach((tool, index) => {
-      output.write(`  ${index + 1}. ${toolLabel(tool)}\n`)
+      process.stdout.write(`  ${index + 1}. ${toolLabel(tool)}\n`)
     })
 
     const answer = (await rl.question("> ")).trim()
@@ -137,9 +136,9 @@ async function promptTools(): Promise<InstallTool[]> {
 }
 
 async function promptScope(): Promise<InstallScope> {
-  const rl = readline.createInterface({ input, output })
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
   try {
-    output.write("Scope [1=global (user), 2=project] (default: 1): ")
+    process.stdout.write("Scope [1=global (user), 2=project] (default: 1): ")
     const answer = (await rl.question("")).trim()
     if (!answer || answer === "1") return "global"
     if (answer === "2") return "project"
@@ -150,9 +149,9 @@ async function promptScope(): Promise<InstallScope> {
 }
 
 async function promptConfirm(planSummary: string): Promise<boolean> {
-  const rl = readline.createInterface({ input, output })
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
   try {
-    output.write(planSummary + "\nProceed? [y/N]: ")
+    process.stdout.write(planSummary + "\nProceed? [y/N]: ")
     const answer = (await rl.question("")).trim().toLowerCase()
     return answer === "y" || answer === "yes"
   } finally {

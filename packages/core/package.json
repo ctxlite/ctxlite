@@ -1,6 +1,6 @@
 {
   "name": "@ctxlite/core",
-  "version": "0.1.35",
+  "version": "0.1.36",
   "license": "SEE LICENSE IN LICENSE",
   "funding": {
     "type": "ko-fi",
@@ -36,6 +36,6 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
-    "vitest": "^1.6.0"
+    "vitest": "^4.1.9"
   }
 }

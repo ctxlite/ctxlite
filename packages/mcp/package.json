@@ -1,6 +1,6 @@
 {
   "name": "@ctxlite/mcp",
-  "version": "0.1.35",
+  "version": "0.1.36",
   "description": "ctxlite MCP server for Cursor editor and Cursor agent CLI",
   "license": "SEE LICENSE IN LICENSE",
   "funding": {
@@ -28,11 +28,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ctxlite/core": "0.1.35",
+    "@ctxlite/core": "0.1.36",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "vitest": "^1.6.0"
+    "vitest": "^4.1.9"
   }
 }
