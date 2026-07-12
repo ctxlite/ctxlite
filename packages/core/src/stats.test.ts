@@ -248,6 +248,23 @@ describe("StatsStore", () => {
     store.close()
   })
 
+  it("logOptimizationSavings persists diff_read, log_summary, and code_search", () => {
+    dbPath = tmpDb()
+    logOptimizationSavings({ source: "diff_read", upstream: "a.ts", tokensIn: 1000, tokensOut: 200 }, dbPath)
+    logOptimizationSavings({ source: "log_summary", upstream: "log", tokensIn: 5000, tokensOut: 800 }, dbPath)
+    logOptimizationSavings({ source: "code_search", upstream: "auth", tokensIn: 3000, tokensOut: 600 }, dbPath)
+
+    store = new StatsStore(dbPath)
+    const summary = store.summary()
+    expect(summary.diffReadRequests).toBe(1)
+    expect(summary.diffReadTokensSaved).toBe(800)
+    expect(summary.logSummaryRequests).toBe(1)
+    expect(summary.logSummaryTokensSaved).toBe(4200)
+    expect(summary.codeSearchRequests).toBe(1)
+    expect(summary.codeSearchTokensSaved).toBe(2400)
+    store.close()
+  })
+
   it("logSessionUsage feeds tokensBefore/savingsPercent without counting as a request", () => {
     dbPath = tmpDb()
     logOptimizationSavings(

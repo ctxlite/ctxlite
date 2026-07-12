@@ -44,4 +44,18 @@ describe("trimFiles", () => {
     const result = trimFiles(files, "tiny function", { maxTokens: 100 })
     expect(result.tokensOut).toBeLessThanOrEqual(100)
   })
+
+  it("SC-002: keeps ≤50% of files while retaining answer file", () => {
+    const files = Array.from({ length: 10 }, (_, i) =>
+      makeFile(`pkg/module${i}.ts`, `export const value${i} = ${i}\n// unrelated boilerplate ${"x".repeat(200)}`),
+    )
+    files[3] = makeFile(
+      "auth/login.ts",
+      "export function loginWithJwt(user: string, secret: string) { return sign(user, secret) }",
+    )
+
+    const result = trimFiles(files, "implement user login with JWT authentication")
+    expect(result.filesOut / result.filesIn).toBeLessThanOrEqual(0.5)
+    expect(result.files.map((f) => f.path)).toContain("auth/login.ts")
+  })
 })

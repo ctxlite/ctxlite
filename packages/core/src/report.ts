@@ -65,6 +65,27 @@ export function buildStatsBreakdown(summary: Summary): StatsBreakdownRow[] {
       measurementKind: "measured",
     },
     {
+      label: "diff_read",
+      tokensSaved: summary.diffReadTokensSaved,
+      count: summary.diffReadRequests,
+      countLabel: "diff reads",
+      measurementKind: "measured",
+    },
+    {
+      label: "log_summary",
+      tokensSaved: summary.logSummaryTokensSaved,
+      count: summary.logSummaryRequests,
+      countLabel: "log passes",
+      measurementKind: "measured",
+    },
+    {
+      label: "code_search",
+      tokensSaved: summary.codeSearchTokensSaved,
+      count: summary.codeSearchRequests,
+      countLabel: "searches",
+      measurementKind: "measured",
+    },
+    {
       label: "trim",
       tokensSaved: summary.trimTokensSaved,
       count: summary.trimmedRequests,

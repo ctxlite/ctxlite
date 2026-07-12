@@ -35,6 +35,18 @@ export type { PruneMessage, ContextPruneResult, ContextCapResult } from "./conte
 
 export { extractSymbols, supportsSymbols } from "./smart-read.js"
 
+export { diffRead, parseUnifiedDiffHunks } from "./diff-read.js"
+export type { DiffReadOptions, DiffReadResult, DiffHunk } from "./diff-read.js"
+
+export { summarizeLog } from "./log-summary.js"
+export type { LogSummaryOptions, LogSummaryResult } from "./log-summary.js"
+
+export { searchCodebase, formatCodeSearchOutput } from "./code-search.js"
+export type { CodeSearchHit, CodeSearchOptions, CodeSearchResult } from "./code-search.js"
+
+export { planBudget, formatBudgetPlanOutput } from "./budget-planner.js"
+export type { BudgetPlanStep, BudgetPlannerOptions, BudgetPlanResult } from "./budget-planner.js"
+
 export {
   StatsStore,
   defaultDbPath,

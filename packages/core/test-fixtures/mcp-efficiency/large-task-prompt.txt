@@ -1,0 +1,1 @@
+Refactor authentication across the monorepo: find every handler, middleware, and test that touches tokens or sessions, narrow candidates, read only what changed, and produce a step-by-step plan under a strict token budget before editing any file.

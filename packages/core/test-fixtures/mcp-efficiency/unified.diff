@@ -1,0 +1,11 @@
+--- a/packages/core/test-fixtures/mcp-efficiency/large-file.ts
++++ b/packages/core/test-fixtures/mcp-efficiency/large-file.ts
+@@ -10,7 +10,7 @@ export class AuthService {
+   login(email: string, password: string): UserAccount {
+     const hash = this.hashPassword(password)
+     const token = this.issueToken(email, hash)
+-    return { id: token, email }
++    return { id: token, email: email.toLowerCase() }
+   }
+ 
+   logout(userId: string): void {

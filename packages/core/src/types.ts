@@ -32,8 +32,20 @@ export interface RequestLog {
   tokensSaved: number
   costSaved: number
   latencyMs: number
-  /** trim | concise | compress | prune | precall | compact | smart_read | cache | session */
-  source?: "trim" | "concise" | "compress" | "prune" | "precall" | "compact" | "smart_read" | "cache" | "session"
+  /** trim | concise | compress | prune | precall | compact | smart_read | diff_read | log_summary | code_search | cache | session */
+  source?:
+    | "trim"
+    | "concise"
+    | "compress"
+    | "prune"
+    | "precall"
+    | "compact"
+    | "smart_read"
+    | "diff_read"
+    | "log_summary"
+    | "code_search"
+    | "cache"
+    | "session"
   /** opencode | claude-code | cursor | mcp — which integration produced this row, for per-session/per-host reporting. */
   host?: string | undefined
   /** Real session/conversation id when the host exposes one (OpenCode, Claude Code, Cursor hooks); absent for MCP tool calls. */
@@ -66,6 +78,12 @@ export interface Summary {
   compactTokensSaved: number
   smartReadRequests: number
   smartReadTokensSaved: number
+  diffReadRequests: number
+  diffReadTokensSaved: number
+  logSummaryRequests: number
+  logSummaryTokensSaved: number
+  codeSearchRequests: number
+  codeSearchTokensSaved: number
   /**
    * tokensSaved minus trimTokensSaved. trim_context measures savings against
    * candidate files the agent chose to evaluate, not files that were

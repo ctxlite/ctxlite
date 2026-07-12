@@ -35,6 +35,12 @@ function makeSummary(overrides: Partial<Summary> = {}): Summary {
     compactTokensSaved: 0,
     smartReadRequests: 0,
     smartReadTokensSaved: 0,
+    diffReadRequests: 0,
+    diffReadTokensSaved: 0,
+    logSummaryRequests: 0,
+    logSummaryTokensSaved: 0,
+    codeSearchRequests: 0,
+    codeSearchTokensSaved: 0,
     realtimeTokensSaved: 800,
     sessionTokensUsed: 0,
     sessionTurnCount: 0,
@@ -129,6 +135,22 @@ describe("buildStatsBreakdown", () => {
     const rows = buildStatsBreakdown(makeSummary())
     expect(rows.find((r) => r.label === "precall (est.)")?.measurementKind).toBe("estimate")
     expect(rows.find((r) => r.label === "compress")?.measurementKind).toBe("measured")
+  })
+
+  it("includes diff_read, log_summary, and code_search measured rows", () => {
+    const rows = buildStatsBreakdown(
+      makeSummary({
+        diffReadRequests: 2,
+        diffReadTokensSaved: 100,
+        logSummaryRequests: 1,
+        logSummaryTokensSaved: 200,
+        codeSearchRequests: 3,
+        codeSearchTokensSaved: 300,
+      }),
+    )
+    expect(rows.find((r) => r.label === "diff_read")?.measurementKind).toBe("measured")
+    expect(rows.find((r) => r.label === "log_summary")?.tokensSaved).toBe(200)
+    expect(rows.find((r) => r.label === "code_search")?.count).toBe(3)
   })
 })
 

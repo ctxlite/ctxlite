@@ -110,6 +110,9 @@ export class StatsStore {
       precall: number
       compact: number
       smart_read: number
+      diff_read: number
+      log_summary: number
+      code_search: number
       saved: number
       trim_saved: number
       concise_saved: number
@@ -118,6 +121,9 @@ export class StatsStore {
       precall_saved: number
       compact_saved: number
       smart_read_saved: number
+      diff_read_saved: number
+      log_summary_saved: number
+      code_search_saved: number
       cost: number
       avg_lat: number
     }>(
@@ -130,6 +136,9 @@ export class StatsStore {
         SUM(CASE WHEN source = 'precall' THEN 1 ELSE 0 END)    as precall,
         SUM(CASE WHEN source = 'compact' THEN 1 ELSE 0 END)    as compact,
         SUM(CASE WHEN source = 'smart_read' THEN 1 ELSE 0 END) as smart_read,
+        SUM(CASE WHEN source = 'diff_read' THEN 1 ELSE 0 END) as diff_read,
+        SUM(CASE WHEN source = 'log_summary' THEN 1 ELSE 0 END) as log_summary,
+        SUM(CASE WHEN source = 'code_search' THEN 1 ELSE 0 END) as code_search,
         COALESCE(SUM(tokens_saved), 0)                        as saved,
         COALESCE(SUM(CASE WHEN source = 'trim' THEN tokens_saved ELSE 0 END), 0) as trim_saved,
         COALESCE(SUM(CASE WHEN source = 'concise' THEN tokens_saved ELSE 0 END), 0) as concise_saved,
@@ -138,6 +147,9 @@ export class StatsStore {
         COALESCE(SUM(CASE WHEN source = 'precall' THEN tokens_saved ELSE 0 END), 0) as precall_saved,
         COALESCE(SUM(CASE WHEN source = 'compact' THEN tokens_saved ELSE 0 END), 0) as compact_saved,
         COALESCE(SUM(CASE WHEN source = 'smart_read' THEN tokens_saved ELSE 0 END), 0) as smart_read_saved,
+        COALESCE(SUM(CASE WHEN source = 'diff_read' THEN tokens_saved ELSE 0 END), 0) as diff_read_saved,
+        COALESCE(SUM(CASE WHEN source = 'log_summary' THEN tokens_saved ELSE 0 END), 0) as log_summary_saved,
+        COALESCE(SUM(CASE WHEN source = 'code_search' THEN tokens_saved ELSE 0 END), 0) as code_search_saved,
         COALESCE(SUM(cost_saved), 0)                          as cost,
         COALESCE(AVG(CASE WHEN source = 'trim' THEN latency_ms END), 0) as avg_lat
        FROM requests
@@ -147,8 +159,8 @@ export class StatsStore {
 
     const legacy = this.db.get<{ trim_count: number; trim_saved: number }>(
       `SELECT
-        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'compact', 'smart_read', 'cache', 'session') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
-        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'compact', 'smart_read', 'cache', 'session') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
+        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'compact', 'smart_read', 'diff_read', 'log_summary', 'code_search', 'cache', 'session') AND trimmed THEN 1 ELSE 0 END), 0) as trim_count,
+        COALESCE(SUM(CASE WHEN source NOT IN ('trim', 'concise', 'compress', 'prune', 'precall', 'compact', 'smart_read', 'diff_read', 'log_summary', 'code_search', 'cache', 'session') AND trimmed THEN tokens_saved ELSE 0 END), 0) as trim_saved
        FROM requests
        WHERE ${filterSql}`,
       ...filterParams,
@@ -214,6 +226,12 @@ export class StatsStore {
       compactTokensSaved: row?.compact_saved ?? 0,
       smartReadRequests: row?.smart_read ?? 0,
       smartReadTokensSaved: row?.smart_read_saved ?? 0,
+      diffReadRequests: row?.diff_read ?? 0,
+      diffReadTokensSaved: row?.diff_read_saved ?? 0,
+      logSummaryRequests: row?.log_summary ?? 0,
+      logSummaryTokensSaved: row?.log_summary_saved ?? 0,
+      codeSearchRequests: row?.code_search ?? 0,
+      codeSearchTokensSaved: row?.code_search_saved ?? 0,
       realtimeTokensSaved,
       sessionTokensUsed,
       sessionTurnCount: session?.session_turn_count ?? 0,
@@ -392,7 +410,7 @@ export function logConcisenessSavings(entry: ConcisenessLog, dbPath?: string): v
 }
 
 export interface OptimizationLog {
-  source: "compress" | "prune" | "precall" | "compact" | "smart_read"
+  source: "compress" | "prune" | "precall" | "compact" | "smart_read" | "diff_read" | "log_summary" | "code_search"
   upstream: string
   tokensIn: number
   tokensOut: number

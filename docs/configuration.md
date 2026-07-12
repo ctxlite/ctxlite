@@ -12,7 +12,7 @@ npx @ctxlite/cli install --tool opencode --scope global --yes
 opencode plugin @ctxlite/opencode -g -f
 ```
 
-Writes two files: `~/.config/opencode/opencode.json` (server-side plugin: hooks, MCP-style tools) and `~/.config/opencode/tui.json` (TUI-side plugin: the sidebar widget). Use `--scope project` to scope to the current repo instead (`opencode.json` / `tui.json` in the project root).
+Writes two files: `~/.config/opencode/opencode.json` (server-side plugin only — **not** `mcpServers`; OpenCode rejects that key) and `~/.config/opencode/tui.json` (TUI-side plugin: the sidebar widget). Use `--scope project` to scope to the current repo instead (`opencode.json` / `tui.json` in the project root).
 
 **Automatic, no action needed:**
 
@@ -22,11 +22,7 @@ Writes two files: `~/.config/opencode/opencode.json` (server-side plugin: hooks,
 - Conciseness instructions injected into the system prompt
 - Sidebar widget showing live savings, a toast after each turn, and a `· ctxlite: X saved` suffix on the session title
 
-**On demand (the agent calls a tool):**
-
-- `get_stats` — token savings statistics
-- `trim_context` — select the most relevant files from a candidate set you've already read
-- `smart_read` — read a file as signatures only (functions/classes/methods, bodies omitted), or a budgeted head/tail read for unsupported languages
+**On demand (plugin tools):** `get_stats`, `trim_context`, `smart_read`. The four newer MCP tools (`diff_read`, `log_summary`, `code_search`, `budget_planner`) are not available on OpenCode until the plugin gains them — use Cursor or Claude Code for those.
 
 ### Claude Code
 
@@ -41,7 +37,7 @@ Writes two files: `~/.claude.json` (MCP server registration) and `~/.claude/sett
 - PreToolUse — same pre-call rewrite as OpenCode (quiet `Bash` flags, blocks low-signal `Read`s)
 - PostToolUse — same output compression as OpenCode (head/tail truncation), for any tool's output
 
-**On demand (MCP):** `get_stats`, `trim_context`, `smart_read` — same tools as OpenCode, via MCP instead of the plugin tool registry.
+**On demand (MCP):** `get_stats`, `trim_context`, `smart_read`, `diff_read`, `log_summary`, `code_search`, `budget_planner`.
 
 ### Cursor
 
@@ -57,7 +53,7 @@ Writes `~/.cursor/mcp.json` (MCP server) and `~/.cursor/hooks.json` (a `preToolU
 
 **Not automatic here, unlike OpenCode/Claude Code:** Cursor's `postToolUse` can only replace output for MCP tools, not built-in ones (`Shell`, `Read`, `Write`) — so there's no automatic output-compression hook on Cursor. Use `smart_read` explicitly for large files instead.
 
-**On demand (MCP):** `get_stats`, `trim_context`, `smart_read`.
+**On demand (MCP):** `get_stats`, `trim_context`, `smart_read`, `diff_read`, `log_summary`, `code_search`, `budget_planner`.
 
 ### Claude Desktop
 
@@ -65,7 +61,7 @@ Writes `~/.cursor/mcp.json` (MCP server) and `~/.cursor/hooks.json` (a `preToolU
 npx @ctxlite/cli install --tool claude-desktop --scope global --yes
 ```
 
-MCP only (`get_stats`, `trim_context`, `smart_read`) — Claude Desktop has no plugin/hook API, global scope only.
+MCP only (`get_stats`, `trim_context`, `smart_read`, `diff_read`, `log_summary`, `code_search`, `budget_planner`) — Claude Desktop has no plugin/hook API, global scope only.
 
 ### Interactive installer
 

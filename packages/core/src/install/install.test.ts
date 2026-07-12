@@ -42,12 +42,34 @@ describe("mergeOpenCodeConfig", () => {
     expect(changed).toBe(true)
     expect(next.plugin).toEqual([OPENCODE_PLUGIN])
     expect(next.$schema).toBe("https://opencode.ai/config.json")
+    expect(next.mcpServers).toBeUndefined()
   })
 
   it("preserves existing plugins", () => {
     const { next, changed } = mergeOpenCodeConfig({ plugin: ["other-plugin"] })
     expect(changed).toBe(true)
     expect(next.plugin).toEqual(["other-plugin", OPENCODE_PLUGIN])
+    expect(next.mcpServers).toBeUndefined()
+  })
+
+  it("strips invalid mcpServers key from opencode.json", () => {
+    const existing = {
+      plugin: [OPENCODE_PLUGIN],
+      mcpServers: { ctxlite: { command: "npx", args: ["-y", "@ctxlite/mcp"] } },
+    }
+    const { next, changed } = mergeOpenCodeConfig(existing)
+    expect(changed).toBe(true)
+    expect(next.mcpServers).toBeUndefined()
+    expect(next.plugin).toEqual([OPENCODE_PLUGIN])
+  })
+
+  it("is idempotent when plugin already present", () => {
+    const existing = {
+      $schema: "https://opencode.ai/config.json",
+      plugin: [OPENCODE_PLUGIN],
+    }
+    const { changed } = mergeOpenCodeConfig(existing)
+    expect(changed).toBe(false)
   })
 })
 
@@ -254,6 +276,26 @@ describe("runInstall", () => {
     }
   })
 
+  it("writes opencode config with plugin only (no mcpServers)", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
+    try {
+      const plan = await runInstall({
+        tools: ["opencode"],
+        scope: "project",
+        projectDir: root,
+        homeDir: root,
+      })
+
+      expect(plan[0]?.action).toBe("create")
+      const raw = await readFile(join(root, "opencode.json"), "utf8")
+      const parsed = JSON.parse(raw) as { plugin: string[]; mcpServers?: unknown }
+      expect(parsed.plugin).toContain(OPENCODE_PLUGIN)
+      expect(parsed.mcpServers).toBeUndefined()
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it("dry-run does not write files", async () => {
     const root = await mkdtemp(join(tmpdir(), "ctxlite-install-"))
     try {
@@ -327,8 +369,17 @@ describe("skill install (claude-code-skill / cursor-skill / opencode-skill)", ()
       expect(skillItem?.action).toBe("create")
       const content = await readFile(join(root, ".claude", "skills", "ctxlite", "SKILL.md"), "utf8")
       expect(content).toContain("name: ctxlite")
-      expect(content).toContain("smart_read")
-      expect(content).toContain("trim_context")
+      for (const tool of [
+        "smart_read",
+        "trim_context",
+        "get_stats",
+        "diff_read",
+        "log_summary",
+        "code_search",
+        "budget_planner",
+      ]) {
+        expect(content).toContain(tool)
+      }
     } finally {
       await rm(root, { recursive: true, force: true })
     }

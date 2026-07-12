@@ -7,6 +7,27 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.38] - 2026-07-12
+
+### Fixed
+- **OpenCode install regression (0.1.37):** stop writing `mcpServers` into `opencode.json` — OpenCode's schema rejects that key (`Unrecognized key: mcpServers`). `ctxlite install --tool opencode` now strips any stray `mcpServers` entry on update so a broken config from 0.1.37 is repaired automatically.
+
+### Changed
+- OpenCode continues to use the `@ctxlite/opencode` plugin for in-process tools (`get_stats`, `trim_context`, `smart_read`). The four MCP-only tools (`diff_read`, `log_summary`, `code_search`, `budget_planner`) remain available on Cursor and Claude Code via MCP, not via `opencode.json`.
+
+## [0.1.37] - 2026-07-12
+
+### Added
+- Four new MCP tools: `diff_read`, `log_summary`, `code_search`, `budget_planner` — business logic in `@ctxlite/core`, thin adapters in `@ctxlite/mcp`
+- Stats attribution for `diff_read`, `log_summary`, and `code_search` in `ctxlite stats` breakdown
+- Unified token-efficiency skill (`skill-content.ts`) covering all seven MCP tools — installed on Cursor, Claude Code, and OpenCode via `ctxlite install`
+
+### Changed
+- MCP server instructions and `docs/architecture.md` / `docs/configuration.md` document when to use each efficiency tool
+
+### Fixed
+- OpenCode `opencode.json` must not include `mcpServers` (see **0.1.38** — repaired on reinstall)
+
 ## [0.1.34] - 2026-06-25
 
 ### Fixed

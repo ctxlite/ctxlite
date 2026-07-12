@@ -17,7 +17,7 @@ Which of these run **automatically** vs. **on demand** depends on what each tool
 
 | | Automatic (no action needed) | On demand (agent calls a tool) |
 |---|---|---|
-| **OpenCode** | pre-call rewrite, output compression, context pruning, conciseness, sidebar widget + toast + session title | `get_stats`, `trim_context`, `smart_read` |
+| **OpenCode** | pre-call rewrite, output compression, context pruning, conciseness, sidebar widget + toast + session title | `get_stats`, `trim_context`, `smart_read` (plugin — in-process) |
 | **Claude Code** | pre-call rewrite (`Bash` quiet flags, blocked reads), output compression — via hooks | `get_stats`, `trim_context`, `smart_read` (MCP) |
 | **Cursor** | pre-call rewrite only — Cursor's hooks can't rewrite output for built-in tools, so output compression has no automatic path here | `get_stats`, `trim_context`, `smart_read` (MCP) |
 | **Claude Desktop** | — (no hook/plugin API) | `get_stats`, `trim_context`, `smart_read` (MCP) |
@@ -32,7 +32,7 @@ Add a project-root `.ctxliteignore` (gitignore-style patterns) to block reads an
 npx @ctxlite/cli install --tool opencode --scope global --yes
 ```
 
-Registers the plugin (`~/.config/opencode/opencode.json`) and the sidebar widget (`tui.json`). Restart OpenCode.
+Registers the plugin (`~/.config/opencode/opencode.json`) and the sidebar widget (`tui.json`). Restart OpenCode. MCP tools (`diff_read`, `log_summary`, `code_search`, `budget_planner`) are Cursor/Claude Code only — OpenCode's config schema does not accept `mcpServers` in `opencode.json`.
 
 ### Claude Code
 

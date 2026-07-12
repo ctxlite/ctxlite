@@ -36,6 +36,9 @@ column — this is also what the `precall` / `compress` / `prune` / `compact`
 | `prune` | Replaces a tool output with a placeholder when the exact same call (same tool + args) already appears earlier in the conversation | `core/context-prune.ts` (`pruneMessageContext`) | Before each model request, given the full message list — `experimental.chat.messages.transform` (OpenCode only; no host other than OpenCode exposes the full message history to a hook) |
 | `compact` | Caps any large tool output in an older (non-latest) message to a fixed token budget, regardless of duplication | `core/context-prune.ts` (`capStaleToolOutputs`) | Same hook as `prune` (OpenCode only) |
 | `smart_read` | Returns a file's signatures (functions/classes/types/exports) with bodies blanked, instead of full content | `core/smart-read.ts` | Agent-initiated MCP/plugin tool call — never automatic, the agent has to decide to call it |
+| `diff_read` | Returns only diff-affected hunks plus surrounding context from an on-disk file | `core/diff-read.ts` | Agent-initiated MCP tool call |
+| `log_summary` | Compresses noisy build/test logs to failures, stack traces, and warnings | `core/log-summary.ts` | Agent-initiated MCP tool call |
+| `code_search` | Lexical workspace search returning ranked paths and bounded snippets | `core/code-search.ts` | Agent-initiated MCP tool call |
 | `trim` | Scores a list of candidate files against a task description (BM25 + import-graph boosting) and drops the irrelevant ones | `core/trimmer.ts`, `core/bm25.ts`, `core/imports.ts` | Agent-initiated tool call (`trim_context`) |
 | `concise` | A flat percentage estimate of tokens saved by the conciseness instructions injected into the system prompt | `core/tokens.ts` (`estimateConcisenessSavings`) | Logged on every completed assistant turn — `message.updated` event (OpenCode only; no equivalent measurement exists for Claude Code/Cursor, see below) |
 
@@ -51,6 +54,9 @@ count) from **estimate** savings (heuristic rules):
 | `prune` | `prune` | measured |
 | `compact` | `compact` | measured |
 | `smart_read` | `smart_read` | measured |
+| `diff_read` | `diff_read` | measured |
+| `log_summary` | `log_summary` | measured |
+| `code_search` | `code_search` | measured |
 | `trim` | `trim` | measured |
 | `concise` | `concise (est.)` | estimate — 15% of output+reasoning tokens |
 
@@ -64,6 +70,10 @@ Token counts use `estimateTokens()` (~4 characters per token). See
 | prune | automatic | unavailable | unavailable | measured |
 | compact | automatic | unavailable | unavailable | measured |
 | smart_read | opt-in (plugin) | opt-in (MCP) | opt-in (MCP) | measured |
+| diff_read | unavailable | opt-in (MCP) | opt-in (MCP) | measured |
+| log_summary | unavailable | opt-in (MCP) | opt-in (MCP) | measured |
+| code_search | unavailable | opt-in (MCP) | opt-in (MCP) | measured |
+| budget_planner | unavailable | opt-in (MCP) | opt-in (MCP) | none (planning only) |
 | trim | opt-in (plugin) | opt-in (MCP) | opt-in (MCP) | measured |
 | concise | automatic | unavailable | unavailable | estimate |
 
@@ -116,8 +126,9 @@ user keeps seeing a stale plugin version indefinitely.
 
 Two independent integrations, both pointed at the same host:
 
-- **MCP server** (`packages/mcp`) exposes `get_stats`/`trim_context`/
-  `smart_read` as MCP tools. MCP gives tool handlers no real session id, so
+- **MCP server** (`packages/mcp`) exposes seven tools: `get_stats`,
+  `trim_context`, `smart_read`, `diff_read`, `log_summary`, `code_search`,
+  and `budget_planner`. MCP gives tool handlers no real session id, so
   `shared.ts` generates one random id per server process as an
   approximation (`MCP_PROCESS_SESSION_ID`) — accurate as long as the host
   spawns one `npx @ctxlite/mcp` process per session, which both hosts do.

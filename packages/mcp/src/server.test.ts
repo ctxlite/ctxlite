@@ -40,6 +40,22 @@ describe("createServer", () => {
     expect(typeof server.connect).toBe("function")
   })
 
+  it("registers all seven efficiency tools", () => {
+    const server = createServer()
+    const tools = (server as unknown as { _registeredTools: Record<string, unknown> })._registeredTools
+    for (const name of [
+      "get_stats",
+      "smart_read",
+      "trim_context",
+      "diff_read",
+      "log_summary",
+      "code_search",
+      "budget_planner",
+    ]) {
+      expect(tools[name]).toBeDefined()
+    }
+  })
+
   it("get_stats tool wraps handleGetStats' text in MCP content format", async () => {
     const server = createServer()
     const result = (await registeredHandler(server, "get_stats")({})) as { content: Array<{ type: string; text: string }> }
@@ -68,5 +84,50 @@ describe("createServer", () => {
     })) as { content: Array<{ type: string; text: string }> }
     expect(result.content[0]?.type).toBe("text")
     expect(typeof result.content[0]?.text).toBe("string")
+  })
+
+  it("diff_read tool returns hunk output", async () => {
+    const { writeFileSync } = await import("fs")
+    const filePath = join(tmpHome, "diff.ts")
+    writeFileSync(filePath, "a\nb\nc\n")
+    const diff = "--- a\n+++ b\n@@ -2,1 +2,1 @@\n-b\n+b2\n"
+    const server = createServer()
+    const result = (await registeredHandler(server, "diff_read")({ path: filePath, diff })) as {
+      content: Array<{ type: string; text: string }>
+    }
+    expect(result.content[0]?.text).toContain("diff_read")
+  })
+
+  it("log_summary tool compresses log text", async () => {
+    const server = createServer()
+    const result = (await registeredHandler(server, "log_summary")({
+      text: "[FAIL] test\nError: boom\n",
+    })) as { content: Array<{ type: string; text: string }> }
+    expect(result.content[0]?.text).toContain("log_summary")
+  })
+
+  it("code_search tool returns hits", async () => {
+    const { mkdirSync, writeFileSync } = await import("fs")
+    const root = join(tmpHome, "search-root")
+    mkdirSync(join(root, "src"), { recursive: true })
+    writeFileSync(join(root, "src", "auth.ts"), "export function auth() {}\n")
+    const server = createServer()
+    const result = (await registeredHandler(server, "code_search")({
+      query: "auth function",
+      root,
+    })) as { content: Array<{ type: string; text: string }> }
+    expect(result.content[0]?.text).toContain("code_search")
+  })
+
+  it("budget_planner tool returns JSON plan", async () => {
+    const server = createServer()
+    const result = (await registeredHandler(server, "budget_planner")({
+      taskDescription: "Refactor auth across monorepo",
+      estimatedTokensIn: 5000,
+      model: "test",
+      maxBudget: 3000,
+    })) as { content: Array<{ type: string; text: string }> }
+    const parsed = JSON.parse(result.content[0]?.text ?? "{}") as { steps: unknown[] }
+    expect(parsed.steps.length).toBeGreaterThan(0)
   })
 })
