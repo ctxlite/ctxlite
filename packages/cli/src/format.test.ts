@@ -100,6 +100,21 @@ describe("formatJson", () => {
     expect(parsed).toHaveProperty("period")
   })
 
+  it("includes breakdown with measurementKind", () => {
+    const parsed = JSON.parse(formatJson(fullSummary)) as JsonExport
+    expect(parsed.breakdown.length).toBeGreaterThan(0)
+    const precall = parsed.breakdown.find((row) => row.label.includes("precall"))
+    expect(precall?.measurementKind).toBe("estimate")
+    const compress = parsed.breakdown.find((row) => row.label === "compress")
+    expect(compress?.measurementKind).toBe("measured")
+  })
+
+  it("includes host-specific help for cursor filter", () => {
+    const out = formatText(fullSummary, { host: "cursor" })
+    expect(out).toContain("(est.)")
+    expect(out).toContain("zeros here are expected")
+  })
+
   it("generatedAt is valid ISO date", () => {
     const parsed = JSON.parse(formatJson(fullSummary)) as JsonExport
     expect(() => new Date(parsed.generatedAt)).not.toThrow()

@@ -13,6 +13,7 @@ vi.mock("os", async (importOriginal) => {
 })
 
 const { smartReadTool } = await import("./smart-read-tool.js")
+const { closeSharedStores } = await import("@ctxlite/core")
 
 function fakeContext(directory: string): ToolContext {
   return {
@@ -34,6 +35,7 @@ describe("smartReadTool", () => {
   })
 
   afterEach(() => {
+    closeSharedStores()
     rmSync(tmpHome, { recursive: true, force: true })
     rmSync(tmpDir, { recursive: true, force: true })
   })
@@ -50,6 +52,12 @@ describe("smartReadTool", () => {
 
     expect(output).toContain("export function add(a: number, b: number): number {")
     expect(output).not.toContain("return a + b")
+
+    const { openStatsSqlite, defaultDbPath } = await import("@ctxlite/core")
+    const row = openStatsSqlite(defaultDbPath()).get<{ upstream: string }>(
+      "SELECT upstream FROM requests WHERE source = 'smart_read' LIMIT 1",
+    )
+    expect(row?.upstream).toBe("read")
   })
 
   it("falls back to a budgeted read for unsupported languages", async () => {

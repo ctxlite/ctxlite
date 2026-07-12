@@ -55,7 +55,10 @@ or pure-docs edit goes through Spec Kit, not straight into a branch:
    never optional regardless of what a template default elsewhere says.
 5. TypeScript: `npm run typecheck && npm test && npm run lint`. Go:
    `make lint && make test`. Confirm coverage didn't drop below 90% for
-   any package: `npm run test:coverage`.
+   any package: `npm run test:coverage`. For changes to token-savings
+   logic (`tool-output-compress.ts`, `context-prune.ts`, hook logging), also
+   run `npm run bench` and confirm `Regression Verdict: PASS` — see
+   [benchmarks.md](./benchmarks.md).
 6. `/speckit-analyze` — cross-artifact consistency, plus a correctness
    review (`/code-review`, or an equivalent independent pass). Both run
    before the work is mergeable (Principle III) — "it works" isn't the

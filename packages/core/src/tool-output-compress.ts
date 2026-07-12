@@ -29,7 +29,7 @@ export function compressToolOutput(
   text: string,
   options: CompressToolOutputOptions = {},
 ): CompressToolOutputResult {
-  const minTokens = options.minTokens ?? 128
+  const minTokens = options.minTokens ?? 96
   const maxChars = options.maxChars ?? 12_000
   const headLines = options.headLines ?? 80
   const tailLines = options.tailLines ?? 40

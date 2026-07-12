@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { compressToolOutput } from "./tool-output-compress.js"
+import { compressOutputForTool } from "./grep-output-compress.js"
 
 describe("compressToolOutput", () => {
   it("strips ANSI codes", () => {
@@ -18,9 +19,21 @@ describe("compressToolOutput", () => {
     expect(result.tokensSaved).toBeGreaterThan(100)
   })
 
+  it("logs tokensSaved within 10% of independent count", () => {
+    const before = largeToolOutput()
+    const result = compressOutputForTool("bash", before)
+    expect(result.compressed).toBe(true)
+    const independent = result.tokensIn - result.tokensOut
+    expect(Math.abs(result.tokensSaved - independent) / independent).toBeLessThanOrEqual(0.1)
+  })
+
   it("skips short output", () => {
     const result = compressToolOutput("ok")
     expect(result.compressed).toBe(false)
     expect(result.output).toBe("ok")
   })
 })
+
+function largeToolOutput(): string {
+  return Array.from({ length: 300 }, (_, i) => `line ${i} ${"x".repeat(40)}`).join("\n")
+}

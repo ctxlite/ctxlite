@@ -79,7 +79,7 @@ export function pruneMessageContext(messages: PruneMessage[]): ContextPruneResul
 
       const original = part.state.output
       const originalTokens = estimateTokens(original)
-      if (originalTokens < 64) {
+      if (originalTokens < 48) {
         continue
       }
 
@@ -105,7 +105,7 @@ export interface ContextCapResult {
 }
 
 /** Old tool outputs above this size get head/tail-capped — they're history, not the active task. */
-const STALE_OUTPUT_MAX_TOKENS = 600
+const STALE_OUTPUT_MAX_TOKENS = 512
 
 /**
  * Caps large completed tool outputs in older messages to a token budget,

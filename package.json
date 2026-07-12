@@ -20,7 +20,8 @@
     "clean": "rm -rf packages/*/dist packages/*/.tsbuildinfo packages/*/*.tsbuildinfo",
     "sync-version": "node scripts/sync-version.js",
     "publish:npm": "./scripts/publish-npm.sh",
-    "publish:npm:live": "./scripts/publish-npm.sh --publish"
+    "publish:npm:live": "./scripts/publish-npm.sh --publish",
+    "bench": "tsx bench/src/run.ts"
   },
   "overrides": {
     "@babel/core": "7.29.7"
@@ -32,6 +33,7 @@
     "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^8.0.0",
     "prettier": "^3.0.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.4.0",
     "vitest": "^4.1.9"
   }

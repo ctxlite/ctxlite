@@ -12,7 +12,7 @@ vi.mock("os", async (importOriginal) => {
 
 const { createToolCompressHook } = await import("./tool-compress-hook.js")
 const { markPrecallPending } = await import("./precall-state.js")
-const { StatsStore, closeSharedStores, defaultDbPath } = await import("@ctxlite/core")
+const { StatsStore, closeSharedStores, defaultDbPath, openStatsSqlite } = await import("@ctxlite/core")
 
 describe("createToolCompressHook", () => {
   beforeEach(() => {
@@ -49,6 +49,10 @@ describe("createToolCompressHook", () => {
     expect(output.output.length).toBeLessThan(big.length)
 
     const store = new StatsStore(defaultDbPath())
+    const row = openStatsSqlite(defaultDbPath()).get<{ upstream: string }>(
+      "SELECT upstream FROM requests WHERE source = 'compress' LIMIT 1",
+    )
+    expect(row?.upstream).toBe("bash")
     const summary = store.summaryForSession("opencode", "ses-2")
     expect(summary.compressRequests).toBe(1)
     store.close()

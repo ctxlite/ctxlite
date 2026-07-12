@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest"
 import {
+  buildStatsBreakdown,
   formatSavingsLine,
   hostLabel,
   renderCompactSummary,
   renderSessionBreakdown,
   renderSessionBreakdownDetailed,
+  renderStatsHelpLines,
   SUPPORT_LINE,
 } from "./report.js"
 import type { SessionBreakdownRow, Summary } from "./types.js"
@@ -122,11 +124,19 @@ describe("renderSessionBreakdown", () => {
   })
 })
 
+describe("buildStatsBreakdown", () => {
+  it("labels precall as an estimate and compress as measured", () => {
+    const rows = buildStatsBreakdown(makeSummary())
+    expect(rows.find((r) => r.label === "precall (est.)")?.measurementKind).toBe("estimate")
+    expect(rows.find((r) => r.label === "compress")?.measurementKind).toBe("measured")
+  })
+})
+
 describe("renderCompactSummary", () => {
   it("shows the savings line, the bar chart, a cost line, and the support line", () => {
     const lines = renderCompactSummary(makeSummary({ sessionTurnCount: 10, sessionTokensUsed: 1000 }))
     expect(lines[0]).toContain("ctxlite ·")
-    expect(lines.some((l) => l.startsWith("precall"))).toBe(true)
+    expect(lines.some((l) => l.startsWith("precall (est.)"))).toBe(true)
     expect(lines.some((l) => l.startsWith("concise (est.)"))).toBe(true)
     expect(lines.some((l) => l.includes("saved") && l.startsWith("~$"))).toBe(true)
     expect(lines.at(-1)).toBe(SUPPORT_LINE)
@@ -167,5 +177,21 @@ describe("renderSessionBreakdownDetailed", () => {
 
   it("returns a placeholder for no sessions", () => {
     expect(renderSessionBreakdownDetailed([])).toEqual(["No sessions recorded yet."])
+  })
+})
+
+describe("renderStatsHelpLines", () => {
+  it("returns empty for no data", () => {
+    expect(renderStatsHelpLines(makeSummary({ totalRequests: 0 }))).toEqual([])
+  })
+
+  it("includes estimate legend for any host", () => {
+    const lines = renderStatsHelpLines(makeSummary(), "opencode")
+    expect(lines[0]).toContain("(est.)")
+  })
+
+  it("explains expected zeros on Cursor", () => {
+    const lines = renderStatsHelpLines(makeSummary(), "cursor")
+    expect(lines.some((l) => l.includes("Cursor") && l.includes("zeros"))).toBe(true)
   })
 })

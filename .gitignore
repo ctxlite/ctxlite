@@ -8,6 +8,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 coverage/
+bench/results/
 .DS_Store
 .env
 .specify/integrations/.cache/

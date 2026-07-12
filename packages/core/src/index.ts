@@ -12,6 +12,7 @@ export { trimFiles } from "./trimmer.js"
 export type { TrimOptions } from "./trimmer.js"
 
 export { parseTokenUsage, estimateTokens, estimateCost, estimateConcisenessSavings, CONCISENESS_SAVINGS_RATE } from "./tokens.js"
+export { isLoggingAccurate, verifyLoggingAccuracy, LOGGING_ACCURACY_TOLERANCE } from "./logging-accuracy.js"
 
 export { optimizeToolArgs, optimizeBashCommand, optimizeReadPath } from "./tool-precall.js"
 export type { PrecallResult } from "./tool-precall.js"
@@ -56,9 +57,10 @@ export {
   renderSessionBreakdown,
   renderSessionBreakdownDetailed,
   renderStatsBarChart,
+  renderStatsHelpLines,
   SUPPORT_LINE,
 } from "./report.js"
-export type { StatsBreakdownRow } from "./report.js"
+export type { StatsBreakdownRow, MeasurementKind } from "./report.js"
 
 export type {
   CodeFile,

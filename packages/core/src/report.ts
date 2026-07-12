@@ -17,56 +17,66 @@ export function hasStableSavingsBaseline(summary: Summary): boolean {
   return summary.sessionTurnCount >= MIN_SESSION_TURNS_FOR_PERCENT
 }
 
+export type MeasurementKind = "measured" | "estimate"
+
 export interface StatsBreakdownRow {
   label: string
   tokensSaved: number
   count: number
   countLabel: string
+  measurementKind: MeasurementKind
 }
 
 export function buildStatsBreakdown(summary: Summary): StatsBreakdownRow[] {
   return [
     {
-      label: "precall",
+      label: "precall (est.)",
       tokensSaved: summary.precallTokensSaved,
       count: summary.precallRequests,
       countLabel: "rewrites/blocks",
+      measurementKind: "estimate",
     },
     {
       label: "compress",
       tokensSaved: summary.compressTokensSaved,
       count: summary.compressRequests,
       countLabel: "tool outputs",
+      measurementKind: "measured",
     },
     {
       label: "prune",
       tokensSaved: summary.pruneTokensSaved,
       count: summary.pruneRequests,
       countLabel: "context passes",
+      measurementKind: "measured",
     },
     {
       label: "compact",
       tokensSaved: summary.compactTokensSaved,
       count: summary.compactRequests,
       countLabel: "stale outputs",
+      measurementKind: "measured",
     },
     {
       label: "smart_read",
       tokensSaved: summary.smartReadTokensSaved,
       count: summary.smartReadRequests,
       countLabel: "file reads",
+      measurementKind: "measured",
     },
     {
       label: "trim",
       tokensSaved: summary.trimTokensSaved,
       count: summary.trimmedRequests,
       countLabel: "calls",
+      measurementKind: "measured",
     },
     {
       label: "concise (est.)",
       tokensSaved: summary.concisenessTokensSaved,
       count: summary.concisenessRequests,
       countLabel: "responses",
+      measurementKind: "estimate",
     },
   ]
 }
@@ -123,6 +133,42 @@ const HOST_LABELS: Record<string, string> = {
 
 export function hostLabel(host: string): string {
   return HOST_LABELS[host] ?? host
+}
+
+/**
+ * Short help lines for stats output — explains estimate labels and why some
+ * categories show zero on a given host (FR-008).
+ */
+export function renderStatsHelpLines(summary: Summary, host?: string): string[] {
+  if (summary.totalRequests === 0) {
+    return []
+  }
+
+  const lines: string[] = [
+    "Labels with (est.) are heuristic estimates, not measured before/after deltas.",
+  ]
+
+  if (host === "cursor") {
+    lines.push(
+      "On Cursor, compress/prune/compact/concise are unavailable for built-in tools — zeros here are expected.",
+    )
+  } else if (host === "claude-code") {
+    lines.push(
+      "On Claude Code, prune/compact/concise measurement are OpenCode-only — zeros here are expected.",
+    )
+  } else if (host === "mcp") {
+    lines.push(
+      "MCP logs smart_read and trim; filter by opencode/claude-code/cursor for host-hook mechanisms.",
+    )
+  }
+
+  const measuredRows = buildStatsBreakdown(summary).filter((r) => r.measurementKind === "measured")
+  const measuredAllZero = measuredRows.length > 0 && measuredRows.every((r) => r.count === 0)
+  if (host && measuredAllZero) {
+    lines.push("See docs/architecture.md for the per-host capability matrix.")
+  }
+
+  return lines
 }
 
 /**

@@ -4,11 +4,16 @@ import {
   formatTokenCount,
   hasStableSavingsBaseline,
   renderStatsBarChart,
+  renderStatsHelpLines,
   SUPPORT_LINE,
   type Summary,
 } from "@ctxlite/core"
 
-export function formatText(summary: Summary): string {
+export interface FormatTextOptions {
+  host?: string
+}
+
+export function formatText(summary: Summary, options?: FormatTextOptions): string {
   if (summary.totalRequests === 0) {
     return `\nctxlite stats — ${summary.period}\n\nNo data recorded yet.\n`
   }
@@ -17,6 +22,10 @@ export function formatText(summary: Summary): string {
     .map((line) => `  ${line}`)
     .join("\n")
 
+  const helpLines = renderStatsHelpLines(summary, options?.host)
+  const helpBlock =
+    helpLines.length > 0 ? `${helpLines.map((line) => `  ${line}`).join("\n")}\n\n` : ""
+
   return `
 ctxlite stats — ${summary.period}
 ─────────────────────────────────────
@@ -24,7 +33,7 @@ Tokens saved  ${formatSavingsLine(summary)}
 
 ${chart}
 
-Cost saved    ~$${summary.costSaved.toFixed(4)}
+${helpBlock}Cost saved    ~$${summary.costSaved.toFixed(4)}
 Avg latency   ${summary.avgLatencyMs}ms
 ─────────────────────────────────────
 ${SUPPORT_LINE}
@@ -57,6 +66,12 @@ export interface JsonExport {
   savingsPercentStable: boolean
   costSavedUsd: number
   avgLatencyMs: number
+  breakdown: Array<{
+    label: string
+    tokensSaved: number
+    count: number
+    measurementKind: "measured" | "estimate"
+  }>
 }
 
 export function formatJson(summary: Summary): string {
@@ -86,6 +101,12 @@ export function formatJson(summary: Summary): string {
     savingsPercentStable: hasStableSavingsBaseline(summary),
     costSavedUsd: summary.costSaved,
     avgLatencyMs: summary.avgLatencyMs,
+    breakdown: buildStatsBreakdown(summary).map((row) => ({
+      label: row.label,
+      tokensSaved: row.tokensSaved,
+      count: row.count,
+      measurementKind: row.measurementKind,
+    })),
   }
   return JSON.stringify(out, null, 2)
 }

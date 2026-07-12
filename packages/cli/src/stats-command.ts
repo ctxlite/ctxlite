@@ -163,7 +163,9 @@ export function runStats(args: Args): number {
     }
 
     const summary = store.summary(since, args.host)
-    const output = args.export === "json" ? formatJson(summary) : formatText(summary)
+    const hostFilter = args.host
+    const textOpts = hostFilter === undefined ? undefined : { host: hostFilter }
+    const output = args.export === "json" ? formatJson(summary) : formatText(summary, textOpts)
     process.stdout.write(output + "\n")
     return 0
   } catch (err) {

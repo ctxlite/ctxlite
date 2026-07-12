@@ -39,6 +39,41 @@ column — this is also what the `precall` / `compress` / `prune` / `compact`
 | `trim` | Scores a list of candidate files against a task description (BM25 + import-graph boosting) and drops the irrelevant ones | `core/trimmer.ts`, `core/bm25.ts`, `core/imports.ts` | Agent-initiated tool call (`trim_context`) |
 | `concise` | A flat percentage estimate of tokens saved by the conciseness instructions injected into the system prompt | `core/tokens.ts` (`estimateConcisenessSavings`) | Logged on every completed assistant turn — `message.updated` event (OpenCode only; no equivalent measurement exists for Claude Code/Cursor, see below) |
 
+### Measurement kind and per-host availability
+
+Stats breakdown labels distinguish **measured** savings (before/after token
+count) from **estimate** savings (heuristic rules):
+
+| `source` | Stats label | Kind |
+|----------|-------------|------|
+| `precall` | `precall (est.)` | estimate — fixed per-rule table in `tool-precall.ts` |
+| `compress` | `compress` | measured |
+| `prune` | `prune` | measured |
+| `compact` | `compact` | measured |
+| `smart_read` | `smart_read` | measured |
+| `trim` | `trim` | measured |
+| `concise` | `concise (est.)` | estimate — 15% of output+reasoning tokens |
+
+Token counts use `estimateTokens()` (~4 characters per token). See
+[benchmarks.md](./benchmarks.md) for the deterministic verification suite.
+
+| Mechanism | OpenCode | Claude Code | Cursor | Measurement |
+|-----------|----------|-------------|--------|-------------|
+| precall | automatic | automatic | automatic | estimate |
+| compress | automatic | automatic | unavailable (built-in tools) | measured |
+| prune | automatic | unavailable | unavailable | measured |
+| compact | automatic | unavailable | unavailable | measured |
+| smart_read | opt-in (plugin) | opt-in (MCP) | opt-in (MCP) | measured |
+| trim | opt-in (plugin) | opt-in (MCP) | opt-in (MCP) | measured |
+| concise | automatic | unavailable | unavailable | estimate |
+
+`smart_read` / `trim` invoked via MCP log under `host: mcp` — use
+`ctxlite stats --by-session mcp` to see that activity, not the IDE host filter.
+
+The `upstream` column on each logged row carries the **real tool name**
+(`bash`, `read`, `grep`, …), not the host name. Historical rows before the
+`022`/`023` fixes may still show `opencode` / `claude-code` / `cursor`.
+
 `precall`/`compress` are automatic on every matching tool call. `prune`/
 `compact`/`concise` are automatic on every request, but only on OpenCode —
 no other host exposes the hook they need (confirmed against both Claude

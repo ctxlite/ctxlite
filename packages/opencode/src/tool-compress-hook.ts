@@ -43,7 +43,7 @@ export function createToolCompressHook(): (
     logOptimizationSavings(
       {
         source: "compress",
-        upstream: "opencode",
+        upstream: input.tool,
         tokensIn: result.tokensIn,
         tokensOut: result.tokensOut,
         id: `compress-${input.callID}`,

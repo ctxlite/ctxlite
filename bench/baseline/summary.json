@@ -1,0 +1,1734 @@
+{
+  "timestamp": "2026-06-29T08:42:22.516Z",
+  "mode": "deterministic",
+  "aggregations": [
+    {
+      "adapterId": "baseline",
+      "taskId": "compact-stale-tool-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12616,
+        "p25": 12616,
+        "p75": 12616
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "baseline",
+      "taskId": "compress-large-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12501,
+        "p25": 12501,
+        "p75": 12501
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "baseline",
+      "taskId": "concise-10000-tokens",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 5,
+        "p25": 5,
+        "p75": 5
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "baseline",
+      "taskId": "precall-npm-test",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 3,
+        "p25": 3,
+        "p75": 3
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "baseline",
+      "taskId": "prune-duplicate-tool-call",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 1661,
+        "p25": 1661,
+        "p75": 1661
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "baseline",
+      "taskId": "smart-read-typescript",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 144,
+        "p25": 144,
+        "p75": 144
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "baseline",
+      "taskId": "trim-file-list",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 255,
+        "p25": 255,
+        "p75": 255
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compact",
+      "taskId": "compact-stale-tool-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 11916,
+        "p25": 11916,
+        "p75": 11916
+      },
+      "tokensIn": {
+        "median": 12506,
+        "p25": 12506,
+        "p75": 12506
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compact",
+      "taskId": "compress-large-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12501,
+        "p25": 12501,
+        "p75": 12501
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compact",
+      "taskId": "concise-10000-tokens",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 5,
+        "p25": 5,
+        "p75": 5
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compact",
+      "taskId": "precall-npm-test",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 3,
+        "p25": 3,
+        "p75": 3
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compact",
+      "taskId": "prune-duplicate-tool-call",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 1661,
+        "p25": 1661,
+        "p75": 1661
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compact",
+      "taskId": "smart-read-typescript",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 144,
+        "p25": 144,
+        "p75": 144
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compact",
+      "taskId": "trim-file-list",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 255,
+        "p25": 255,
+        "p75": 255
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compress",
+      "taskId": "compact-stale-tool-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12616,
+        "p25": 12616,
+        "p75": 12616
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compress",
+      "taskId": "compress-large-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 9510,
+        "p25": 9510,
+        "p75": 9510
+      },
+      "tokensIn": {
+        "median": 12500,
+        "p25": 12500,
+        "p75": 12500
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compress",
+      "taskId": "concise-10000-tokens",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 5,
+        "p25": 5,
+        "p75": 5
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compress",
+      "taskId": "precall-npm-test",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 3,
+        "p25": 3,
+        "p75": 3
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compress",
+      "taskId": "prune-duplicate-tool-call",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 1661,
+        "p25": 1661,
+        "p75": 1661
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compress",
+      "taskId": "smart-read-typescript",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 144,
+        "p25": 144,
+        "p75": 144
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "compress",
+      "taskId": "trim-file-list",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 255,
+        "p25": 255,
+        "p75": 255
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "concise",
+      "taskId": "compact-stale-tool-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12616,
+        "p25": 12616,
+        "p75": 12616
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "concise",
+      "taskId": "compress-large-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12501,
+        "p25": 12501,
+        "p75": 12501
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "concise",
+      "taskId": "concise-10000-tokens",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 1500,
+        "p25": 1500,
+        "p75": 1500
+      },
+      "tokensIn": {
+        "median": 10000,
+        "p25": 10000,
+        "p75": 10000
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "concise",
+      "taskId": "precall-npm-test",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 3,
+        "p25": 3,
+        "p75": 3
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "concise",
+      "taskId": "prune-duplicate-tool-call",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 1661,
+        "p25": 1661,
+        "p75": 1661
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "concise",
+      "taskId": "smart-read-typescript",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 144,
+        "p25": 144,
+        "p75": 144
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "concise",
+      "taskId": "trim-file-list",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 255,
+        "p25": 255,
+        "p75": 255
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "ctxlite-all",
+      "taskId": "compact-stale-tool-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 11916,
+        "p25": 11916,
+        "p75": 11916
+      },
+      "tokensIn": {
+        "median": 12506,
+        "p25": 12506,
+        "p75": 12506
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "ctxlite-all",
+      "taskId": "compress-large-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 9510,
+        "p25": 9510,
+        "p75": 9510
+      },
+      "tokensIn": {
+        "median": 12500,
+        "p25": 12500,
+        "p75": 12500
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "ctxlite-all",
+      "taskId": "concise-10000-tokens",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 1500,
+        "p25": 1500,
+        "p75": 1500
+      },
+      "tokensIn": {
+        "median": 10000,
+        "p25": 10000,
+        "p75": 10000
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "ctxlite-all",
+      "taskId": "precall-npm-test",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 800,
+        "p25": 800,
+        "p75": 800
+      },
+      "tokensIn": {
+        "median": 2,
+        "p25": 2,
+        "p75": 2
+      },
+      "durationMs": {
+        "median": 1,
+        "p25": 1,
+        "p75": 1
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "ctxlite-all",
+      "taskId": "prune-duplicate-tool-call",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 759,
+        "p25": 759,
+        "p75": 759
+      },
+      "tokensIn": {
+        "median": 777,
+        "p25": 777,
+        "p75": 777
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "ctxlite-all",
+      "taskId": "smart-read-typescript",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 70,
+        "p25": 70,
+        "p75": 70
+      },
+      "tokensIn": {
+        "median": 128,
+        "p25": 128,
+        "p75": 128
+      },
+      "durationMs": {
+        "median": 21,
+        "p25": 21,
+        "p75": 21
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "ctxlite-all",
+      "taskId": "trim-file-list",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 90,
+        "p25": 90,
+        "p75": 90
+      },
+      "tokensIn": {
+        "median": 195,
+        "p25": 195,
+        "p75": 195
+      },
+      "durationMs": {
+        "median": 1,
+        "p25": 1,
+        "p75": 1
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "precall",
+      "taskId": "compact-stale-tool-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12616,
+        "p25": 12616,
+        "p75": 12616
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "precall",
+      "taskId": "compress-large-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12501,
+        "p25": 12501,
+        "p75": 12501
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "precall",
+      "taskId": "concise-10000-tokens",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 5,
+        "p25": 5,
+        "p75": 5
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "precall",
+      "taskId": "precall-npm-test",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 800,
+        "p25": 800,
+        "p75": 800
+      },
+      "tokensIn": {
+        "median": 2,
+        "p25": 2,
+        "p75": 2
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "precall",
+      "taskId": "prune-duplicate-tool-call",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 1661,
+        "p25": 1661,
+        "p75": 1661
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "precall",
+      "taskId": "smart-read-typescript",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 144,
+        "p25": 144,
+        "p75": 144
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "precall",
+      "taskId": "trim-file-list",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 255,
+        "p25": 255,
+        "p75": 255
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "prune",
+      "taskId": "compact-stale-tool-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12616,
+        "p25": 12616,
+        "p75": 12616
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "prune",
+      "taskId": "compress-large-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12501,
+        "p25": 12501,
+        "p75": 12501
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "prune",
+      "taskId": "concise-10000-tokens",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 5,
+        "p25": 5,
+        "p75": 5
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "prune",
+      "taskId": "precall-npm-test",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 3,
+        "p25": 3,
+        "p75": 3
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "prune",
+      "taskId": "prune-duplicate-tool-call",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 759,
+        "p25": 759,
+        "p75": 759
+      },
+      "tokensIn": {
+        "median": 777,
+        "p25": 777,
+        "p75": 777
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "prune",
+      "taskId": "smart-read-typescript",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 144,
+        "p25": 144,
+        "p75": 144
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "prune",
+      "taskId": "trim-file-list",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 255,
+        "p25": 255,
+        "p75": 255
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "smart_read",
+      "taskId": "compact-stale-tool-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12616,
+        "p25": 12616,
+        "p75": 12616
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "smart_read",
+      "taskId": "compress-large-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12501,
+        "p25": 12501,
+        "p75": 12501
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "smart_read",
+      "taskId": "concise-10000-tokens",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 5,
+        "p25": 5,
+        "p75": 5
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "smart_read",
+      "taskId": "precall-npm-test",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 3,
+        "p25": 3,
+        "p75": 3
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "smart_read",
+      "taskId": "prune-duplicate-tool-call",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 1661,
+        "p25": 1661,
+        "p75": 1661
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "smart_read",
+      "taskId": "smart-read-typescript",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 70,
+        "p25": 70,
+        "p75": 70
+      },
+      "tokensIn": {
+        "median": 128,
+        "p25": 128,
+        "p75": 128
+      },
+      "durationMs": {
+        "median": 5,
+        "p25": 5,
+        "p75": 5
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "smart_read",
+      "taskId": "trim-file-list",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 255,
+        "p25": 255,
+        "p75": 255
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "trim",
+      "taskId": "compact-stale-tool-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12616,
+        "p25": 12616,
+        "p75": 12616
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "trim",
+      "taskId": "compress-large-output",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 12501,
+        "p25": 12501,
+        "p75": 12501
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "trim",
+      "taskId": "concise-10000-tokens",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 5,
+        "p25": 5,
+        "p75": 5
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "trim",
+      "taskId": "precall-npm-test",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 3,
+        "p25": 3,
+        "p75": 3
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "trim",
+      "taskId": "prune-duplicate-tool-call",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 1661,
+        "p25": 1661,
+        "p75": 1661
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "trim",
+      "taskId": "smart-read-typescript",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "tokensIn": {
+        "median": 144,
+        "p25": 144,
+        "p75": 144
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    },
+    {
+      "adapterId": "trim",
+      "taskId": "trim-file-list",
+      "n": 1,
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timed_out": 0
+      },
+      "tokensSaved": {
+        "median": 90,
+        "p25": 90,
+        "p75": 90
+      },
+      "tokensIn": {
+        "median": 195,
+        "p25": 195,
+        "p75": 195
+      },
+      "durationMs": {
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      "passRate": 1,
+      "varianceFlag": false
+    }
+  ],
+  "baselineComparison": {
+    "gateFloorMeasuredSavingsPercent": 40.9,
+    "archivedSavingsPercent": 9.343387897737724,
+    "published": {
+      "totalTokensSaved": 25106,
+      "totalCostSavedUsd": 0.075318,
+      "savingsPercent": 67.4276199172799,
+      "measuredSavingsPercent": 61.250470000537135,
+      "byMechanism": {
+        "compact": 11202,
+        "compress": 11202,
+        "concise": 1500,
+        "precall": 800,
+        "prune": 383,
+        "smart_read": 4,
+        "trim": 15
+      }
+    }
+  },
+  "regressionVerdict": {
+    "verdict": "pass",
+    "failures": [],
+    "checkedAt": "2026-06-29T08:42:22.515Z"
+  },
+  "correctnessPenalty": 0,
+  "successfulTokensSaved": 24645,
+  "totalTokensSaved": 24645
+}

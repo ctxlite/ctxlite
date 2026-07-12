@@ -30,6 +30,8 @@ describe("pruneMessageContext", () => {
     const result = pruneMessageContext(messages)
     expect(result.prunedCount).toBe(1)
     expect(result.tokensSaved).toBeGreaterThan(50)
+    const independent = result.tokensIn - result.tokensOut
+    expect(Math.abs(result.tokensSaved - independent) / Math.max(independent, 1)).toBeLessThanOrEqual(0.1)
     expect(messages[0]?.parts[0]?.state?.output).toContain("[ctxlite] Duplicate")
     expect(messages[1]?.parts[0]?.state?.output).toBe("b".repeat(400))
   })
