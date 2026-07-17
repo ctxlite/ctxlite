@@ -34,6 +34,16 @@ describe("mergeMcpConfig", () => {
     const { changed } = mergeMcpConfig(existing, { command: "npx", args: ["-y", "@ctxlite/mcp"] })
     expect(changed).toBe(false)
   })
+
+  it("preserves existing github server", () => {
+    const existing = {
+      mcpServers: { github: { command: "npx", args: ["-y", "@modelcontextprotocol/server-github"] } },
+    }
+    const entry = { command: "npx", args: ["-y", "@ctxlite/mcp"] }
+    const { next, changed } = mergeMcpConfig(existing, entry)
+    expect(changed).toBe(true)
+    expect(next.mcpServers).toEqual({ github: existing.mcpServers.github, [MCP_SERVER_NAME]: entry })
+  })
 })
 
 describe("mergeOpenCodeConfig", () => {
@@ -42,25 +52,29 @@ describe("mergeOpenCodeConfig", () => {
     expect(changed).toBe(true)
     expect(next.plugin).toEqual([OPENCODE_PLUGIN])
     expect(next.$schema).toBe("https://opencode.ai/config.json")
-    expect(next.mcpServers).toBeUndefined()
   })
 
   it("preserves existing plugins", () => {
     const { next, changed } = mergeOpenCodeConfig({ plugin: ["other-plugin"] })
     expect(changed).toBe(true)
     expect(next.plugin).toEqual(["other-plugin", OPENCODE_PLUGIN])
-    expect(next.mcpServers).toBeUndefined()
   })
 
-  it("strips invalid mcpServers key from opencode.json", () => {
+  it("preserves user mcpServers", () => {
     const existing = {
+      $schema: "https://opencode.ai/config.json",
       plugin: [OPENCODE_PLUGIN],
-      mcpServers: { ctxlite: { command: "npx", args: ["-y", "@ctxlite/mcp"] } },
+      mcpServers: { github: { command: "npx", args: ["-y", "@modelcontextprotocol/server-github"] } },
     }
     const { next, changed } = mergeOpenCodeConfig(existing)
+    expect(changed).toBe(false)
+    expect(next.mcpServers).toEqual(existing.mcpServers)
+  })
+
+  it("preserves custom top-level keys", () => {
+    const { next, changed } = mergeOpenCodeConfig({ customKey: "value" })
     expect(changed).toBe(true)
-    expect(next.mcpServers).toBeUndefined()
-    expect(next.plugin).toEqual([OPENCODE_PLUGIN])
+    expect(next.customKey).toBe("value")
   })
 
   it("is idempotent when plugin already present", () => {

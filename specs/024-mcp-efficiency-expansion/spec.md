@@ -18,6 +18,16 @@ Verified against the current repository — not assumed:
 4. **Stats and savings attribution already distinguish mechanisms** (per `023-token-savings-accuracy`): new tools must log savings through existing stats patterns where they reduce tokens, and agent guidance must tell users to call `get_stats` instead of guessing savings.
 5. **Release versioning is centralized**: all `@ctxlite/*` packages share `config.version` in root `package.json` (currently **0.1.36**), propagated via `npm run sync-version`. Constitution Release Discipline requires a version bump before publish — this feature must end with a bumped, releasable version.
 
+## Clarifications
+
+### Session 2026-07-17
+
+- Q: Should `ctxlite install` preserve user MCP servers in `opencode.json`? → A: preserve-all — only add/update ctxlite keys; never delete user `mcpServers` or other settings.
+- Q: What gates OpenCode sidebar savings display? → A: `tokensSaved > 0` via `StatsStore.summaryForSession` — not `totalRequests === 0`.
+- Q: How should sidebar, toast, and session title stay consistent? → A: single source — `buildOpenCodeSessionDisplay` / `buildOpenCodeSessionTitle` in `@ctxlite/opencode`, backed by `@ctxlite/core` formatting helpers.
+- Q: When should percent/cost savings appear in OpenCode UI? → A: only after `hasStableSavingsBaseline()` (≥10 session turns); two-line labeled format until then.
+- Q: Is Phase G blocking for 024 release? → A: yes — install regression and stats UI inconsistency are release blockers.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Agents read code with minimal tokens (Priority: P1)
@@ -158,6 +168,9 @@ A maintainer finishes this feature, validates tests and coverage, and prepares a
 - **FR-010**: System MUST include tests for every new or changed behavior in `packages/core` and `packages/mcp` per constitution Principle II (no skipped tests; maintain ≥90% coverage per package).
 - **FR-011**: System MUST bump root `package.json` `config.version` and run `npm run sync-version` as the final release-prep step before calling the feature complete — increment at least patch from the version at feature start (**0.1.36**), update `CHANGELOG.md`, and verify the new version is not already published on npm.
 - **FR-012 (explicitly out of scope for v1)**: Persistent cross-session tool-result cache in SQLite or disk (beyond agent session memory and existing hook compress cache). Skill may describe reuse behavior; a formal cache service is a follow-up unless planning proves it essential.
+- **FR-013**: `ctxlite install` MUST preserve all existing user keys in host config files (including `mcpServers` in `opencode.json`); merge logic only adds or updates ctxlite-owned entries (`plugin`, hooks, skill paths).
+- **FR-014**: OpenCode stats UI (sidebar, toast, session title) MUST derive savings from `StatsStore.summaryForSession("opencode", sessionID)` and gate display on `tokensSaved > 0`, not `totalRequests === 0`.
+- **FR-015**: OpenCode session title, sidebar savings line, and toast MUST use the same formatting helpers (`formatSavingsLine`, `buildOpenCodeSessionTitle`) and suppress percent/cost until `hasStableSavingsBaseline()` returns true.
 
 ### Key Entities
 
@@ -179,6 +192,9 @@ A maintainer finishes this feature, validates tests and coverage, and prepares a
 - **SC-007**: After install on each supported host, the efficiency skill is present and mentions all **seven** tools by name or documented alias — verifiable by install integration test or documented manual checklist.
 - **SC-008**: When the user asks about savings in an MCP-enabled session, agent evaluation checklist shows **`get_stats` invoked** in ≥**90%** of scripted test prompts (manual or automated prompt suite).
 - **SC-009**: On feature completion, published workspace version is **> 0.1.36**, all packages synchronized, changelog entry present, and `npm run typecheck && npm test && npm run lint` pass on the release commit.
+- **SC-010**: After `ctxlite install` on an `opencode.json` that already contains user `mcpServers`, re-running install leaves those servers unchanged (integration test).
+- **SC-011**: When a session has `tokensSaved > 0` but `totalRequests === 0`, OpenCode sidebar shows savings (not "no savings yet") — verified by unit test on `buildOpenCodeSessionDisplay`.
+- **SC-012**: OpenCode session title suffix matches sidebar token count formatting for the same session — verified by shared `buildOpenCodeSessionTitle` usage in sidebar and stats-events paths.
 
 ## Assumptions
 

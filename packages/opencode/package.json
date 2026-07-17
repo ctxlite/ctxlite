@@ -1,6 +1,6 @@
 {
   "name": "@ctxlite/opencode",
-  "version": "0.1.38",
+  "version": "0.1.39",
   "license": "SEE LICENSE IN LICENSE",
   "funding": {
     "type": "ko-fi",
@@ -30,7 +30,7 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.tui.json"
   },
   "dependencies": {
-    "@ctxlite/core": "0.1.38",
+    "@ctxlite/core": "0.1.39",
     "@opencode-ai/plugin": "latest",
     "@opentui/core": "^0.4.2",
     "@opentui/solid": "^0.4.2",

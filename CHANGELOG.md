@@ -7,6 +7,13 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.1.39] - 2026-07-17
+
+### Fixed
+- **OpenCode install (0.1.38 regression):** `ctxlite install --tool opencode` no longer strips user `mcpServers` from `opencode.json` — merge is preserve-all; only ctxlite-owned keys (`plugin`, `$schema`) are added or updated.
+- **OpenCode stats sidebar:** show savings when `tokensSaved > 0` instead of gating on `totalRequests === 0`, which hid savings while toast/title already showed them.
+- **OpenCode session title:** sidebar, toast, and title now share `buildOpenCodeSessionDisplay` / `buildOpenCodeSessionTitle`; percent and cost lines suppressed until `hasStableSavingsBaseline()` (≥10 session turns).
+
 ## [0.1.38] - 2026-07-12
 
 ### Fixed

@@ -1,6 +1,7 @@
 import type { Event } from "@opencode-ai/sdk"
 import { StatsStore, formatTokenCount, logConcisenessSavings, logSessionUsage } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
+import { buildOpenCodeSessionTitle } from "./session-display.js"
 
 /** Minimal shape we need from PluginInput.client — avoids depending on the full generated SDK type. */
 export type ToastClient = {
@@ -20,15 +21,13 @@ export type ToastClient = {
   }
 }
 
-const TITLE_SUFFIX_PATTERN = / · ctxlite: .*$/
-
 /** Sets the session title to "<original title> · ctxlite: <total> saved", replacing any prior suffix. */
 async function updateSessionTitle(client: ToastClient, sessionID: string, total: number): Promise<void> {
+  if (total <= 0) return
   const result = await client.session.get({ path: { id: sessionID } })
-  const baseTitle = (result.data?.title ?? "").replace(TITLE_SUFFIX_PATTERN, "")
   await client.session.update({
     path: { id: sessionID },
-    body: { title: `${baseTitle} · ctxlite: ${formatTokenCount(total)} saved` },
+    body: { title: buildOpenCodeSessionTitle(result.data?.title ?? "", total) },
   })
 }
 

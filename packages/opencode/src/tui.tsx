@@ -1,53 +1,37 @@
 /** @jsxImportSource @opentui/solid */
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule, TuiSlotContext } from "@opencode-ai/plugin/tui"
 import { createEffect, createSignal, onCleanup, Show } from "solid-js"
-import { StatsStore, buildStatsBreakdown, formatSavingsLine, renderStatsBarChart, SUPPORT_LINE } from "@ctxlite/core"
+import { StatsStore } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
+import { buildOpenCodeSessionDisplay, type OpenCodeSessionDisplay } from "./session-display.js"
 
 const id = "@ctxlite/opencode"
 const SIDEBAR_ORDER = 200
 const REFRESH_INTERVAL_MS = 15_000
 
-interface StatsSnapshot {
-  totalLine: string
-  rows: string[]
-  costLine: string
-  supportLabel: string
-  supportUrl: string
-}
-
-// SUPPORT_LINE is "If ctxlite is saving you tokens: https://..." — split at
-// the colon so the sidebar (narrow, wrapMode="none") can show the label and
-// URL on two lines instead of truncating the URL on one.
-const SUPPORT_SEPARATOR_INDEX = SUPPORT_LINE.indexOf(": ")
-const SUPPORT_LABEL =
-  SUPPORT_SEPARATOR_INDEX === -1 ? SUPPORT_LINE : SUPPORT_LINE.slice(0, SUPPORT_SEPARATOR_INDEX)
-const SUPPORT_URL =
-  SUPPORT_SEPARATOR_INDEX === -1 ? "" : SUPPORT_LINE.slice(SUPPORT_SEPARATOR_INDEX + 2)
-
 /** Current session only, not all-time — the sidebar should reflect what this session has saved, not an ever-growing total. */
-function readSnapshot(sessionID: string): StatsSnapshot {
+function readSnapshot(sessionID: string): OpenCodeSessionDisplay {
   let store: StatsStore | null = null
   try {
     store = new StatsStore(getStatsDbPath())
-    const summary = store.summaryForSession("opencode", sessionID)
-    if (summary.totalRequests === 0) {
-      return { totalLine: "no savings yet", rows: [], costLine: "", supportLabel: "", supportUrl: "" }
-    }
-
-    const rows = renderStatsBarChart(buildStatsBreakdown(summary))
-    const totalLine = formatSavingsLine(summary)
-    const costLine = `~$${summary.costSaved.toFixed(4)} saved`
-    return { totalLine, rows, costLine, supportLabel: SUPPORT_LABEL, supportUrl: SUPPORT_URL }
+    return buildOpenCodeSessionDisplay(store.summaryForSession("opencode", sessionID))
   } catch {
-    return { totalLine: "", rows: [], costLine: "", supportLabel: "", supportUrl: "" }
+    return {
+      totalLine: "",
+      breakdownRows: [],
+      costLine: null,
+      hasBaseline: false,
+      supportLabel: "",
+      supportUrl: "",
+      tokensSaved: 0,
+    }
   } finally {
     store?.close()
   }
 }
 
 function SidebarStats(props: { api: TuiPluginApi; sessionID: string }) {
-  const [snapshot, setSnapshot] = createSignal<StatsSnapshot>(readSnapshot(props.sessionID))
+  const [snapshot, setSnapshot] = createSignal<OpenCodeSessionDisplay>(readSnapshot(props.sessionID))
 
   // Re-reads immediately when the visible session changes (e.g. switching
   // chat tabs) — sessionID is a Solid prop, so this effect re-runs whenever
@@ -66,7 +50,7 @@ function SidebarStats(props: { api: TuiPluginApi; sessionID: string }) {
           <b>ctxlite</b> · {snapshot().totalLine}
         </text>
         <box gap={0}>
-          {snapshot().rows.map((line) => (
+          {snapshot().breakdownRows.map((line) => (
             <text fg={props.api.theme.current.textMuted} wrapMode="none">
               {line}
             </text>

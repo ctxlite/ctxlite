@@ -49,36 +49,26 @@ export function removeMcpConfig(existing: unknown): { next: JsonObject; changed:
   return { next, changed: true }
 }
 
-function withoutMcpServers(base: JsonObject): { next: JsonObject; stripped: boolean } {
-  if (!("mcpServers" in base)) {
-    return { next: base, stripped: false }
-  }
-  const next = { ...base }
-  delete next.mcpServers
-  return { next, stripped: true }
-}
-
 export function mergeOpenCodeConfig(existing: unknown): { next: JsonObject; changed: boolean } {
   const base = isObject(existing) ? { ...existing } : {}
-  const { next: withoutMcp, stripped } = withoutMcpServers(base)
-  const plugins: string[] = Array.isArray(withoutMcp.plugin)
-    ? withoutMcp.plugin.filter((item): item is string => typeof item === "string")
+  const plugins: string[] = Array.isArray(base.plugin)
+    ? base.plugin.filter((item): item is string => typeof item === "string")
     : []
 
   if (plugins.includes(OPENCODE_PLUGIN)) {
-    const next = { ...withoutMcp }
+    const next = { ...base }
     if (!next.$schema) {
       next.$schema = "https://opencode.ai/config.json"
       return { next, changed: true }
     }
-    return { next, changed: stripped }
+    return { next, changed: false }
   }
 
   plugins.push(OPENCODE_PLUGIN)
   return {
     next: {
-      ...withoutMcp,
-      $schema: withoutMcp.$schema ?? "https://opencode.ai/config.json",
+      ...base,
+      $schema: base.$schema ?? "https://opencode.ai/config.json",
       plugin: plugins,
     },
     changed: true,
@@ -87,19 +77,18 @@ export function mergeOpenCodeConfig(existing: unknown): { next: JsonObject; chan
 
 export function removeOpenCodeConfig(existing: unknown): { next: JsonObject; changed: boolean } {
   const base = isObject(existing) ? { ...existing } : {}
-  const { next: withoutMcp, stripped } = withoutMcpServers(base)
 
-  if (!Array.isArray(withoutMcp.plugin)) {
-    return { next: withoutMcp, changed: stripped }
+  if (!Array.isArray(base.plugin)) {
+    return { next: base, changed: false }
   }
 
-  const plugins = withoutMcp.plugin.filter((item): item is string => typeof item === "string")
+  const plugins = base.plugin.filter((item): item is string => typeof item === "string")
   const nextPlugins = plugins.filter((item) => item !== OPENCODE_PLUGIN)
   if (nextPlugins.length === plugins.length) {
-    return { next: withoutMcp, changed: stripped }
+    return { next: base, changed: false }
   }
 
-  return { next: { ...withoutMcp, plugin: nextPlugins }, changed: true }
+  return { next: { ...base, plugin: nextPlugins }, changed: true }
 }
 
 /**
