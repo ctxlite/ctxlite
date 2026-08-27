@@ -8,15 +8,23 @@ on:
 
 jobs:
   test:
-    name: Test & Typecheck
+    name: Test & Typecheck (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    # Node-version-agnostic install matrix (spec 026, User Story 4): install
+    # and test on the oldest and newest currently-supported Node.js LTS
+    # lines, not just one pinned version — better-sqlite3's native module is
+    # the ABI-mismatch risk this guards against (see docs/contributing.md).
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["20", "22", "24"]
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node-version }}
           cache: "npm"
 
       - name: Install dependencies

@@ -1,5 +1,13 @@
-import { describe, it, expect } from "vitest"
-import { extractSymbols, supportsSymbols } from "./smart-read.js"
+import { describe, it, expect, beforeEach, afterEach } from "vitest"
+import { mkdtempSync, rmSync, writeFileSync } from "fs"
+import { tmpdir } from "os"
+import { join } from "path"
+import {
+  extractSymbols,
+  supportsSymbols,
+  isEligibleForSmartRead,
+  SMART_READ_ELIGIBLE_THRESHOLD_TOKENS,
+} from "./smart-read.js"
 
 describe("supportsSymbols", () => {
   it("supports ts/tsx/js/jsx", () => {
@@ -13,6 +21,40 @@ describe("supportsSymbols", () => {
     expect(supportsSymbols("a.py")).toBe(false)
     expect(supportsSymbols("a.go")).toBe(false)
     expect(supportsSymbols("a")).toBe(false)
+  })
+})
+
+describe("isEligibleForSmartRead", () => {
+  let tmpDir: string
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), "ctxlite-smart-read-threshold-"))
+  })
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it("is false for a file below the threshold", () => {
+    const path = join(tmpDir, "small.ts")
+    writeFileSync(path, "export const x = 1\n")
+    expect(isEligibleForSmartRead(path)).toBe(false)
+  })
+
+  it("is true for a file at/above the threshold with a supported grammar", () => {
+    const path = join(tmpDir, "large.ts")
+    writeFileSync(path, "x".repeat(SMART_READ_ELIGIBLE_THRESHOLD_TOKENS * 4 + 100))
+    expect(isEligibleForSmartRead(path)).toBe(true)
+  })
+
+  it("is false for a large file with no symbol grammar (no cheaper alternative exists)", () => {
+    const path = join(tmpDir, "large.py")
+    writeFileSync(path, "x".repeat(SMART_READ_ELIGIBLE_THRESHOLD_TOKENS * 4 + 100))
+    expect(isEligibleForSmartRead(path)).toBe(false)
+  })
+
+  it("is false for a nonexistent path (fails open, never blocks on a stat error)", () => {
+    expect(isEligibleForSmartRead(join(tmpDir, "does-not-exist.ts"))).toBe(false)
   })
 })
 

@@ -4,6 +4,7 @@
 
 import { createRequire } from "node:module"
 import { readFile } from "node:fs/promises"
+import { statSync } from "node:fs"
 import { Parser, Language, type Node } from "web-tree-sitter"
 
 const require = createRequire(import.meta.url)
@@ -67,6 +68,35 @@ function grammarForPath(path: string): GrammarName | null {
 /** Whether extractSymbols has a grammar for this file, based on its extension. */
 export function supportsSymbols(path: string): boolean {
   return grammarForPath(path) !== null
+}
+
+/**
+ * Single cutoff, shared by the "prefer smart_read over a full read" guidance
+ * and the precall blocking rule in tool-precall.ts (spec 026 research.md
+ * §3) — one threshold, not two, so the two never drift out of sync.
+ * ~2k tokens matches the existing conciseness-instructions guidance
+ * ("files above ~2-3k tokens").
+ */
+export const SMART_READ_ELIGIBLE_THRESHOLD_TOKENS = 2000
+
+/**
+ * Whether a file at `path` is large enough that smart_read (signatures-only)
+ * would meaningfully help, checked from on-disk byte size alone (~4
+ * bytes/token estimate) so callers never have to read the full file just to
+ * decide. Returns false — never throws — when the file doesn't exist, can't
+ * be stat'd, or has no symbol grammar (no cheaper alternative exists, so
+ * blocking a read would leave the agent stuck with no path forward).
+ */
+export function isEligibleForSmartRead(path: string): boolean {
+  if (!supportsSymbols(path)) {
+    return false
+  }
+  try {
+    const { size } = statSync(path)
+    return size / 4 >= SMART_READ_ELIGIBLE_THRESHOLD_TOKENS
+  } catch {
+    return false
+  }
 }
 
 function isNode(value: Node | null): value is Node {

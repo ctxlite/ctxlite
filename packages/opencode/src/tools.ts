@@ -129,6 +129,32 @@ Provide the files you're considering including and your current task description
   },
 })
 
+/**
+ * Tool `concise_reply` — schema-forced final answer for pure explain/
+ * describe/list/summarize turns (spec 026 follow-up: free-text system-prompt
+ * instructions alone were measured to be unreliably followed by free-tier
+ * models — see docs/benchmarks.md). A tool argument schema is generally
+ * harder for a model to sidestep than a prose request, since malformed
+ * output fails validation instead of silently rendering. Not used for
+ * anything involving code edits — those still go through normal edit/write.
+ */
+export const conciseReplyTool: ToolDefinition = tool({
+  description: `Give your final answer for a pure explain/describe/list/summarize request — NOT for anything that edits a file.
+Call this as your only response for such a request: one short point per item, no markdown table, no restating the same fact twice.
+After calling this, do not also write a free-text answer — this call IS the answer.`,
+
+  args: {
+    points: tool.schema
+      .array(tool.schema.string().max(160).describe("One item: 'name — what it does', one short clause"))
+      .max(20)
+      .describe("One entry per item being described"),
+  },
+
+  async execute({ points }) {
+    return points.map((p) => `- ${p}`).join("\n")
+  },
+})
+
 function periodToTimestamp(period: string): number {
   const now = Math.floor(Date.now() / 1000)
   switch (period) {

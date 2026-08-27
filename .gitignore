@@ -9,6 +9,7 @@ dist/
 *.tsbuildinfo
 coverage/
 bench/results/
+bench-live/results/
 .DS_Store
 .env
 .specify/integrations/.cache/

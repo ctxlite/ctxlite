@@ -45,6 +45,42 @@ export function defaultDbPath(): string {
   return join(homedir(), ".ctxlite", "stats.db")
 }
 
+/**
+ * Bounded retry for the stats DB write path (spec 026, User Story 1). The
+ * busy_timeout pragma already makes SQLite itself retry lock contention
+ * internally for up to 5s before throwing; this adds a further bounded
+ * JS-level retry so a write that still throws — e.g. two separate OS
+ * processes (an OpenCode plugin process and a CLI `get_stats` invocation)
+ * both hitting the same stats.db around the same moment — gets more than
+ * one chance before the row is lost, instead of silently vanishing into the
+ * caller's outer try/catch (kept as a last-resort guard so a stats-DB
+ * problem never breaks tool execution, but it should rarely be reached now).
+ */
+export function runWithRetry(fn: () => void, attempts = 3): void {
+  let lastErr: unknown
+  for (let i = 0; i < attempts; i++) {
+    try {
+      fn()
+      return
+    } catch (err) {
+      lastErr = err
+    }
+  }
+  throw lastErr
+}
+
+let logFailureCount = 0
+
+/** Count of writes that exhausted their retry budget and were dropped. Test/diagnostic use. */
+export function getLogFailureCount(): number {
+  return logFailureCount
+}
+
+/** Resets the failure counter. Test use only. */
+export function resetLogFailureCount(): void {
+  logFailureCount = 0
+}
+
 export class StatsStore {
   private readonly db: StatsSqlite
   private readonly sessionStart: number
@@ -64,27 +100,31 @@ export class StatsStore {
       const id = options?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
       const source =
         entry.source ?? (entry.tokensIn > entry.tokensUsed ? "trim" : entry.tokensSaved > 0 ? "concise" : "trim")
-      this.db.run(
-        `INSERT OR IGNORE INTO requests
-         (id, ts, upstream, trimmed, tokens_in, tokens_used, tokens_out,
-          tokens_saved, cost_saved, latency_ms, source, host, session_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        id,
-        Math.floor(Date.now() / 1000),
-        entry.upstream,
-        source === "trim" ? 1 : 0,
-        entry.tokensIn,
-        entry.tokensUsed,
-        entry.tokensOut,
-        entry.tokensSaved,
-        entry.costSaved,
-        entry.latencyMs,
-        source,
-        entry.host ?? null,
-        entry.sessionId ?? null,
-      )
+      runWithRetry(() => {
+        this.db.run(
+          `INSERT OR IGNORE INTO requests
+           (id, ts, upstream, trimmed, tokens_in, tokens_used, tokens_out,
+            tokens_saved, cost_saved, latency_ms, source, host, session_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          id,
+          Math.floor(Date.now() / 1000),
+          entry.upstream,
+          source === "trim" ? 1 : 0,
+          entry.tokensIn,
+          entry.tokensUsed,
+          entry.tokensOut,
+          entry.tokensSaved,
+          entry.costSaved,
+          entry.latencyMs,
+          source,
+          entry.host ?? null,
+          entry.sessionId ?? null,
+        )
+      })
     } catch {
-      // Silent — logging must not break the main flow
+      // Retry budget exhausted — logging must still never break tool
+      // execution, but this is now the rare case, not the common one.
+      logFailureCount += 1
     }
   }
 
@@ -324,6 +364,21 @@ function getSharedStore(dbPath?: string): StatsStore {
     sharedStores.set(path, store)
   }
   return store
+}
+
+/**
+ * Public accessor for the same shared connection `getSharedStore` uses
+ * internally — for callers (e.g. the OpenCode plugin's per-event read of
+ * `summaryForSession`) that need to *read* stats repeatedly from a
+ * long-lived process. Reusing this connection instead of opening a fresh
+ * `new StatsStore(dbPath)` per call avoids competing with the shared writer
+ * connection for the same file and avoids the per-call open/close failure
+ * mode that made read-driven UI feedback (toasts, session titles)
+ * intermittently silent (spec 026, User Story 1). Closed by
+ * `closeSharedStores()` like any other shared connection.
+ */
+export function getSharedStatsStore(dbPath?: string): StatsStore {
+  return getSharedStore(dbPath)
 }
 
 /** Closes all cached writer connections. For tests and graceful shutdown. */

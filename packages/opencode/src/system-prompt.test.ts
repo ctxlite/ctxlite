@@ -14,6 +14,7 @@ describe("buildSystemPromptAddition", () => {
     expect(addition).toContain("sign-off")
     expect(addition).toContain("smart_read")
     expect(addition).toContain("trim_context")
+    expect(addition).toContain("NEVER use a markdown table")
   })
 
   it("is idempotent — same output every call", () => {

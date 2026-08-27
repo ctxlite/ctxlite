@@ -5,7 +5,7 @@ import { createCompactionHook } from "./compaction-hook.js"
 import { createStatsEventHandler } from "./stats-events.js"
 import { createToolPrecallHook } from "./tool-precall-hook.js"
 import { createToolCompressHook } from "./tool-compress-hook.js"
-import { getStatsTool, trimContextTool } from "./tools.js"
+import { getStatsTool, trimContextTool, conciseReplyTool } from "./tools.js"
 import { smartReadTool } from "./smart-read-tool.js"
 
 /**
@@ -46,6 +46,7 @@ const CtxlitePlugin: Plugin = async ({ client }) => {
       get_stats: getStatsTool,
       trim_context: trimContextTool,
       smart_read: smartReadTool,
+      concise_reply: conciseReplyTool,
     },
   }
 }

@@ -1,5 +1,5 @@
 import type { Event } from "@opencode-ai/sdk"
-import { StatsStore, formatTokenCount, logConcisenessSavings, logSessionUsage } from "@ctxlite/core"
+import { formatTokenCount, logConcisenessSavings, logSessionUsage, getSharedStatsStore } from "@ctxlite/core"
 import { getStatsDbPath } from "./stats-path.js"
 import { buildOpenCodeSessionTitle } from "./session-display.js"
 
@@ -83,10 +83,15 @@ export function createStatsEventHandler(client?: ToastClient): (input: { event: 
       return
     }
 
-    let store: StatsStore | null = null
     try {
-      store = new StatsStore(dbPath)
-      const total = store.summaryForSession("opencode", info.sessionID).tokensSaved
+      // Reuses the same shared connection as the writer calls above — see
+      // getSharedStatsStore's doc comment (spec 026, User Story 1). Never a
+      // fresh `new StatsStore(dbPath)` per event: that competed with the
+      // shared writer connection for the same file, and any open/read
+      // failure was silently swallowed below, making the toast/session-title
+      // feedback the user actually watches intermittently vanish even when
+      // the underlying savings had, in fact, been recorded correctly.
+      const total = getSharedStatsStore(dbPath).summaryForSession("opencode", info.sessionID).tokensSaved
 
       // First completed turn seen for this session — set the baseline so we
       // don't dump pre-existing session history into one toast.
@@ -114,8 +119,6 @@ export function createStatsEventHandler(client?: ToastClient): (input: { event: 
       await updateSessionTitle(client, info.sessionID, total)
     } catch {
       // Silent — a toast/title failure must not break the chat turn
-    } finally {
-      store?.close()
     }
   }
 }

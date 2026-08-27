@@ -76,6 +76,19 @@ describe("runPreToolUseHook", () => {
     }
   })
 
+  it("does NOT block a large-file read (regression guard: the OpenCode-only size-threshold rule leaked into this hook once — caught live via this repo's own dogfooded Claude Code hook — must never fire here)", async () => {
+    const out = captureStdout()
+    const bigFile = join(tmpHome, "large.ts")
+    writeFileSync(bigFile, "x".repeat(2000 * 4 + 100))
+    try {
+      const code = await runPreToolUseHook(stdinOf({ tool_name: "Read", tool_input: { file_path: bigFile } }))
+      expect(code).toBe(0)
+      expect(out.calls.join("")).toBe("")
+    } finally {
+      out.restore()
+    }
+  })
+
   it("writes nothing when there's nothing to optimize", async () => {
     const out = captureStdout()
     try {

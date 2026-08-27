@@ -4,6 +4,16 @@ This document describes the current TypeScript monorepo. The original Go HTTP
 proxy is a separate, legacy distribution channel — see
 [Legacy: Go HTTP proxy](#legacy-go-http-proxy) at the end of this document.
 
+> **v0.2.0 install-availability note**: `ctxlite install` now only offers
+> OpenCode. The Claude Code/Cursor/Claude Desktop integrations described
+> below (MCP server, hook bridges, installer paths) are still real,
+> functional code — a prior install on one of those hosts keeps working —
+> they're just no longer reachable through `ctxlite install` while ctxlite's
+> efficiency work focuses on OpenCode specifically. See
+> [benchmarks.md](./benchmarks.md) for the measured numbers behind that
+> focus. Everything in this document about those hosts otherwise remains
+> accurate as a description of the code.
+
 ## Overview
 
 ctxlite is four npm packages sharing one SQLite database:
@@ -157,6 +167,15 @@ how an existing setup picks up a newly added install target after an
 upgrade (this is exactly what happened when Cursor hooks were added in
 v0.1.20: installs done before that version only had `mcp.json` until
 `install` was run again).
+
+`ALL_TOOLS` (`core/install/types.ts`) is the list the CLI actually offers by
+default, via `--tool all`, and in the interactive prompt — as of v0.2.0 it's
+`["opencode"]` only. `paths.ts`/`merge.ts` still support `cursor`,
+`claude-code`, and `claude-desktop` as `InstallTool` values (nothing there
+was deleted, and the low-level `buildTargets`/`runInstall` functions still
+accept them directly), but `parseTools` — the CLI arg parser — validates
+against `ALL_TOOLS` and rejects anything not in it with a clear "Unknown
+tool" error. That's the one place this is actually enforced.
 
 ## Skills
 

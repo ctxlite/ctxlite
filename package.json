@@ -3,11 +3,14 @@
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "workspaces": [
     "packages/*"
   ],
   "config": {
-    "version": "0.1.39"
+    "version": "0.2.0"
   },
   "scripts": {
     "prepare": "git config core.hooksPath scripts/git-hooks",
@@ -21,7 +24,8 @@
     "sync-version": "node scripts/sync-version.js",
     "publish:npm": "./scripts/publish-npm.sh",
     "publish:npm:live": "./scripts/publish-npm.sh --publish",
-    "bench": "tsx bench/src/run.ts"
+    "bench": "tsx bench/src/run.ts",
+    "bench:live": "tsx bench-live/src/run.ts"
   },
   "overrides": {
     "@babel/core": "7.29.7"

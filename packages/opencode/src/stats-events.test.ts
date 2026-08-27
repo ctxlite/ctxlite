@@ -100,4 +100,35 @@ describe("createStatsEventHandler", () => {
     expect(body.title).toMatch(/^My session · ctxlite: .* saved$/)
     expect(body.title).not.toContain("1.0K saved · ctxlite")
   })
+
+  it("toasts reliably on every qualifying turn across a burst of many turns — no intermittently silent feedback (spec 026, User Story 1)", async () => {
+    const { client, showToast } = fakeClient()
+    const handler = createStatsEventHandler(client)
+
+    const turns = 20
+    for (let i = 1; i <= turns; i++) {
+      await handler(assistantCompletedEvent(`msg-${i}`, 1000))
+    }
+
+    // First turn is the baseline (no toast); every one of the remaining
+    // turns has a positive delta, so every one of them must toast.
+    expect(showToast).toHaveBeenCalledTimes(turns - 1)
+  })
+
+  it("reuses one shared read connection across many events instead of opening a fresh one per event", async () => {
+    const { getSharedStatsStore, closeSharedStores: closeShared } = await import("@ctxlite/core")
+    closeShared()
+
+    const { client } = fakeClient()
+    const handler = createStatsEventHandler(client)
+
+    await handler(assistantCompletedEvent("msg-1", 1000))
+    const dbPath = join(tmpHome, ".ctxlite", "stats.db")
+    const afterFirst = getSharedStatsStore(dbPath)
+
+    await handler(assistantCompletedEvent("msg-2", 1000))
+    const afterSecond = getSharedStatsStore(dbPath)
+
+    expect(afterSecond).toBe(afterFirst)
+  })
 })

@@ -1,4 +1,7 @@
+import { isAbsolute, join } from "node:path"
+import { statSync } from "node:fs"
 import { loadIgnorePatterns, isIgnored } from "./ctxliteignore.js"
+import { isEligibleForSmartRead } from "./smart-read.js"
 
 /** Heuristic tokens prevented by quieter command flags (conservative). */
 const PRECALL_ESTIMATES: Record<string, number> = {
@@ -283,13 +286,37 @@ const BLOCKED_READ_PATTERNS = [
   /\.min\.js$/,
 ]
 
+/** Approximate output-token cost of a full read this size — used to size the block's estimatedTokensSaved. */
+function estimateFullReadTokens(resolvedPath: string): number {
+  try {
+    return Math.ceil(statSync(resolvedPath).size / 4)
+  } catch {
+    return 0
+  }
+}
+
 /**
  * Block reads of paths that rarely help the agent and waste context.
  * When `cwd` is provided, also checks the project's `.ctxliteignore`
  * patterns (read fresh each call, never cached — SC-001) in addition to
  * the built-in patterns above (FR-002).
+ *
+ * A second, distinct blocking condition (spec 026, User Story 2): a full
+ * read of a file large enough that `smart_read` would serve the same
+ * purpose more cheaply is also blocked and redirected — UNLESS the caller
+ * signals `hasEditIntent` (the agent has already engaged this exact path
+ * via `smart_read` or an edit/write call this session — see
+ * `contracts/precall-block-read.md`), or `checkSizeThreshold` is not set
+ * (glob calls list paths, not content, so the threshold doesn't apply to
+ * them). This condition only ever evaluates when `cwd` is provided, since
+ * resolving/stat-ing the path requires it — matching the existing
+ * `.ctxliteignore` precedent of "no cwd, no filesystem check."
  */
-export function optimizeReadPath(path: string, cwd?: string): PrecallResult {
+export function optimizeReadPath(
+  path: string,
+  cwd?: string,
+  options?: { hasEditIntent?: boolean; checkSizeThreshold?: boolean },
+): PrecallResult {
   const normalized = path.replace(/\\/g, "/")
   for (const pattern of BLOCKED_READ_PATTERNS) {
     if (pattern.test(normalized)) {
@@ -313,16 +340,50 @@ export function optimizeReadPath(path: string, cwd?: string): PrecallResult {
     }
   }
 
+  if (cwd && options?.checkSizeThreshold && !options?.hasEditIntent) {
+    const resolved = isAbsolute(path) ? path : join(cwd, path)
+    if (isEligibleForSmartRead(resolved)) {
+      const fullTokens = estimateFullReadTokens(resolved)
+      return {
+        args: { path },
+        modified: false,
+        blocked: true,
+        blockReason:
+          `Blocked full read of "${path}": this file is large enough that smart_read ` +
+          `(structure-only) is the ctxlite-preferred way to inspect it. Retry with ` +
+          `smart_read on the same path. If you specifically need exact content to make ` +
+          `an edit, use smart_read (or edit/write) on this path first — that unblocks a ` +
+          `full read.`,
+        estimatedTokensSaved: Math.round(fullTokens * 0.7),
+      }
+    }
+  }
+
   return { args: { path }, modified: false, blocked: false, estimatedTokensSaved: 0 }
 }
 
 /**
  * Optimize tool args before execution (pre-call / input side).
+ *
+ * `enforceSizeThreshold` defaults to false and MUST stay opt-in, passed
+ * only by the OpenCode precall hook: the large-file block-and-redirect
+ * rule is OpenCode-specific by spec (026, User Story 2 — "Cursor and
+ * Claude Code keep their current, weaker precall behavior unchanged").
+ * `optimizeToolArgs` is the single shared entry point every host's hook
+ * bridge calls (Claude Code's `hook.ts`, Cursor's `cursor-hook.ts`,
+ * OpenCode's `tool-precall-hook.ts`) — defaulting this to true here would
+ * silently turn the new rule on for every host, which is exactly the kind
+ * of tool-precall.ts regression this file has shipped before (see the
+ * ctxlite-internals skill). Caught live: dogfooding this repo's own
+ * Claude Code hook against this very code showed the block firing on a
+ * Claude Code Read call before this default was fixed.
  */
 export function optimizeToolArgs(
   tool: string,
   args: Record<string, unknown>,
   cwd?: string,
+  hasEditIntent = false,
+  enforceSizeThreshold = false,
 ): PrecallResult {
   if (tool === "bash" && typeof args.command === "string") {
     return optimizeBashCommand(args.command)
@@ -338,7 +399,10 @@ export function optimizeToolArgs(
           : null
 
   if ((tool === "read" || tool === "glob") && readPath) {
-    return optimizeReadPath(readPath, cwd)
+    return optimizeReadPath(readPath, cwd, {
+      hasEditIntent,
+      checkSizeThreshold: enforceSizeThreshold && tool === "read",
+    })
   }
 
   return { args, modified: false, blocked: false, estimatedTokensSaved: 0 }

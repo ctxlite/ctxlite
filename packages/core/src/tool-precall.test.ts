@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "fs"
 import { tmpdir } from "os"
 import { join } from "path"
 import { optimizeBashCommand, optimizeReadPath, optimizeToolArgs } from "./tool-precall.js"
+import { SMART_READ_ELIGIBLE_THRESHOLD_TOKENS } from "./smart-read.js"
 
 describe("optimizeBashCommand", () => {
   it("adds --silent to npm test", () => {
@@ -353,5 +354,102 @@ describe("optimizeToolArgs", () => {
     const result = optimizeToolArgs("bash", { command: "cargo test" })
     expect(result.modified).toBe(true)
     expect(result.args.command).toContain("--quiet")
+  })
+})
+
+describe("block-and-redirect for large full reads (spec 026, User Story 2)", () => {
+  let tmpDir: string
+  const bigContent = () => "x".repeat(SMART_READ_ELIGIBLE_THRESHOLD_TOKENS * 4 + 100)
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), "ctxlite-precall-blocksize-"))
+  })
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  it("blocks a full read above the threshold with no edit intent, naming smart_read", () => {
+    const filePath = join(tmpDir, "large.ts")
+    writeFileSync(filePath, bigContent())
+
+    const result = optimizeReadPath(filePath, tmpDir, { checkSizeThreshold: true })
+    expect(result.blocked).toBe(true)
+    expect(result.blockReason).toContain("smart_read")
+    expect(result.blockReason).toContain(filePath)
+    expect(result.estimatedTokensSaved).toBeGreaterThan(0)
+  })
+
+  it("does NOT block when hasEditIntent is signaled", () => {
+    const filePath = join(tmpDir, "large.ts")
+    writeFileSync(filePath, bigContent())
+
+    const result = optimizeReadPath(filePath, tmpDir, { checkSizeThreshold: true, hasEditIntent: true })
+    expect(result.blocked).toBe(false)
+  })
+
+  it("never blocks a file below the threshold, regardless of edit intent", () => {
+    const filePath = join(tmpDir, "small.ts")
+    writeFileSync(filePath, "export const x = 1\n")
+
+    expect(optimizeReadPath(filePath, tmpDir, { checkSizeThreshold: true }).blocked).toBe(false)
+    expect(
+      optimizeReadPath(filePath, tmpDir, { checkSizeThreshold: true, hasEditIntent: true }).blocked,
+    ).toBe(false)
+  })
+
+  it("does not apply the size check without checkSizeThreshold (e.g. glob calls)", () => {
+    const filePath = join(tmpDir, "large.ts")
+    writeFileSync(filePath, bigContent())
+
+    const result = optimizeReadPath(filePath, tmpDir)
+    expect(result.blocked).toBe(false)
+  })
+
+  it("does not apply the size check without a cwd", () => {
+    // No cwd means the path can't be resolved/stat'd — same precedent as .ctxliteignore.
+    const result = optimizeReadPath("large.ts", undefined, { checkSizeThreshold: true })
+    expect(result.blocked).toBe(false)
+  })
+
+  it("does not block a large file with no symbol grammar (no cheaper alternative exists)", () => {
+    const filePath = join(tmpDir, "large.py")
+    writeFileSync(filePath, bigContent())
+
+    const result = optimizeReadPath(filePath, tmpDir, { checkSizeThreshold: true })
+    expect(result.blocked).toBe(false)
+  })
+
+  it("existing low-signal-path blocking is unchanged by the new rule (regression guard)", () => {
+    const result = optimizeReadPath("node_modules/foo/index.js", tmpDir, { checkSizeThreshold: true })
+    expect(result.blocked).toBe(true)
+    expect(result.blockReason).toContain("low-signal path")
+  })
+
+  it("optimizeToolArgs does NOT apply the size-threshold block unless enforceSizeThreshold is explicitly true (regression guard: this defaults off for every caller except OpenCode's hook — Claude Code's and Cursor's hook bridges call optimizeToolArgs the same way and must not pick up this rule)", () => {
+    const filePath = join(tmpDir, "large.ts")
+    writeFileSync(filePath, bigContent())
+
+    const readResult = optimizeToolArgs("read", { path: filePath }, tmpDir)
+    expect(readResult.blocked).toBe(false)
+  })
+
+  it("optimizeToolArgs applies checkSizeThreshold for read but not for glob, when enforceSizeThreshold is true", () => {
+    const filePath = join(tmpDir, "large.ts")
+    writeFileSync(filePath, bigContent())
+
+    const readResult = optimizeToolArgs("read", { path: filePath }, tmpDir, false, true)
+    expect(readResult.blocked).toBe(true)
+
+    const globResult = optimizeToolArgs("glob", { path: filePath }, tmpDir, false, true)
+    expect(globResult.blocked).toBe(false)
+  })
+
+  it("optimizeToolArgs passes hasEditIntent through to the read tool, when enforceSizeThreshold is true", () => {
+    const filePath = join(tmpDir, "large.ts")
+    writeFileSync(filePath, bigContent())
+
+    const result = optimizeToolArgs("read", { path: filePath }, tmpDir, true, true)
+    expect(result.blocked).toBe(false)
   })
 })

@@ -11,7 +11,7 @@ vi.mock("os", async (importOriginal) => {
 })
 
 const { createToolPrecallHook } = await import("./tool-precall-hook.js")
-const { takePrecallPending } = await import("./precall-state.js")
+const { takePrecallPending, hasPathEngagement } = await import("./precall-state.js")
 const { StatsStore, closeSharedStores, defaultDbPath } = await import("@ctxlite/core")
 
 function baseOutput(args: Record<string, unknown>): { args: Record<string, unknown>; result?: string } {
@@ -98,5 +98,92 @@ describe("createToolPrecallHook", () => {
     } finally {
       cwdSpy.mockRestore()
     }
+  })
+
+  describe("large-file block-and-redirect (spec 026, User Story 2)", () => {
+    const bigContent = () => "x".repeat(2000 * 4 + 100)
+
+    it("blocks a large full read with no prior engagement, naming smart_read, and logs the block", async () => {
+      const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(tmpHome)
+      try {
+        const filePath = join(tmpHome, "large.ts")
+        writeFileSync(filePath, bigContent())
+
+        const hook = createToolPrecallHook()
+        const output = baseOutput({ path: filePath })
+        await hook({ tool: "read", sessionID: "ses-large-1", callID: "call-large-1" }, output)
+
+        expect(output.result).toContain("[ctxlite]")
+        expect(output.result).toContain("smart_read")
+
+        const store = new StatsStore(defaultDbPath())
+        const summary = store.summaryForSession("opencode", "ses-large-1")
+        expect(summary.precallRequests).toBe(1)
+        store.close()
+      } finally {
+        cwdSpy.mockRestore()
+      }
+    })
+
+    it("marks path engagement on a smart_read call despite smart_read being in SKIP_TOOLS", async () => {
+      const hook = createToolPrecallHook()
+      const output = baseOutput({ path: "src/large.ts" })
+
+      await hook({ tool: "smart_read", sessionID: "ses-large-2", callID: "call-large-2" }, output)
+
+      expect(hasPathEngagement("ses-large-2", "src/large.ts")).toBe(true)
+    })
+
+    it("marks path engagement on an edit call", async () => {
+      const hook = createToolPrecallHook()
+      const output = baseOutput({ filePath: "src/large.ts" })
+
+      await hook({ tool: "edit", sessionID: "ses-large-3", callID: "call-large-3" }, output)
+
+      expect(hasPathEngagement("ses-large-3", "src/large.ts")).toBe(true)
+    })
+
+    it("allows a large full read after the same path was already engaged via smart_read in this session", async () => {
+      const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(tmpHome)
+      try {
+        const filePath = join(tmpHome, "large.ts")
+        writeFileSync(filePath, bigContent())
+
+        const hook = createToolPrecallHook()
+
+        await hook(
+          { tool: "smart_read", sessionID: "ses-large-4", callID: "call-large-4a" },
+          baseOutput({ path: filePath }),
+        )
+
+        const output = baseOutput({ path: filePath })
+        await hook({ tool: "read", sessionID: "ses-large-4", callID: "call-large-4b" }, output)
+
+        expect(output.result).toBeUndefined()
+      } finally {
+        cwdSpy.mockRestore()
+      }
+    })
+
+    it("does not let a repeated identical blocked read bypass enforcement (engagement is not set by a block itself)", async () => {
+      const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(tmpHome)
+      try {
+        const filePath = join(tmpHome, "large.ts")
+        writeFileSync(filePath, bigContent())
+
+        const hook = createToolPrecallHook()
+
+        await hook(
+          { tool: "read", sessionID: "ses-large-5", callID: "call-large-5a" },
+          baseOutput({ path: filePath }),
+        )
+        const secondAttempt = baseOutput({ path: filePath })
+        await hook({ tool: "read", sessionID: "ses-large-5", callID: "call-large-5b" }, secondAttempt)
+
+        expect(secondAttempt.result).toContain("[ctxlite]")
+      } finally {
+        cwdSpy.mockRestore()
+      }
+    })
   })
 })

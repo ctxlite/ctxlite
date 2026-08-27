@@ -11,7 +11,7 @@ vi.mock("os", async (importOriginal) => {
   return { ...actual, homedir: () => tmpHome }
 })
 
-const { getStatsTool, trimContextTool } = await import("./tools.js")
+const { getStatsTool, trimContextTool, conciseReplyTool } = await import("./tools.js")
 const { closeSharedStores, StatsStore, defaultDbPath } = await import("@ctxlite/core")
 
 function fakeContext(sessionID = "ses-1", directory = "/tmp"): ToolContext {
@@ -139,5 +139,22 @@ describe("trimContextTool", () => {
     // unlike unrelated.ts which IS a real BM25-scored candidate.
     expect(text).not.toContain("auth.generated.ts")
     expect(text).toContain("auth.ts")
+  })
+})
+
+describe("conciseReplyTool", () => {
+  it("renders each point as a bullet", async () => {
+    const result = await conciseReplyTool.execute(
+      { points: ["parseTokenUsage — parses API usage from a response body", "estimateTokens — ~4 chars/token"] },
+      fakeContext("ses-concise"),
+    )
+    expect(output(result)).toBe(
+      "- parseTokenUsage — parses API usage from a response body\n- estimateTokens — ~4 chars/token",
+    )
+  })
+
+  it("renders an empty list as an empty string", async () => {
+    const result = await conciseReplyTool.execute({ points: [] }, fakeContext("ses-concise-empty"))
+    expect(output(result)).toBe("")
   })
 })

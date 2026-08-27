@@ -12,6 +12,19 @@ npm run build
 npm test
 ```
 
+Supported on any currently-maintained Node.js LTS line (`engines.node:
+">=20"` in `package.json` — informational, not `engine-strict`-enforced).
+CI (`.github/workflows/ci.yml`) runs the full install/build/test/lint matrix
+against Node 20, 22, and 24 on every push, so a working install isn't tied
+to whichever version you happen to have locally. The one native dependency,
+`better-sqlite3` (the stats DB), falls back automatically to Node's
+built-in `node:sqlite` (Node 22+) if its prebuilt binary doesn't match your
+Node version, and to Bun's `bun:sqlite` under the OpenCode plugin runtime;
+if neither path works, `npm install` surfaces a specific error naming the
+mismatch (`ctxlite: cannot open stats.db — better-sqlite3 native module
+mismatch...`) rather than a generic native-module failure — see
+`packages/core/src/sqlite-adapter.ts`.
+
 `npm install` also points git at `scripts/git-hooks/` (via the root
 `package.json`'s `prepare` script, `git config core.hooksPath
 scripts/git-hooks` — no extra dependency, just git's native hook-path

@@ -58,15 +58,21 @@ function captureStdio() {
 
 describe("parseInstallArgs", () => {
   it("parses tool and scope flags", () => {
-    const args = parseInstallArgs(["--tool", "cursor,opencode", "--scope", "project", "--yes"])
-    expect(args.tools).toEqual(["cursor", "opencode"])
+    const args = parseInstallArgs(["--tool", "opencode", "--scope", "project", "--yes"])
+    expect(args.tools).toEqual(["opencode"])
     expect(args.scope).toBe("project")
     expect(args.yes).toBe(true)
   })
 
-  it("parses all tools", () => {
+  it("parses all tools as just opencode (Cursor/Claude Code/Claude Desktop are no longer installable — see docs/benchmarks.md)", () => {
     const args = parseInstallArgs(["--tool", "all"])
-    expect(args.tools).toHaveLength(4)
+    expect(args.tools).toEqual(["opencode"])
+  })
+
+  it("rejects a no-longer-supported tool (cursor, claude-code, claude-desktop) with a clear error naming what IS valid", () => {
+    expect(() => parseInstallArgs(["--tool", "cursor"])).toThrow('Unknown tool "cursor". Valid: opencode, all')
+    expect(() => parseInstallArgs(["--tool", "claude-code"])).toThrow('Unknown tool "claude-code"')
+    expect(() => parseInstallArgs(["--tool", "claude-desktop"])).toThrow('Unknown tool "claude-desktop"')
   })
 
   it("throws on unknown option", () => {
@@ -136,12 +142,12 @@ describe("runInstallCommand", () => {
     }
   })
 
-  it("rejects claude-desktop with project scope", async () => {
+  it("rejects an unsupported tool with a clear, non-interactive error", async () => {
     const io = captureStdio()
     try {
       const code = await runInstallCommand(["--tool", "claude-desktop", "--scope", "project", "--project-dir", root])
       expect(code).toBe(1)
-      expect(io.stderr()).toContain("Claude Desktop only supports global scope")
+      expect(io.stderr()).toContain('Unknown tool "claude-desktop"')
     } finally {
       io.restore()
     }
@@ -152,7 +158,7 @@ describe("runInstallCommand", () => {
     try {
       const code = await runInstallCommand([
         "--tool",
-        "cursor",
+        "opencode",
         "--scope",
         "project",
         "--project-dir",
@@ -161,7 +167,7 @@ describe("runInstallCommand", () => {
       ])
       expect(code).toBe(0)
       expect(io.stdout()).toContain("[create]")
-      expect(() => readFileSync(join(root, ".cursor", "mcp.json"))).toThrow()
+      expect(() => readFileSync(join(root, "opencode.json"))).toThrow()
     } finally {
       io.restore()
     }
@@ -170,7 +176,7 @@ describe("runInstallCommand", () => {
   it("requires --yes in non-interactive mode when not a dry run", async () => {
     const io = captureStdio()
     try {
-      const code = await runInstallCommand(["--tool", "cursor", "--scope", "project", "--project-dir", root])
+      const code = await runInstallCommand(["--tool", "opencode", "--scope", "project", "--project-dir", root])
       expect(code).toBe(1)
       expect(io.stderr()).toContain("use --yes in non-interactive mode")
     } finally {
@@ -183,7 +189,7 @@ describe("runInstallCommand", () => {
     try {
       const code = await runInstallCommand([
         "--tool",
-        "claude-code",
+        "opencode",
         "--scope",
         "project",
         "--project-dir",
@@ -192,20 +198,21 @@ describe("runInstallCommand", () => {
       ])
       expect(code).toBe(0)
       expect(io.stdout()).toContain("Done. Updated")
-      expect(JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8")).mcpServers.ctxlite).toBeDefined()
+      const config = JSON.parse(readFileSync(join(root, "opencode.json"), "utf8"))
+      expect(config.plugin).toContain("@ctxlite/opencode")
     } finally {
       io.restore()
     }
   })
 
   it("reports nothing-to-change on a second --yes run", async () => {
-    await runInstallCommand(["--tool", "claude-code", "--scope", "project", "--project-dir", root, "--yes"])
+    await runInstallCommand(["--tool", "opencode", "--scope", "project", "--project-dir", root, "--yes"])
 
     const io = captureStdio()
     try {
       const code = await runInstallCommand([
         "--tool",
-        "claude-code",
+        "opencode",
         "--scope",
         "project",
         "--project-dir",
@@ -220,13 +227,13 @@ describe("runInstallCommand", () => {
   })
 
   it("--remove removes a previously installed entry", async () => {
-    await runInstallCommand(["--tool", "cursor", "--scope", "project", "--project-dir", root, "--yes"])
+    await runInstallCommand(["--tool", "opencode", "--scope", "project", "--project-dir", root, "--yes"])
 
     const io = captureStdio()
     try {
       const code = await runInstallCommand([
         "--tool",
-        "cursor",
+        "opencode",
         "--scope",
         "project",
         "--project-dir",
@@ -236,8 +243,8 @@ describe("runInstallCommand", () => {
       ])
       expect(code).toBe(0)
       expect(io.stdout()).toContain("Done. Updated")
-      const mcp = JSON.parse(readFileSync(join(root, ".cursor", "mcp.json"), "utf8"))
-      expect(mcp.mcpServers?.ctxlite).toBeUndefined()
+      const config = JSON.parse(readFileSync(join(root, "opencode.json"), "utf8"))
+      expect(config.plugin ?? []).not.toContain("@ctxlite/opencode")
     } finally {
       io.restore()
     }
@@ -292,7 +299,7 @@ describe("runInstallCommand interactive prompts", () => {
     fakeStdin.isTTY = false
   })
 
-  it("prompts for tools and scope, defaulting to all tools on an empty answer", async () => {
+  it("prompts for tools and scope, defaulting to all tools (just opencode) on an empty answer", async () => {
     const io = captureStdio()
     // Two sequential readline.createInterface() calls (tools, then scope)
     // share this one fake stdin — pushing both answers upfront races with
@@ -307,10 +314,8 @@ describe("runInstallCommand interactive prompts", () => {
     feedStdin("2")
     try {
       const code = await promise
-      // claude-desktop only supports global, so an "all tools" + project-scope
-      // selection must be rejected, not silently dropped.
-      expect(code).toBe(1)
-      expect(io.stderr()).toContain("Claude Desktop only supports global scope")
+      expect(code).toBe(0)
+      expect(io.stdout()).toContain("[create]")
     } finally {
       io.restore()
     }
@@ -345,7 +350,7 @@ describe("runInstallCommand interactive prompts", () => {
     const io = captureStdio()
     feedStdin("y")
     try {
-      const code = await runInstallCommand(["--tool", "cursor", "--scope", "project", "--project-dir", root])
+      const code = await runInstallCommand(["--tool", "opencode", "--scope", "project", "--project-dir", root])
       expect(code).toBe(0)
       expect(io.stdout()).toContain("Proceed?")
       expect(io.stdout()).toContain("Done. Updated")
@@ -358,10 +363,10 @@ describe("runInstallCommand interactive prompts", () => {
     const io = captureStdio()
     feedStdin("n")
     try {
-      const code = await runInstallCommand(["--tool", "cursor", "--scope", "project", "--project-dir", root])
+      const code = await runInstallCommand(["--tool", "opencode", "--scope", "project", "--project-dir", root])
       expect(code).toBe(0)
       expect(io.stdout()).toContain("Cancelled.")
-      expect(() => readFileSync(join(root, ".cursor", "mcp.json"))).toThrow()
+      expect(() => readFileSync(join(root, "opencode.json"))).toThrow()
     } finally {
       io.restore()
     }

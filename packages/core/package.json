@@ -1,12 +1,15 @@
 {
   "name": "@ctxlite/core",
-  "version": "0.1.39",
+  "version": "0.2.0",
   "license": "SEE LICENSE IN LICENSE",
   "funding": {
     "type": "ko-fi",
     "url": "https://ko-fi.com/techdebeci"
   },
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

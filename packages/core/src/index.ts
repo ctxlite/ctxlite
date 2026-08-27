@@ -33,7 +33,12 @@ export type { CompressGrepOutputOptions } from "./grep-output-compress.js"
 export { pruneMessageContext, capStaleToolOutputs } from "./context-prune.js"
 export type { PruneMessage, ContextPruneResult, ContextCapResult } from "./context-prune.js"
 
-export { extractSymbols, supportsSymbols } from "./smart-read.js"
+export {
+  extractSymbols,
+  supportsSymbols,
+  isEligibleForSmartRead,
+  SMART_READ_ELIGIBLE_THRESHOLD_TOKENS,
+} from "./smart-read.js"
 
 export { diffRead, parseUnifiedDiffHunks } from "./diff-read.js"
 export type { DiffReadOptions, DiffReadResult, DiffHunk } from "./diff-read.js"
@@ -55,6 +60,10 @@ export {
   logOptimizationSavings,
   logSessionUsage,
   closeSharedStores,
+  getSharedStatsStore,
+  runWithRetry,
+  getLogFailureCount,
+  resetLogFailureCount,
 } from "./stats.js"
 export type { ConcisenessLog, OptimizationLog } from "./stats.js"
 

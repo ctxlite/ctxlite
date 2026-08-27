@@ -11,13 +11,19 @@ import {
 } from "@ctxlite/core"
 
 const HELP = `
-ctxlite install — configure ctxlite in Cursor, OpenCode, or Claude
+ctxlite install — configure ctxlite in OpenCode
+
+Cursor and Claude Code were previously supported here too; that support is
+currently disabled while ctxlite's efficiency work focuses on OpenCode
+specifically (see docs/benchmarks.md). Their install/merge code still
+exists (a prior Cursor/Claude Code install keeps working), it's just no
+longer offered by this command.
 
 USAGE:
   ctxlite install [options]
 
 OPTIONS:
-  --tool <id>         cursor, opencode, claude-code, claude-desktop, all (comma-separated)
+  --tool <id>         opencode, all (comma-separated; "all" is currently just opencode)
   --scope <scope>     global (user) or project (default: global)
   --project-dir <dir> Project root for project scope (default: cwd)
   --yes, -y           Apply without confirmation
@@ -27,19 +33,13 @@ OPTIONS:
 
 EXAMPLES:
   ctxlite install
-  ctxlite install --tool cursor --scope global --yes
-  ctxlite install --tool opencode,claude-code --scope project
-  ctxlite install --tool all --scope global --dry-run
-  ctxlite install --remove --tool cursor --scope global --yes
+  ctxlite install --tool opencode --scope global --yes
+  ctxlite install --tool all --scope project --dry-run
+  ctxlite install --remove --tool opencode --scope global --yes
 
 CONFIG PATHS:
-  Cursor (global)              ~/.cursor/mcp.json (MCP) + ~/.cursor/hooks.json (hooks)
-  Cursor (project)             .cursor/mcp.json (MCP) + .cursor/hooks.json (hooks)
   OpenCode (global)            ~/.config/opencode/opencode.json + tui.json
   OpenCode (project)           opencode.json + tui.json
-  Claude Code (global)         ~/.claude.json (MCP) + ~/.claude/settings.json (hooks)
-  Claude Code (project)        .mcp.json (MCP) + .claude/settings.json (hooks)
-  Claude Desktop               OS-specific claude_desktop_config.json
 `.trimStart()
 
 export interface InstallArgs {
@@ -189,11 +189,6 @@ export async function runInstallCommand(argv: string[]): Promise<number> {
     }
   }
 
-  if (args.scope === "project" && tools.includes("claude-desktop")) {
-    process.stderr.write("Error: Claude Desktop only supports global scope\n")
-    return 1
-  }
-
   const plan = await planInstall({
     tools,
     scope: args.scope,
@@ -233,7 +228,7 @@ export async function runInstallCommand(argv: string[]): Promise<number> {
     process.stdout.write("Nothing to change.\n")
   } else {
     process.stdout.write(`Done. Updated ${changed.length} file(s).\n`)
-    process.stdout.write("Restart Cursor / OpenCode / Claude Code to load changes.\n")
+    process.stdout.write("Restart OpenCode to load changes.\n")
   }
 
   if (!args.remove && tools.includes("opencode")) {

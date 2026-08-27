@@ -1,4 +1,7 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, afterEach } from "vitest"
+import { tmpdir } from "os"
+import { join } from "path"
+import { rmSync } from "fs"
 import {
   buildStatsBreakdown,
   formatSavingsLine,
@@ -9,6 +12,7 @@ import {
   renderStatsHelpLines,
   SUPPORT_LINE,
 } from "./report.js"
+import { StatsStore, closeSharedStores } from "./stats.js"
 import type { SessionBreakdownRow, Summary } from "./types.js"
 
 describe("SUPPORT_LINE", () => {
@@ -215,5 +219,53 @@ describe("renderStatsHelpLines", () => {
   it("explains expected zeros on Cursor", () => {
     const lines = renderStatsHelpLines(makeSummary(), "cursor")
     expect(lines.some((l) => l.includes("Cursor") && l.includes("zeros"))).toBe(true)
+  })
+})
+
+describe("dashboard reliability across many sessions (spec 026, User Story 1, SC-004)", () => {
+  let store: StatsStore
+  let dbPath: string
+
+  afterEach(() => {
+    store?.close()
+    closeSharedStores()
+    try {
+      rmSync(dbPath)
+    } catch {
+      // ignore cleanup errors
+    }
+  })
+
+  it("renders every one of 20 consecutive sessions — none intermittently missing", () => {
+    dbPath = join(tmpdir(), `ctxlite-report-reliability-${Date.now()}.db`)
+    store = new StatsStore(dbPath)
+
+    const sessionCount = 20
+    for (let i = 0; i < sessionCount; i++) {
+      store.log(
+        {
+          upstream: "opencode",
+          cacheHit: false,
+          tokensIn: 100,
+          tokensUsed: 40,
+          tokensOut: 20,
+          tokensSaved: 60,
+          costSaved: 0.001,
+          latencyMs: 5,
+          source: "precall",
+          host: "opencode",
+          sessionId: `ses-report-${i}`,
+        },
+        { id: `report-reliability-${i}` },
+      )
+    }
+
+    const rows = store.sessionBreakdown(0, "opencode")
+    expect(rows).toHaveLength(sessionCount)
+
+    const lines = renderSessionBreakdown(rows)
+    for (let i = 0; i < sessionCount; i++) {
+      expect(lines.some((l) => l.includes(`ses-report-${i}`))).toBe(true)
+    }
   })
 })

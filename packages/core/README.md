@@ -1,6 +1,6 @@
 # ctxlite
 
-> Token optimizer for OpenCode, Cursor, and Claude Code — automatic context optimization + stats reporting.
+> Token optimizer for OpenCode — automatic context optimization + stats reporting.
 
 [![CI](https://github.com/ctxlite/ctxlite/actions/workflows/ci.yml/badge.svg)](https://github.com/ctxlite/ctxlite/actions)
 [![npm](https://img.shields.io/npm/v/@ctxlite/opencode)](https://www.npmjs.com/package/@ctxlite/opencode)
@@ -9,68 +9,45 @@
 
 If ctxlite is saving you tokens, consider [supporting the project on Ko-fi](https://ko-fi.com/techdebeci).
 
+> **Cursor and Claude Code were previously supported here too.** That support
+> is currently disabled — `ctxlite install` only offers OpenCode now. Their
+> underlying install/merge code hasn't been deleted (a prior Cursor/Claude
+> Code install keeps working), it's just no longer offered, while ctxlite's
+> efficiency work focuses on OpenCode specifically. See
+> [docs/benchmarks.md](docs/benchmarks.md) for the real, measured numbers
+> behind that focus.
+
 ## How it works
 
-ctxlite reduces tokens at several points in a session: quieter command flags and blocked low-signal reads before a tool runs, output compression and symbol-only file reads after, duplicate/stale context pruning before each request, BM25-based relevant-file selection, and conciseness instructions for the model's own output.
-
-Which of these run **automatically** vs. **on demand** depends on what each tool's plugin/hook API actually allows — see the table below.
+ctxlite reduces tokens at several points in an OpenCode session: quieter command flags and blocked low-signal reads before a tool runs (including a hard block-and-redirect to `smart_read` for large full-file reads), output compression and symbol-only file reads after, duplicate/stale context pruning before each request, BM25-based relevant-file selection, and conciseness instructions for the model's own output.
 
 | | Automatic (no action needed) | On demand (agent calls a tool) |
 |---|---|---|
-| **OpenCode** | pre-call rewrite, output compression, context pruning, conciseness, sidebar widget + toast + session title | `get_stats`, `trim_context`, `smart_read` (plugin — in-process) |
-| **Claude Code** | pre-call rewrite (`Bash` quiet flags, blocked reads), output compression — via hooks | `get_stats`, `trim_context`, `smart_read` (MCP) |
-| **Cursor** | pre-call rewrite only — Cursor's hooks can't rewrite output for built-in tools, so output compression has no automatic path here | `get_stats`, `trim_context`, `smart_read` (MCP) |
-| **Claude Desktop** | — (no hook/plugin API) | `get_stats`, `trim_context`, `smart_read` (MCP) |
+| **OpenCode** | pre-call rewrite (quiet flags, blocked/redirected reads), output compression, context pruning, conciseness, sidebar widget + toast + session title | `get_stats`, `trim_context`, `smart_read`, `concise_reply` (plugin — in-process) |
 
 Add a project-root `.ctxliteignore` (gitignore-style patterns) to block reads and `trim_context` candidates from project-specific generated/vendor paths that aren't already covered by ctxlite's built-in blocked-path list — see [the format reference](specs/018-ctxliteignore-support/contracts/ctxliteignore-format.md).
 
-## Install
+**Honest numbers, not just claims**: real, model-in-the-loop testing (`bench-live/`, see [docs/benchmarks.md](docs/benchmarks.md)) measured roughly 26–88% input/context token reduction and roughly 10–20% output-token reduction on representative OpenCode tasks — not the 70–90% output-token target originally hoped for. That gap, what was tried to close it, and why it's genuinely hard on any model tested (free or paid) is documented in full rather than smoothed over.
 
-### OpenCode
+## Install
 
 ```bash
 npx @ctxlite/cli install --tool opencode --scope global --yes
 ```
 
-Registers the plugin (`~/.config/opencode/opencode.json`) and the sidebar widget (`tui.json`). Restart OpenCode. MCP tools (`diff_read`, `log_summary`, `code_search`, `budget_planner`) are Cursor/Claude Code only — OpenCode's config schema does not accept `mcpServers` in `opencode.json`.
+Registers the plugin (`~/.config/opencode/opencode.json`) and the sidebar widget (`tui.json`). Restart OpenCode.
 
-### Claude Code
+Use `--scope project` to scope this to the current repo instead of your whole machine, `--dry-run` to preview changes first, and `--remove` to undo.
 
-```bash
-npx @ctxlite/cli install --tool claude-code --scope global --yes
-```
-
-Registers the MCP server (`~/.claude.json`) and the PreToolUse/PostToolUse hooks (`~/.claude/settings.json`) — two separate files, both written.
-
-### Cursor
-
-```bash
-npx @ctxlite/cli install --tool cursor --scope global --yes
-```
-
-Registers the MCP server (`~/.cursor/mcp.json`) and the `preToolUse` hook (`~/.cursor/hooks.json`).
-
-### Claude Desktop
-
-```bash
-npx @ctxlite/cli install --tool claude-desktop --scope global --yes
-```
-
-MCP only — Claude Desktop has no plugin/hook API.
-
-### Interactive installer (pick tools + global/project scope)
+### Interactive installer
 
 ```bash
 npx @ctxlite/cli install
 ```
 
-Use `--scope project` to scope any of the above to the current repo instead of your whole machine, and `--remove` to undo.
+Prompts for scope (global/project) and confirms before writing.
 
 ## Viewing stats
-
-All surfaces read from the same `~/.ctxlite/stats.db`, so the CLI shows combined totals no matter which tool generated the savings.
-
-**From any terminal:**
 
 ```bash
 npx @ctxlite/cli stats
@@ -78,22 +55,10 @@ npx @ctxlite/cli stats --last 7d
 npx @ctxlite/cli stats --export json
 ```
 
-**OpenCode:** the sidebar widget shows live savings the whole session — no action needed. You can still ask in chat:
+**In OpenCode:** the sidebar widget shows live savings the whole session — no action needed. You can still ask in chat:
 
 ```
 You: how much has ctxlite saved this session?
-```
-
-**Claude Code:** ask in chat — the agent calls the `get_stats` MCP tool:
-
-```
-You: show me ctxlite's token savings for the last 7 days
-```
-
-**Cursor:** same as Claude Code — ask in chat and the agent calls `get_stats`:
-
-```
-You: how much has ctxlite saved on this project?
 ```
 
 If the agent doesn't reach for `get_stats` on its own, ask explicitly: "use the ctxlite get_stats tool."
@@ -102,14 +67,14 @@ If the agent doesn't reach for `get_stats` on its own, ask explicitly: "use the 
 
 | Package | Description |
 |---|---|
-| `@ctxlite/opencode` | OpenCode plugin (server + TUI sidebar) |
-| `@ctxlite/mcp` | MCP server for Cursor, Claude Code, Claude Desktop |
-| `@ctxlite/core` | Shared logic (BM25, tree-sitter symbol extraction, stats) |
-| `@ctxlite/cli` | CLI for `stats`, `install`, and the Claude Code / Cursor hook bridge |
+| `@ctxlite/opencode` | OpenCode plugin (server + TUI sidebar) — the primary supported surface |
+| `@ctxlite/core` | Shared logic (BM25, tree-sitter symbol extraction, stats, precall enforcement) |
+| `@ctxlite/cli` | CLI for `stats` and `install` |
+| `@ctxlite/mcp` | MCP server — currently unused now that Cursor/Claude Code install is disabled; kept for a future re-enable, not actively developed |
 
 ## Go proxy (legacy)
 
-The Go binary in `go/` provides an HTTP proxy with L1/L2 caching for Cursor and Claude Code — an earlier architecture, superseded by the plugin/MCP/hooks approach above.  
+The Go binary in `go/` provides an HTTP proxy with L1/L2 caching for Cursor and Claude Code — an earlier architecture, superseded by the plugin/MCP/hooks approach above, and not part of the current OpenCode-focused direction.
 See [docs/configuration.md](docs/configuration.md) and [docs/architecture.md](docs/architecture.md).
 
 ## Contributing

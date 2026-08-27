@@ -51,12 +51,16 @@ export const MCP_SERVER_NAME = "ctxlite"
 export const MCP_PACKAGE = "@ctxlite/mcp"
 export const OPENCODE_PLUGIN = "@ctxlite/opencode"
 
-export const ALL_TOOLS: InstallTool[] = [
-  "cursor",
-  "opencode",
-  "claude-code",
-  "claude-desktop",
-]
+/**
+ * Installable tools, offered by the CLI installer's default/interactive/
+ * `--tool all` paths. ctxlite now targets OpenCode only — Cursor and Claude
+ * Code support still exists in `paths.ts`/`merge.ts` (a prior install on
+ * either host keeps working, and the code isn't deleted), but the installer
+ * no longer offers to create, update, or refresh a Cursor/Claude Code/Claude
+ * Desktop config. See docs/benchmarks.md for why: this project's efficiency
+ * work is now scoped to OpenCode specifically.
+ */
+export const ALL_TOOLS: InstallTool[] = ["opencode"]
 
 export function defaultMcpEntry(): McpServerEntry {
   return {

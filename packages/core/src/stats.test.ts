@@ -6,6 +6,9 @@ import {
   logOptimizationSavings,
   logSessionUsage,
   closeSharedStores,
+  runWithRetry,
+  getLogFailureCount,
+  resetLogFailureCount,
 } from "./stats.js"
 import { openStatsSqlite } from "./sqlite-adapter.js"
 import { tmpdir } from "os"
@@ -522,5 +525,94 @@ describe("StatsStore", () => {
 
     const allRows = store.sessionBreakdown(0)
     expect(allRows).toHaveLength(2)
+  })
+})
+
+describe("runWithRetry", () => {
+  it("recovers from a transient failure within the retry budget", () => {
+    let calls = 0
+    const fn = () => {
+      calls++
+      if (calls < 3) throw new Error("SQLITE_BUSY: database is locked")
+    }
+    expect(() => runWithRetry(fn)).not.toThrow()
+    expect(calls).toBe(3)
+  })
+
+  it("throws after exhausting the retry budget", () => {
+    let calls = 0
+    const fn = () => {
+      calls++
+      throw new Error("SQLITE_BUSY: database is locked")
+    }
+    expect(() => runWithRetry(fn, 3)).toThrow()
+    expect(calls).toBe(3)
+  })
+
+  it("does not retry at all on the first success", () => {
+    let calls = 0
+    runWithRetry(() => {
+      calls++
+    })
+    expect(calls).toBe(1)
+  })
+})
+
+describe("StatsStore.log reliability (spec 026, User Story 1)", () => {
+  let store: StatsStore
+  let dbPath: string
+
+  afterEach(() => {
+    store?.close()
+    closeSharedStores()
+    resetLogFailureCount()
+    try {
+      rmSync(dbPath)
+    } catch {
+      // ignore cleanup errors
+    }
+  })
+
+  it("every logged row is queryable immediately after logging, across a realistic burst of calls (SC-004 — 100% presence, no intermittently missing rows)", () => {
+    dbPath = tmpDb()
+    store = new StatsStore(dbPath)
+    resetLogFailureCount()
+
+    const total = 50
+    for (let i = 0; i < total; i++) {
+      store.log(
+        {
+          upstream: "opencode",
+          cacheHit: false,
+          tokensIn: 100,
+          tokensUsed: 40,
+          tokensOut: 20,
+          tokensSaved: 60,
+          costSaved: 0.001,
+          latencyMs: 5,
+          source: "precall",
+          host: "opencode",
+          sessionId: `ses-${i}`,
+        },
+        { id: `burst-${i}` },
+      )
+    }
+
+    const summary = store.summary()
+    expect(summary.totalRequests).toBe(total)
+    expect(getLogFailureCount()).toBe(0)
+  })
+
+  it("a session with zero qualifying savings reports explicit zero, never a fabricated non-zero value (FR-004)", () => {
+    dbPath = tmpDb()
+    store = new StatsStore(dbPath)
+
+    // No savings-producing calls were made — logOptimizationSavings itself
+    // no-ops when tokensSaved <= 0, so nothing should ever reach the DB.
+    logOptimizationSavings({ source: "smart_read", upstream: "opencode", tokensIn: 100, tokensOut: 100 }, dbPath)
+
+    const summary = store.summary(0, "opencode")
+    expect(summary.totalRequests).toBe(0)
+    expect(summary.tokensSaved).toBe(0)
   })
 })

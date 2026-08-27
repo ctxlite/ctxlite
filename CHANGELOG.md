@@ -7,6 +7,23 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-27
+
+### Changed
+- **OpenCode-only install.** `ctxlite install` (and `--tool all`) now only offers OpenCode — Cursor, Claude Code, and Claude Desktop are no longer selectable, and the installer no longer creates/updates/refreshes any config for them. Their install/merge code isn't deleted (a prior Cursor/Claude Code install keeps working, and `--tool cursor` etc. is just rejected going forward, not silently ignored), but this project's efficiency work is now scoped to OpenCode specifically. See `docs/benchmarks.md` for why.
+- Stats dashboard reliability (spec `026-opencode-output-token-efficiency`): fixed a silent-write-drop bug in the stats DB write path (now retries transient failures instead of dropping the row), and fixed the OpenCode plugin opening a brand-new SQLite connection on every single assistant message just to read savings for the toast/session-title — both real, live-diagnosed causes of "savings sometimes don't show up."
+- OpenCode now hard-blocks a full `read` of a large file when `smart_read` would serve the same purpose, redirecting the agent to retry — unless it already engaged that exact path via `smart_read` or an edit/write call this session.
+- Conciseness system prompt strengthened (never use a markdown table for lists; don't restate the same fact twice) and a new `concise_reply` tool added for pure explain/list turns.
+
+### Fixed
+- **Real regression caught via this repo's own dogfooded Claude Code hook**: the new OpenCode-only large-file-block rule above was, for one build, wired through the shared `optimizeToolArgs` in a way that also fired for Claude Code's and Cursor's hook bridges — not just OpenCode. Fixed by making the rule strictly opt-in (`enforceSizeThreshold`, defaulted `false`, set `true` only by OpenCode's own hook) before this ever shipped; regression tests added in `packages/cli/src/hook.test.ts` and `cursor-hook.test.ts`.
+
+### Added
+- `bench-live/` — a real, model-in-the-loop benchmark harness (`npm run bench:live`) that runs representative tasks against a locally installed `opencode` CLI and a real model, enforced vs. disabled, and measures actual token/cost numbers — distinct from the existing deterministic `bench/` simulation suite.
+
+### Honest finding (not a regression — a measured result)
+Real testing (`bench-live`, three models: two free-tier, one paid) found output-token cost reduction lands around **10–20%** on realistic tasks, not the 70–90% originally hoped for — the enforcement mechanism above cuts input/context tokens substantially (26–88% measured) but has limited effect on how much text a model chooses to write. Multiple complementary approaches were tried and are documented, including two that failed live testing (a schema-forced reply tool; an explicit numeric length constraint). See `docs/benchmarks.md` for the full writeup — reported plainly rather than smoothed over, since shipping honest numbers was the entire point of this release.
+
 ## [0.1.39] - 2026-07-17
 
 ### Fixed

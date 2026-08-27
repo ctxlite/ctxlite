@@ -84,7 +84,8 @@ describe("@ctxlite/core barrel exports", () => {
 
   it("exposes the constant exports with their documented values", () => {
     expect(ctxliteCore.CONCISENESS_SAVINGS_RATE).toBeTypeOf("number")
-    expect(ctxliteCore.ALL_TOOLS).toEqual(["cursor", "opencode", "claude-code", "claude-desktop"])
+    // Cursor/Claude Code/Claude Desktop are no longer installable — see docs/benchmarks.md.
+    expect(ctxliteCore.ALL_TOOLS).toEqual(["opencode"])
     expect(ctxliteCore.MCP_PACKAGE).toBe("@ctxlite/mcp")
     expect(ctxliteCore.MCP_SERVER_NAME).toBe("ctxlite")
     expect(ctxliteCore.OPENCODE_PLUGIN).toBe("@ctxlite/opencode")
